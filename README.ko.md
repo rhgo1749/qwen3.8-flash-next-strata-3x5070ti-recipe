@@ -1,4 +1,4 @@
-# Strata GPU-per-Lane 병렬 서빙 레시피
+# Qwen3.8-Flash-Next / Strata GPU-per-Lane 병렬 서빙 레시피
 
 [English](README.md) | **한국어** | [简体中文](README.zh-CN.md) | [日本語](README.ja.md)
 
@@ -67,20 +67,23 @@ resident KV         32768 / 32768 / 32768
 CPU cores           5 / 6 / 5
 pcie-frac           0.55 / 0.25 / 0.55
 shared expert arena ~39.97 GiB
-core V/F plateau    2300 MHz @ >=875 mV
-VRAM offset         +2500
 ```
 
 이 값들은 **다른 PC의 기본값이 아니다.** 기준 시스템에서 실측 후 선택한 값이다.
 
-이 레시피의 **정본 성능 데이터는 2차 언더볼팅/튜닝 상태**다.
+## 성능 수치를 읽는 방법
 
-- warm lane-local TG: **78.8 / 78.4 / 80.1 tok/s**;
-- 위 세 lane의 engine-reported rate 합: **237.3 tok/s lane-sum**;
-- no-reuse PP 개별 spot check: **1,529.7 / 1,421.6 / 1,536.9 tok/s**, 평균 약 **1,496 tok/s/lane**;
+서로 다른 성격의 측정을 한 숫자로 섞지 않는다.
+
+- **controlled clean short-warm aggregate:** **216.1 tok/s**, clean wall-time 기준 best **221.1 tok/s**.
+- **장문 실사용 aggregate TG:** 약 **175–190 tok/s**.
+- **2차 언더볼팅 후 lane-local TG:** **78.8 / 78.4 / 80.1 tok/s**, 합계 **237.3 tok/s lane-sum**.
+- **2차 언더볼팅 후 no-reuse PP spot check:** **1,529.7 / 1,421.6 / 1,536.9 tok/s**, 평균 약 **1,496 tok/s/lane**.
 - 약 **141K–145K token** 장문 요청 3개를 동시에 넣어 262K ×3 capacity와 안정성을 검증했다.
 
-**237.3 tok/s는 clean wall-clock aggregate가 아니라 lane-sum**이므로 그렇게 표기해야 한다. 2차 이전 throughput 수치는 이 레시피의 promoted 결과에서 제외한다.
+> **2차 언더볼팅 후 237.3 tok/s lane-sum이 관측됐지만, clean wall-timed warm aggregate의 공식 best는 221.1 tok/s다.**
+
+즉 `237.3`을 “aggregate 성능이 237.3까지 올랐다”고 쓰지 않는다. 측정 방식, workload, cache 상태와 speculative acceptance가 다르기 때문에 이 숫자만으로 언더볼팅이 221.1 → 237.3 tok/s의 성능 향상을 만들었다고 결론내릴 수 없다.
 
 자세한 수치와 주의점은 [`RESULTS.md`](RESULTS.md), [`docs/undervolt-v2-20260929.md`](docs/undervolt-v2-20260929.md)를 보면 된다.
 
@@ -117,8 +120,8 @@ VRAM offset         +2500
 
 ## 문서 지도
 
-- [`RESULTS.md`](RESULTS.md) — 정본 기준 시스템 실측 결과
-- [`docs/undervolt-v2-20260929.md`](docs/undervolt-v2-20260929.md) — 정본 GPU 튜닝 및 PP/TG 데이터
+- [`RESULTS.md`](RESULTS.md) — 기준 시스템 실측 결과와 보고 규칙
+- [`docs/undervolt-v2-20260929.md`](docs/undervolt-v2-20260929.md) — 2차 언더볼팅 GPU 튜닝 및 PP/TG 데이터
 - [`docs/reference-host-validation-20260929.md`](docs/reference-host-validation-20260929.md) — 262K ×3 장문/서빙 검증 기록
 - [`docs/fork-and-implementation.md`](docs/fork-and-implementation.md) — 포크와 레시피의 역할 분리
 - [`bench/README.md`](bench/README.md) — 측정 규칙
