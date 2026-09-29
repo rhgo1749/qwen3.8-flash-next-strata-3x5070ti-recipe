@@ -4,101 +4,124 @@
 
 このリポジトリは、**GPU 1枚につき独立した Strata generation lane を1つ**動かし、大きな host-RAM expert arena は lane 間で物理的に1コピーだけ共有するサービング方式をまとめたものです。
 
-実測リファレンスは **RTX 5070 Ti 16 GB ×3 + Qwen3.8-Flash-Next IQ3_XXS** です。ただし設計自体は3枚構成や特定 GPU に限定されません。
+実測リファレンスは **RTX 5070 Ti 16 GB ×3** です。IQ3_XXS は performance-oriented な比較基準として維持し、現在のリファレンス・ホストの実運用モデルは **Qwen3.8-Flash-Next GSQ-RCO IQ3_S** です。
 
 実装: [`rhgo1749/Strata`](https://github.com/rhgo1749/Strata)  
-整理済みリファレンス実装 commit: [`844d6206`](https://github.com/rhgo1749/Strata/commit/844d62064b4327f80eae0f2980ccbd83b04fbe9a)
+**現在の promoted implementation pin:** [`9dda206`](https://github.com/rhgo1749/Strata/commit/9dda206874387b20cac20837a1452f115a8f9f93)  
+**現在の promoted engine:** Strata **0.1.22**
 
 ## 基本アイデア
 
 - 1つのリクエストは1つの GPU lane が処理する。
 - 複数リクエストは別々の GPU lane で同時に処理できる。
-- 大きな host expert arena は物理 RAM 上で共有する。
+- 大きな host expert arena は物理 RAM 上で1コピーだけ共有する。
 - CUDA state、hot-expert cache、KV、session state は lane-local のままにする。
 - 通常の decode path では GPU 間の token-by-token 同期を必須にしない。
 
 そのため、遅い GPU は割り当てられたリクエストだけを遅くし、他の lane の token rate を直接引き下げません。反対に、リクエストが1つしかない場合は他の GPU lane が idle になることがあります。
 
-## 推奨ハードウェアの目安
-
-この実装は特定の3 GPU構成にハードコードされていません。基本ルールは次の通りです。
-
-> **使用する各 GPU がまず single-GPU Strata lane を単独で正常に動かせること。そのうえで、全 lane を同時に動かすための RAM / CPU / PCIe 余裕をホスト側に確保すること。**
-
-| 項目 | 実用的な開始点 | multi-lane 推奨 | 検証済みリファレンス |
-| --- | --- | --- | --- |
-| OS | Linux | 現行 64-bit Linux | Ubuntu Linux |
-| GPU 数 | NVIDIA GPU 2枚 | 2–4枚 | 3枚 |
-| GPUごとの VRAM | 選択した single-GPU Strata 設定を収容できること。upstream の対応モデルは 12 GB から | hot-expert cache / resident KV の余裕を考え **16 GB+ / GPU** を推奨 | RTX 5070 Ti 16 GB ×3 |
-| System RAM | shared expert arena 1つ + 全 lane の host-KV + OS/runtime の余裕 | 実際の quant/context から算出。本 3-lane IQ3_XXS 262K ×3 recipe では **128 GB を検証済み推奨値**として使用 | 128 GB |
-| CPU | 現在の auto partition は lane あたり最低 2 physical cores を要求 | 余裕があれば **active lane あたり 4–6 physical cores** から開始 | Ryzen 9 9950X3D 16C/32T、5 / 6 / 5 |
-| PCIe | 各 GPU に安定した実用リンク | 可能なら広いリンクを優先し、非対称 topology は実測で調整 | Gen5 x8 / x4 / x8 |
-| Storage | SSD | NVMe SSD | NVMe |
-| NVLink | 不要 | 不要 | なし |
-| PSU / 冷却 | CPU + 全 GPU の同時負荷を支えられること | 通常の電力・温度マージンを確保 | ホスト依存 |
-
-これらは**汎用の最低要件ではなくガイドライン**です。小さい quant、少ない lane、短い context なら RAM を減らせる可能性があり、逆に lane/context/model が大きくなれば必要量も増えます。
-
-RAM は次のように考えると分かりやすいです。
-
-```text
-必要 host RAM ≈
-    shared expert arena 1つ
-  + lane 0 host-KV
-  + lane 1 host-KV
-  + ...
-  + OS / server / filesystem-cache の余裕
-```
-
-expert arena を GPU 枚数分掛ける必要はありません。この fork のポイントの1つが、その大きな arena を物理 RAM 上で共有することです。
-
-より詳しい sizing / bring-up ガイドは実装 fork の [`docs/multigpu-hardware-guide.md`](https://github.com/rhgo1749/Strata/blob/main/docs/multigpu-hardware-guide.md) を参照してください。
-
 ## リファレンス・ホスト
 
 ```text
-CPU                 Ryzen 9 9950X3D
+CPU                 Ryzen 9 9950X3D, 16C/32T
 RAM                 128 GB DDR5
 GPUs                RTX 5070 Ti 16 GB ×3
 PCIe                Gen5 x8 / x4 / x8
-model               Qwen3.8-Flash-Next IQ3_XXS
 contexts            262144 / 262144 / 262144
+host-KV guard       786432
 resident KV         32768 / 32768 / 32768
 CPU cores           5 / 6 / 5
 pcie-frac           0.55 / 0.25 / 0.55
-shared expert arena ~39.97 GiB
 GPU V/F plateau     2300 MHz @ >=875 mV
 VRAM offset         +2500
 ```
 
 これらはリファレンス・ホスト固有の実測値であり、別マシンの既定値ではありません。
 
-## 正式な性能データ
+基本的な sizing ルールは次の通りです。
 
-この recipe の公開性能データは**2回目の undervolt 状態**を正本とします。それ以前の pre-second-undervolt throughput は代表値として使用しません。
+> 使用する各 GPU がまず single-GPU Strata lane を単独で正常に動かせること。そのうえで、全 lane を同時に動かすための RAM / CPU / PCIe 余裕をホスト側に確保すること。
 
-- warm lane-local TG: **78.8 / 78.4 / 80.1 tok/s**;
-- lane-sum TG: **237.3 tok/s**;
-- no-reuse PP spot check: **1,529.7 / 1,421.6 / 1,536.9 tok/s**;
-- 3つの独立 PP 観測の平均: 約 **1,496 tok/s/lane**;
-- 約 **141K–145K token** の full-window request を3本同時に処理し、context overflow / CUDA OOM / lane death なしで完了。
+host RAM は概ね次のように見積もります。
 
-> **237.3 tok/s は各 lane の engine-reported TG を合計した lane-sum であり、clean wall-clock aggregate ではありません。**
+```text
+必要 host RAM ≈
+    shared expert arena 1つ
+  + 全 lane の host-KV
+  + OS / server / filesystem-cache の余裕
+```
 
-PP 3件も同期した1回の prefill ではなく独立した spot check なので、aggregate PP として合算しません。141K–145K ×3 の試験は **262K ×3 capacity / client compatibility** の検証として扱い、正式な throughput benchmark とは分けます。
+expert arena を GPU 枚数分掛ける必要はありません。この fork の重要な点の1つが、その大きな arena を物理 RAM 上で共有することです。
 
-詳細な測定結果: [`RESULTS.md`](RESULTS.md)  
-2回目の undervolt dataset: [`docs/undervolt-v2-20260929.md`](docs/undervolt-v2-20260929.md)  
-リファレンス・ホスト検証: [`docs/reference-host-validation-20260929.md`](docs/reference-host-validation-20260929.md)  
-実装と recipe の役割分担: [`docs/fork-and-implementation.md`](docs/fork-and-implementation.md)
+## 現在の promoted performance — Strata 0.1.22
+
+現在の recipe baseline は fork commit `9dda206`、engine 0.1.22 です。既存の3-lane起動契約はそのまま互換で、migration flag は不要でした。
+
+### IQ3_XXS performance reference
+
+- clean warm 3-request wall aggregate: **226.5–227.9 tok/s**
+- midpoint: 約 **227.2 tok/s**
+- 15,064-token no-reuse single-lane PP spot check: **2,492.2 tok/s**
+
+旧 **237.3 tok/s** は engine-reported lane-sum として有効な履歴値ですが、clean wall-clock aggregate ではありません。
+
+### IQ3_S current deployment benchmark
+
+Strata 0.1.22 の IQ3_S runtime は **46.84 GiB** の shared expert arena と、lane ごとに **4524 slots / 8.63 GiB** の hot-expert cache を使用します。
+
+2つの backend session で保持した4つの warm round は:
+
+```text
+183.9 / 190.8 / 196.8 / 209.7 tok/s wall aggregate
+```
+
+したがって **現在の IQ3_S warm range は 183.9–209.7 tok/s、4 round 平均は 195.3 tok/s** です。
+
+Concurrent no-reuse prompt processing:
+
+| Measurement | GPU0 x8 | GPU1 x4 | GPU2 x8 |
+| --- | ---: | ---: | ---: |
+| 15,048-token PP | **2,325.6** | **1,806.5** | **2,293.0 tok/s** |
+| 30,024-token PP | **2,352.1** | **1,812.9** | **2,348.3 tok/s** |
+
+30K run の x8 lane 平均は **2,350.2 tok/s**、中央の x4 lane は約 **22.9%** 遅くなりました。保持した long-prompt request はすべて **0 reused** で、CUDA OOM、API failure、lane death はありませんでした。
+
+旧 IQ3_S ~30K dataset は **1,553.7 / 1,323.9 / 1,545.1 tok/s** でした。今回の 0.1.22 はその履歴 benchmark generation より約 **+51.4% / +36.9% / +52.0%** 高い値ですが、prompt content と runtime generation が完全に同一の strict A/B ではありません。
+
+詳細: [`docs/iq3-s-3lane-benchmark-20260929.md`](docs/iq3-s-3lane-benchmark-20260929.md)
+
+## Layer-split challenger
+
+同じ `9dda206` binary で upstream Strata の 3-GPU layer-split も 262K で動作します。
+
+- short single-request decode: **80.6 tok/s**
+- 15,064-token no-reuse PP: **1,142.3 tok/s**
+
+IQ3_XXS の同じ 15K PP probe では request-per-lane path が約 **2.18×** の PP を示し、layer-split は single-request decode で優位でした。
+
+したがって architecture decision は変わりません。**concurrent-agent serving の production baseline は independent request lanes**、layer-split は single-request-oriented workload 向け challenger として残します。
+
+## Full-window validation
+
+3本の実ソフトウェアレビュー prompt を、全 lane 262K context で同時実行しました。
+
+- 141,578 input / 992 output tokens
+- 144,875 input / 1,295 output tokens
+- 144,777 input / 871 output tokens
+
+3本とも context overflow、CUDA OOM、API failure、lane death なしで完了しました。これは **262K ×3 capacity / client compatibility** の証拠であり、throughput headline とは分けて扱います。
 
 ## 別の PC に適用する場合
 
 使用予定の各 GPU でまず single-GPU Strata を安定動作させ、その後 GPU ごとの VRAM、実際の PCIe link、CPU/RAM 資源に合わせて lane 数を決めます。CPU core、context、resident KV、PCIe 関連値はリファレンス値をコピーせず、対象ホスト上で再測定してください。
 
-## リポジトリの役割
+## 詳細ドキュメント
 
-`rhgo1749/Strata` は汎用実装、テスト、architecture/roadmap を保持します。具体的なハードウェア構成、ホスト固有 tuning、benchmark 記録はこの recipe リポジトリが保持します。
+- [`RESULTS.md`](RESULTS.md) — current / historical reference-host results
+- [`docs/strata-0.1.22-promotion-20260929.md`](docs/strata-0.1.22-promotion-20260929.md) — current 0.1.22 promotion
+- [`docs/iq3-s-3lane-benchmark-20260929.md`](docs/iq3-s-3lane-benchmark-20260929.md) — current IQ3_S benchmark
+- [`docs/reference-host-validation-20260929.md`](docs/reference-host-validation-20260929.md) — 262K ×3 full-window validation
+- [`docs/fork-and-implementation.md`](docs/fork-and-implementation.md) — implementation / recipe ownership boundary
 
 ## 関連プロジェクト
 
