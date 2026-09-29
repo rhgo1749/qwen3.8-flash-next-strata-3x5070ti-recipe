@@ -4,7 +4,7 @@
 
 A practical recipe for running **one independent Strata generation lane per GPU** while sharing one large host-RAM expert arena between lanes.
 
-The measured reference machine uses **3 × RTX 5070 Ti 16 GB** with Qwen3.8-Flash-Next IQ3_XXS. The architecture is request/session parallelism, not tensor parallelism: one request normally runs on one GPU lane, while multiple requests run concurrently on different GPUs.
+The measured reference machine uses **3 × RTX 5070 Ti 16 GB**. IQ3_XXS is kept as the performance-oriented comparison profile, while the current reference-host deployment uses **Qwen3.8-Flash-Next GSQ-RCO IQ3_S**.
 
 Implementation: [`rhgo1749/Strata`](https://github.com/rhgo1749/Strata)  
 **Current promoted implementation pin:** [`9dda206`](https://github.com/rhgo1749/Strata/commit/9dda206874387b20cac20837a1452f115a8f9f93)  
@@ -63,13 +63,11 @@ CPU                 Ryzen 9 9950X3D, 16C/32T
 RAM                 128 GB DDR5
 GPUs                RTX 5070 Ti 16 GB ×3
 PCIe                Gen5 x8 / x4 / x8
-model               Qwen3.8-Flash-Next IQ3_XXS
 contexts            262144 / 262144 / 262144
 host-KV guard       786432
 resident KV         32768 / 32768 / 32768
 CPU cores           5 / 6 / 5
 pcie-frac           0.55 / 0.25 / 0.55
-shared expert arena ~39.97 GiB
 GPU V/F plateau     2300 MHz @ >=875 mV
 VRAM offset         +2500
 ```
@@ -95,31 +93,47 @@ Do **not** multiply the expert arena by GPU count; that is the allocation this f
 
 The current recipe baseline is fork commit `9dda206`, engine 0.1.22. The existing 3-lane launch contract remained compatible; no migration flag was required.
 
-### Clean warm concurrent decode
+### IQ3_XXS performance reference
 
-Three identical short requests were warmed so all lanes could reuse the same short prefix. Two retained warm rounds measured:
+- clean warm three-request wall aggregate: **226.5–227.9 tok/s**;
+- midpoint: about **227.2 tok/s**;
+- no-reuse 15,064-token single-lane PP spot check: **2,492.2 tok/s**.
 
-- **227.9 tok/s** wall aggregate (384 completion tokens / 1.685 s)
-- **226.5 tok/s** wall aggregate (384 completion tokens / 1.695 s)
+The older 237.3 tok/s IQ3_XXS value remains a historical engine-reported lane-sum, not a clean wall aggregate.
 
-**Current headline multi-lane result: 226.5–227.9 tok/s clean warm wall aggregate** (about 227.2 tok/s midpoint).
+### IQ3_S current deployment benchmark
 
-This replaces the older 237.3 tok/s lane-sum as the preferred headline metric because the new number is derived from one common wall interval. The old 237.3 tok/s observation remains valid historical lane-local evidence, but it was never a wall-clock aggregate.
+The current IQ3_S runtime uses a **46.84 GiB** shared expert arena and a **4524-slot / 8.63 GiB** hot-expert cache per lane on Strata 0.1.22.
 
-### Current prompt-processing spot check
+Four retained clean warm rounds across two backend sessions measured:
 
-A no-reuse **15,064-token** prompt on one 262K lane processed at **2,492.2 tok/s**.
+```text
+183.9 / 190.8 / 196.8 / 209.7 tok/s wall aggregate
+```
 
-This is a promoted same-host 0.1.22 software-version spot check, not a universal long-prompt PP claim. Older 45K–65K prompt-processing observations remain useful historical data but are a different prompt-length/run generation.
+**Current IQ3_S warm range: 183.9–209.7 tok/s, four-round mean 195.3 tok/s.**
 
-### 0.1.21 comparison
+Concurrent no-reuse prompt processing:
+
+| Measurement | GPU0 x8 | GPU1 x4 | GPU2 x8 |
+| --- | ---: | ---: | ---: |
+| 15,048-token PP | **2,325.6** | **1,806.5** | **2,293.0 tok/s** |
+| 30,024-token PP | **2,352.1** | **1,812.9** | **2,348.3 tok/s** |
+
+For the 30K run, the x8 lanes averaged **2,350.2 tok/s**, while the x4 middle lane was about **22.9% slower**. All retained long-prompt requests reported **0 reused** and completed without CUDA OOM, API failure, or lane death.
+
+The older IQ3_S ~30K dataset was **1,553.7 / 1,323.9 / 1,545.1 tok/s**. The new 0.1.22 rates are roughly **+51.4% / +36.9% / +52.0%** versus that historical benchmark generation, but this is not a strict same-prompt A/B.
+
+Full IQ3_S record: [`docs/iq3-s-3lane-benchmark-20260929.md`](docs/iq3-s-3lane-benchmark-20260929.md).
+
+### 0.1.21 comparison for IQ3_XXS
 
 The immediately preceding 0.1.21 integration validation measured:
 
 - warm three-request wall aggregate: **198.2 tok/s**;
 - ~15K prompt-processing spot check: **1,609.9 tok/s**.
 
-The 0.1.22 promotion therefore measured about **+14.6%** warm wall aggregate and **+54.8%** on that retained ~15K PP comparison. These are promotion-run deltas, not universal model speedup claims.
+The IQ3_XXS 0.1.22 promotion measured about **+14.6%** warm wall aggregate and **+54.8%** on that retained ~15K PP comparison. These are promotion-run deltas, not universal model speedup claims.
 
 Full promotion record: [`docs/strata-0.1.22-promotion-20260929.md`](docs/strata-0.1.22-promotion-20260929.md).
 
@@ -130,9 +144,9 @@ The same `9dda206` binary also preserves upstream Strata 3-GPU layer-split at 26
 - short single-request decode: **80.6 tok/s**;
 - 15,064-token no-reuse PP: **1,142.3 tok/s**.
 
-On the retained 15K PP probe, the request-per-lane path measured about **2.18×** the layer-split PP rate. Layer-split still showed the expected single-request decode advantage.
+On the retained IQ3_XXS 15K PP probe, the request-per-lane path measured about **2.18×** the layer-split PP rate. Layer-split still showed the expected single-request decode advantage.
 
-The architecture decision therefore remains unchanged: **independent request lanes are the production baseline for concurrent-agent serving; layer-split remains a challenger for single-request-oriented workloads.**
+The architecture decision remains unchanged: **independent request lanes are the production baseline for concurrent-agent serving; layer-split remains a challenger for single-request-oriented workloads.**
 
 ## Full-window validation
 
@@ -143,20 +157,6 @@ Three real software-review prompts were run concurrently with every lane configu
 - 144,777 input tokens / 871 output tokens
 
 All three completed without context overflow, CUDA OOM, API failure, or lane death. This is retained as **262K ×3 capacity/client-compatibility evidence**, not as the canonical throughput benchmark.
-
-## IQ3_S quality-oriented challenger
-
-A clean three-lane IQ3_S run also validated the same 262K ×3 policy on the reference host.
-
-| Measurement | IQ3_S result |
-| --- | ---: |
-| Shared host expert arena | **46.84 GiB** |
-| Hot-expert cache per GPU | **4548 slots / 8.67 GiB** |
-| Warm short-decode TG | **60.5 / 63.8 / 59.1 tok/s** |
-| Engine-reported TG lane-sum | **183.4 tok/s** |
-| Concurrent ~30K no-reuse PP | **1,553.7 / 1,323.9 / 1,545.1 tok/s** |
-
-IQ3_S remains a quality-oriented challenger profile rather than the canonical performance profile.
 
 ## How to adapt it to another PC
 
@@ -176,8 +176,8 @@ The measured launch example is in [`recipe/launch-3lane.sh.example`](recipe/laun
 
 - [`RESULTS.md`](RESULTS.md) — current and historical reference-host results
 - [`docs/strata-0.1.22-promotion-20260929.md`](docs/strata-0.1.22-promotion-20260929.md) — current 0.1.22 promotion record
+- [`docs/iq3-s-3lane-benchmark-20260929.md`](docs/iq3-s-3lane-benchmark-20260929.md) — current IQ3_S benchmark
 - [`docs/undervolt-v2-20260929.md`](docs/undervolt-v2-20260929.md) — historical second-undervolt GPU tuning / lane-local dataset
-- [`docs/iq3-s-3lane-benchmark-20260929.md`](docs/iq3-s-3lane-benchmark-20260929.md) — IQ3_S challenger benchmark
 - [`docs/reference-host-validation-20260929.md`](docs/reference-host-validation-20260929.md) — 262K ×3 full-window serving validation
 - [`docs/fork-and-implementation.md`](docs/fork-and-implementation.md) — fork/recipe ownership boundary
 - [`bench/README.md`](bench/README.md) — benchmark/reporting contract
