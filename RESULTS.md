@@ -22,31 +22,13 @@ pcie-frac           0.55 / 0.25 / 0.55
 shared expert arena ~39.97 GiB
 ```
 
-The repository keeps **different measurement classes separate** instead of promoting whichever number is largest.
+The repository keeps **different measurement classes separate** instead of promoting whichever number is largest. The second-undervolt state is the canonical public IQ3_XXS state; older pre-second-undervolt throughput numbers are intentionally omitted.
 
-## Performance summary
-
-### Clean wall-timed warm aggregate
-
-The controlled short-warm benchmark remains the clean aggregate reference:
-
-- **216.1 tok/s** controlled warm aggregate;
-- **221.1 tok/s** best observed clean warm round.
-
-These are wall-timed concurrent three-lane results from the pre-second-undervolt controlled dataset. They remain the appropriate public aggregate numbers because the wall interval was clean and the three requests were measured as one controlled concurrent run.
-
-### Long-context real-workload aggregate
-
-On overlapping long-context real workloads, aggregate decode was approximately:
-
-- **175–190 tok/s aggregate TG**;
-- prompt processing was roughly **1.5–1.6k tok/s per lane** on representative long-context observations.
-
-These values describe real serving behavior rather than the fixed short-warm microbenchmark, so they should not be compared as if they were the same workload.
+## Canonical IQ3_XXS performance
 
 ### Second-undervolt lane-local observation
 
-After the second undervolt pass, fixed short lane-local probes used `temperature=0` and `max_tokens=256` and recorded:
+Fixed short lane-local probes used `temperature=0` and `max_tokens=256` and recorded:
 
 | Lane | Prompt reuse | TG | MTP/spec accepted |
 | --- | --- | ---: | ---: |
@@ -60,11 +42,7 @@ Lane-sum:
 78.8 + 78.4 + 80.1 = 237.3 tok/s
 ```
 
-**237.3 tok/s is a lane-sum of engine-reported TG, not a clean wall-clock aggregate.** It demonstrates that the 2300 MHz / 875 mV plateau did not show an obvious decode regression, but it is not promoted as proof that aggregate throughput increased from 221.1 to 237.3 tok/s.
-
-A concise public wording is:
-
-> **237.3 tok/s lane-sum was observed after the second undervolt pass, while 221.1 tok/s remains the best clean wall-timed warm aggregate.**
+**237.3 tok/s is a lane-sum of engine-reported TG, not a clean wall-clock aggregate.** It is the canonical public decode observation for this recipe, but it must not be described as an aggregate speedup.
 
 ## No-reuse prompt-processing spot checks after the second undervolt
 
@@ -80,7 +58,7 @@ Mean PP across the three independent spot checks is about **1,496 tok/s/lane**.
 
 ## Full-window concurrency validation
 
-Three independent real software-review prompts were also run concurrently to validate the full 262K window on every lane:
+Three independent real software-review prompts were run concurrently with every lane configured for a 262K context window:
 
 | Client | Input tokens | Output tokens | Finish |
 | --- | ---: | ---: | --- |
@@ -90,7 +68,27 @@ Three independent real software-review prompts were also run concurrently to val
 
 All three inputs exceeded the former 131,072-token per-lane limit. No context-overflow error, CUDA OOM, API failure, or lane death occurred.
 
-This run is retained as **262K ×3 capacity and client-compatibility evidence**. Its real-workload throughput belongs to the long-context measurement class above, not the controlled short-warm class.
+This run is retained as **262K ×3 capacity and client-compatibility evidence**, not as a 262K-token-per-prompt benchmark and not as the canonical throughput benchmark.
+
+## IQ3_S challenger profile — 2026-09-29
+
+A clean three-lane IQ3_S run was also completed on the same reference host with the same `262144 / 262144 / 262144` context policy, `32768` resident KV per lane, `5 / 6 / 5` physical-core split, and `0.55 / 0.25 / 0.55` PCIe fractions.
+
+Key clean observations:
+
+- shared expert arena: **46.84 GiB**;
+- hot-expert cache: **4548 slots / 8.67 GiB per lane**;
+- controlled concurrent short TG: **60.5 / 63.8 / 59.1 tok/s**;
+- short TG lane-sum: **183.4 tok/s**;
+- concurrent ~30K no-reuse PP: **1,553.7 / 1,323.9 / 1,545.1 tok/s**;
+- the x4 middle lane was about **14.6% slower** in PP than the mean of the two x8 lanes;
+- no lane death or CUDA OOM occurred during the run.
+
+The IQ3_S short lane-sum is about 23% below the canonical IQ3_XXS lane-sum, but those two figures come from different short-probe workloads and generation lengths. Treat that percentage as an **indicative cross-run comparison**, not a controlled quantization A/B.
+
+The first IQ3_S bring-up was excluded because two idle-holder containers were still occupying roughly 0.5 GiB of GPU1 VRAM and reduced that lane's hot-expert cache. The retained dataset was collected only after removing those holders and restarting all three lanes cleanly; the holders were restored after the benchmark.
+
+Full IQ3_S configuration, per-lane logs, power samples, and reporting caveats are recorded in [`docs/iq3-s-3lane-benchmark-20260929.md`](docs/iq3-s-3lane-benchmark-20260929.md).
 
 ## Resident-KV boundary
 
@@ -100,16 +98,17 @@ Testing a larger GPU-resident KV window showed that giving KV more VRAM can disp
 
 For this repository:
 
-- **216.1 tok/s** is the controlled clean warm aggregate reference;
-- **221.1 tok/s** is the best observed clean wall-timed warm aggregate;
-- **175–190 tok/s** describes long-context real-workload aggregate TG;
-- **237.3 tok/s** must be described as the post-second-undervolt **lane-sum**, not wall aggregate;
-- independent PP spot checks must not be summed unless their prefill intervals are known to overlap;
-- do not infer a causal undervolt speedup without a clean same-workload stock-vs-undervolt wall-timed A/B.
+- **237.3 tok/s** is the canonical IQ3_XXS post-second-undervolt **lane-sum**, not wall-clock aggregate throughput;
+- independent IQ3_XXS PP spot checks must not be summed because their prefill intervals were not one synchronized benchmark;
+- the 141K–145K ×3 run is capacity/stability/client-compatibility evidence for three lanes configured to 262K each;
+- **183.4 tok/s** is the clean IQ3_S controlled short **lane-sum**, not wall-clock aggregate throughput;
+- the IQ3_S ~30K PP figures are concurrent per-lane engine rates and must not be promoted as a summed wall-clock PP number;
+- do not infer a causal undervolt or quantization speedup/slowdown without a clean same-workload wall-timed A/B.
 
 ## More detail
 
-- [`docs/undervolt-v2-20260929.md`](docs/undervolt-v2-20260929.md) — second-undervolt GPU tuning and PP/TG dataset
+- [`docs/undervolt-v2-20260929.md`](docs/undervolt-v2-20260929.md) — canonical second-undervolt GPU tuning and IQ3_XXS PP/TG dataset
+- [`docs/iq3-s-3lane-benchmark-20260929.md`](docs/iq3-s-3lane-benchmark-20260929.md) — IQ3_S three-lane challenger benchmark
 - [`docs/reference-host-validation-20260929.md`](docs/reference-host-validation-20260929.md) — sanitized full-window and serving validation
 - [`bench/README.md`](bench/README.md) — measurement/reporting rules
 - [`docs/multigpu-shared-runtime.md`](https://github.com/rhgo1749/Strata/blob/main/docs/multigpu-shared-runtime.md) — generic implementation contract
