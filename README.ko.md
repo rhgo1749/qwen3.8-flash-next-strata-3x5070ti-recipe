@@ -122,6 +122,26 @@ Concurrent no-reuse prompt processing:
 
 자세한 기록: [`docs/iq3-s-3lane-benchmark-20260929.md`](docs/iq3-s-3lane-benchmark-20260929.md)
 
+### Controlled systems ablation — IQ3_S
+
+아래는 기존 warm-throughput headline을 대체하는 값이 아니라 **아키텍처의 scaling / RAM sharing / heterogeneous isolation**을 따로 검증한 controlled benchmark다.
+
+| 질문 | 실측 결과 |
+| --- | --- |
+| 1 → 2 → 3 GPU decode scaling | **72.59 → 137.01 → 188.23 tok/s**, 2 GPU **1.887×**, 3 GPU **2.593×** |
+| Parallel efficiency | 2 GPU **94.4%**, 3 GPU **86.4%** |
+| Private → shared host arena | two-engine PSS **95.33 → 52.03 GiB**, **43.30 GiB / 45.4% 절감** |
+| RTX 5070 Ti 단독 | **70.336 tok/s** |
+| RTX 5060 Ti x4와 동시 구동 중 RTX 5070 Ti | **70.321 tok/s**, 실측 감소 **0.0215%** |
+| 동시 RTX 5060 Ti x4 lane | **57.246 tok/s** |
+
+특히 heterogeneous isolation 결과가 인상적이다. 측정 오차 범위에서 **느린 RTX 5060 Ti lane이 동시에 돌아가도 RTX 5070 Ti lane의 decode throughput이 내려가지 않았다.** 즉 느린 카드가 전체 token step의 pace setter가 아니라 **자기 요청만 느리게 처리**하는 구조적 의도가 그대로 관측됐다.
+
+빈 expert-cache slot에 expert 하나를 admission하는 H2D microbenchmark에서는 layer-weighted wall mean이 5070 Ti x8에서 약 **0.081 ms pinned / 0.117 ms ordinary host memory**, 5060 Ti x4에서 **0.155 / 0.190 ms**였다. 다만 이것은 **full-cache miss penalty가 아니다.** 현재 hot-expert cache에는 eviction이 없어서 cache가 가득 찬 뒤 non-resident expert는 CPU path로 fallback한다.
+
+상세 방법론/주의사항: [`docs/systems-ablation-20260929.md`](docs/systems-ablation-20260929.md)  
+trial-level 원시 관측값: [`bench/systems-ablation-20260929.csv`](bench/systems-ablation-20260929.csv)
+
 ### IQ3_XXS 0.1.21 대비
 
 직전 0.1.21 integration 검증값은:
@@ -171,6 +191,8 @@ IQ3_XXS의 같은 15K PP probe에서 request-per-lane A는 약 **2.18×**의 PP�
 ## 문서 지도
 
 - [`RESULTS.md`](RESULTS.md) — 현재/역사 기준 시스템 실측 결과와 reporting rule
+- [`docs/systems-ablation-20260929.md`](docs/systems-ablation-20260929.md) — scaling, RAM sharing, heterogeneous isolation, expert-admission controlled 결과
+- [`bench/systems-ablation-20260929.csv`](bench/systems-ablation-20260929.csv) — systems ablation의 machine-readable trial 관측값
 - [`docs/strata-0.1.22-promotion-20260929.md`](docs/strata-0.1.22-promotion-20260929.md) — 현재 0.1.22 promotion 기록
 - [`docs/iq3-s-3lane-benchmark-20260929.md`](docs/iq3-s-3lane-benchmark-20260929.md) — 현재 IQ3_S benchmark
 - [`docs/undervolt-v2-20260929.md`](docs/undervolt-v2-20260929.md) — 과거 2차 언더볼팅 lane-local 데이터
