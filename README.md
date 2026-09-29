@@ -6,6 +6,8 @@ A practical recipe for running **one independent Strata generation lane per GPU*
 
 The measured reference machine uses **3 × RTX 5070 Ti 16 GB** with Qwen3.8-Flash-Next IQ3_XXS, but the architecture is not tied to three GPUs or to one GPU model. The same pattern can be adapted to more or fewer GPUs, including mixed-performance GPUs, as long as every lane can fit its own GPU-resident runtime state and the host has enough CPU, RAM, and PCIe capacity.
 
+The same reference host has also been validated with **Qwen3.8-Flash-Next GSQ-RCO IQ3_S at 262K context on all three lanes**. IQ3_S is documented here as a **quality-oriented challenger profile** rather than a replacement for the faster IQ3_XXS production baseline.
+
 Implementation: [`rhgo1749/Strata`](https://github.com/rhgo1749/Strata)  
 Sanitized implementation pin: [`844d6206`](https://github.com/rhgo1749/Strata/commit/844d62064b4327f80eae0f2980ccbd83b04fbe9a)
 
@@ -151,6 +153,27 @@ The 141K–145K ×3 run is retained as **262K ×3 capacity and client-compatibil
 
 See [`RESULTS.md`](RESULTS.md) and [`docs/undervolt-v2-20260929.md`](docs/undervolt-v2-20260929.md) for the full dataset and reporting rules.
 
+## IQ3_S quality-oriented challenger
+
+A clean three-lane run also validated **Qwen3.8-Flash-Next GSQ-RCO IQ3_S** on the same 3 × 16 GB GPU / 128 GB host with **262144 context configured on every lane**.
+
+| Measurement | IQ3_S result |
+| --- | ---: |
+| Shared host expert arena | **46.84 GiB** |
+| Hot-expert cache per GPU | **4548 slots / 8.67 GiB** |
+| Warm short-decode TG | **60.5 / 63.8 / 59.1 tok/s** |
+| Engine-reported TG lane-sum | **183.4 tok/s** |
+| Concurrent ~30K no-reuse PP | **1,553.7 / 1,323.9 / 1,545.1 tok/s** |
+| x8-lane mean ~30K PP | **~1,549 tok/s** |
+
+The larger IQ3_S quant increased the shared expert arena from roughly **39.97 GiB to 46.84 GiB (~17%)**. The middle PCIe Gen5 x4 lane reached **1,323.9 tok/s** in the ~30K no-reuse prefill run, about **14.6% below** the mean of the two x8 lanes, making the asymmetric PCIe topology more visible with this profile.
+
+Compared with the canonical IQ3_XXS short-probe lane-sum of 237.3 tok/s, the separate IQ3_S run's 183.4 tok/s suggests an **indicative ~23% decode penalty**. This is **not a controlled quantization A/B**: the measurements were taken from different short-probe datasets and must not be presented as a same-prompt, same-generation-length delta.
+
+IQ3_S is therefore kept as the **higher-quality challenger profile** while IQ3_XXS remains the canonical performance profile. A controlled same-prompt quality/performance A/B is still needed before promoting IQ3_S for the intended agent workload.
+
+Full IQ3_S setup, measurement hygiene, per-lane results and power samples: [`docs/iq3-s-3lane-benchmark-20260929.md`](docs/iq3-s-3lane-benchmark-20260929.md).
+
 ## How to adapt it to another PC
 
 Do not copy the reference machine's `5/6/5` CPU split or `0.55/0.25/0.55` PCIe fractions blindly.
@@ -190,6 +213,7 @@ Those remain architecture challengers rather than assumed upgrades. The implemen
 
 - [`RESULTS.md`](RESULTS.md) — reference-host results and reporting rules
 - [`docs/undervolt-v2-20260929.md`](docs/undervolt-v2-20260929.md) — canonical second-undervolt GPU tuning and PP/TG dataset
+- [`docs/iq3-s-3lane-benchmark-20260929.md`](docs/iq3-s-3lane-benchmark-20260929.md) — IQ3_S three-lane challenger benchmark, PP/TG and power samples
 - [`docs/reference-host-validation-20260929.md`](docs/reference-host-validation-20260929.md) — sanitized full-window serving validation
 - [`docs/fork-and-implementation.md`](docs/fork-and-implementation.md) — fork/recipe ownership boundary
 - [`bench/README.md`](bench/README.md) — benchmark/reporting rules
