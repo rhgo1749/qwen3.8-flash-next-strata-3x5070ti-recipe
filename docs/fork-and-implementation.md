@@ -6,11 +6,12 @@ This document separates the upstream engine, the implementation fork, and the pu
 
 ```text
 Niko1221/Strata
-  upstream engine / normal single-GPU path
+  upstream engine / normal single-GPU path / native layer-split
           |
           v
 rhgo1749/Strata
   implementation fork
+  - upstream engine syncs
   - shared expert arena
   - multi-lane supervisor
   - request-level dispatcher
@@ -22,45 +23,56 @@ rhgo1749/qwen3.8-flash-next-strata-gpu-per-lane-recipe
   public recipe
   - reference hardware
   - host-specific CPU/PCIe/KV tuning
-  - canonical GPU tuning and benchmark records
+  - canonical benchmark records
+  - promotion records
   - capacity / serving validation
   - launch examples
 ```
 
-The recipe is deliberately separate from the implementation fork. The fork can rebase, sync upstream, or experiment with scheduling and distributed-cache ideas while the recipe keeps a stable public record of measured host-specific behavior.
+The recipe is deliberately separate from the implementation fork. The fork can sync upstream and carry multiple execution strategies while the recipe keeps a stable public record of measured host-specific behavior.
 
-Sanitized implementation pin for the current public recipe:
+## Current promoted implementation
 
 ```text
-rhgo1749/Strata
-844d62064b4327f80eae0f2980ccbd83b04fbe9a
+repository  rhgo1749/Strata
+commit      9dda206874387b20cac20837a1452f115a8f9f93
+engine      Strata 0.1.22
+promoted    2026-09-29
 ```
 
-## Upstream principle preserved
+The 0.1.22 sync preserved both execution paths:
 
-The multi-GPU fork does **not** turn Strata into a tensor-parallel engine. The existing single-GPU numerical engine remains the execution unit.
+1. the fork's independent request-per-GPU lane supervisor and shared host expert arena;
+2. upstream Strata's native multi-GPU layer-split challenger.
 
-The fork adds a coarse-grained serving layer around it:
+The recipe's existing multi-lane command surface remained compatible across the promotion.
 
-1. share the large host expert arena between processes;
-2. start one ordinary Strata engine per GPU;
-3. keep context/KV/hot-cache/session state lane-local;
-4. partition CPU cores so expert workers do not collide;
-5. lease whole generation requests to free lanes.
+## Production architecture principle
+
+The multi-lane production path does **not** turn every request into tensor/pipeline parallel inference. The normal execution unit remains one Strata engine lane per GPU.
+
+The fork's production serving layer:
+
+1. shares the large host expert arena between lane processes;
+2. starts one ordinary Strata engine per GPU;
+3. keeps context/KV/hot-cache/session state lane-local;
+4. partitions CPU cores so expert workers do not collide;
+5. leases whole generation requests to free lanes.
 
 That means the production parallelism unit is a **request/session**, not a token, tensor, layer, or expert.
 
 ## Shared expert arena
 
-Implementation file:
+Implementation files:
 
 ```text
 src/core/pinned.cu
+src/core/pinned_upstream_impl.cu
 ```
 
-The fork adds an opt-in Linux file-backed path for the expert arena. Independent lane processes map the same physical host pages while keeping their own CUDA registration, streams, GPU hot-expert cache, resident KV, and session state.
+The fork adds an opt-in Linux file-backed path for the expert arena while retaining upstream pinned-memory behavior for unrelated allocations. Independent lane processes map the same physical host pages while keeping their own CUDA registration, streams, GPU hot-expert cache, resident KV, and session state.
 
-The shared path is exact-size guarded so unrelated pinned allocations stay on the normal Strata path.
+The shared path is exact-size guarded so unrelated pinned allocations stay on the normal path.
 
 ## Multi-GPU supervisor
 
@@ -70,11 +82,33 @@ Implementation file:
 serve/multigpu_server.py
 ```
 
-The supervisor reads a normal working Strata config and creates one derived lane config per GPU. It can set per-lane context, PCIe/cache tuning, resident KV, CPU budget, log path, and private listen port.
+The supervisor reads a working Strata config and creates one derived lane config per GPU. It can set per-lane context, PCIe/cache tuning, resident KV, CPU budget, log path, and private listen port.
 
 Lane startup is currently sequential because ordinary engine initialization still populates the shared expert arena. A future leader/follower initialization path may remove that repeated source load.
 
-## Reference-host tuning belongs here
+## Coexistence with upstream layer-split
+
+Upstream Strata 0.1.22 can also run one model split across several GPUs. The fork preserves that path rather than replacing it.
+
+The two modes solve different problems:
+
+- **request-per-lane:** several independent requests run concurrently, one request per GPU lane;
+- **layer-split:** one request uses multiple GPUs as one model pipeline.
+
+On the 0.1.22 reference-host promotion run:
+
+```text
+request-per-lane warm 3-request wall aggregate  226.5–227.9 tok/s
+request-per-lane 15,064-token no-reuse PP       2,492.2 tok/s
+layer-split 15,064-token no-reuse PP            1,142.3 tok/s
+layer-split short single-request decode            80.6 tok/s
+```
+
+This evidence keeps request-per-lane as the production baseline for the target concurrent-agent workload while preserving layer-split as a challenger for single-request-oriented workloads.
+
+See [`strata-0.1.22-promotion-20260929.md`](strata-0.1.22-promotion-20260929.md) for the full promotion record and caveats.
+
+## Reference-host tuning belongs in the recipe
 
 The measured reference host uses:
 
@@ -92,35 +126,19 @@ VRAM offset          +2500
 
 These values are **not** generic defaults. Another host should begin from its own topology and validate each lane independently and concurrently.
 
-The current public performance source of truth is [`undervolt-v2-20260929.md`](undervolt-v2-20260929.md). Earlier pre-second-undervolt throughput figures are intentionally not promoted by the recipe.
-
-Full-window capacity and serving validation is kept separately in [`reference-host-validation-20260929.md`](reference-host-validation-20260929.md).
+Current performance source of truth is [`../RESULTS.md`](../RESULTS.md). GPU tuning history remains in [`undervolt-v2-20260929.md`](undervolt-v2-20260929.md), while full-window capacity/serving validation remains in [`reference-host-validation-20260929.md`](reference-host-validation-20260929.md).
 
 ## Why not cross-GPU decode by default?
 
-The current design deliberately avoids mandatory GPU-to-GPU expert or KV traffic in the normal decode critical path. That provides several practical properties:
+The current production design deliberately avoids mandatory GPU-to-GPU expert or KV traffic in the normal decode critical path. That provides several practical properties:
 
 - a slower lane does not force every other lane to wait;
 - lane failures remain comparatively isolated;
 - mixed-performance GPUs are usable as independent request slots;
 - no NVLink is required;
-- existing single-GPU Strata execution is reused.
+- existing Strata execution is reused.
 
-The trade-off is equally clear: one request normally uses only one GPU lane. When only one request is active, other lanes may be idle.
-
-## What is not implemented in the production path
-
-The current production path does not require:
-
-- tensor parallelism;
-- pipeline parallelism;
-- cross-GPU expert parallelism;
-- distributed non-overlapping expert ownership;
-- GPU-to-GPU KV migration;
-- a dynamic shared KV allocator;
-- single-process multi-GPU decode.
-
-These remain possible roadmap challengers rather than assumed upgrades.
+The trade-off is clear: one request normally uses only one GPU lane. When only one request is active, other lanes may be idle. Upstream layer-split remains available when that trade-off is undesirable.
 
 ## Roadmap relationship
 
