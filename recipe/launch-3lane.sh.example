@@ -1,8 +1,10 @@
 #!/usr/bin/env bash
-# Qwen3.8-Flash-Next IQ3_XXS / Strata / 3x RTX 5070 Ti
+# Qwen3.8-Flash-Next / Strata / 3x RTX 5070 Ti
 #
-# Benchmark implementation pin:
-#   rhgo1749/Strata@844d62064b4327f80eae0f2980ccbd83b04fbe9a
+# Current promoted implementation pin (Strata 0.1.24):
+#   rhgo1749/Strata@3824f04003b79609a7cc6861ea5b4652a47d2ddb
+# Integration merge:
+#   rhgo1749/Strata@82a51614517392f2c5b83af7c39ffbb7abbc783e
 #
 # This is a host-specific example for the validated GPU enumeration:
 #   GPU0 = PCIe 5.0 x8
@@ -10,9 +12,11 @@
 #   GPU2 = PCIe 5.0 x8
 #
 # Verify your own topology before copying the asymmetric pcie-frac values.
+# Strata 0.1.24 adaptive hot-expert replacement is enabled by default;
+# add --adapt-swaps 0 to the underlying engine args only for a static-residency A/B.
 
 STRATA_DIR="${STRATA_DIR:-$HOME/Strata}"
-CONFIG="${CONFIG:-/absolute/path/to/strata-iq3_xxs.json}"
+CONFIG="${CONFIG:-/absolute/path/to/strata.json}"
 PUBLIC_PORT="${PUBLIC_PORT:-18086}"
 
 cd "$STRATA_DIR"
