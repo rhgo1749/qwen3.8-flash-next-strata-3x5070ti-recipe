@@ -67,18 +67,22 @@ resident KV         32768 / 32768 / 32768
 CPU cores           5 / 6 / 5
 pcie-frac           0.55 / 0.25 / 0.55
 shared expert arena ~39.97 GiB
+core V/F plateau    2300 MHz @ >=875 mV
+VRAM offset         +2500
 ```
 
 이 값들은 **다른 PC의 기본값이 아니다.** 기준 시스템에서 실측 후 선택한 값이다.
 
-주요 실측:
+이 레시피의 **정본 성능 데이터는 2차 언더볼팅/튜닝 상태**다.
 
-- 2차 언더볼팅 전 warm aggregate: **216.1 tok/s**, 최고 round **221.1 tok/s**;
-- 장문 prompt processing: lane당 대략 **1.5–1.6k tok/s**;
-- 약 **141K–145K token**짜리 장문 요청 3개 동시 완료;
-- 2차 언더볼팅 후 lane-local warm: **78.8 / 78.4 / 80.1 tok/s**.
+- warm lane-local TG: **78.8 / 78.4 / 80.1 tok/s**;
+- 위 세 lane의 engine-reported rate 합: **237.3 tok/s lane-sum**;
+- no-reuse PP 개별 spot check: **1,529.7 / 1,421.6 / 1,536.9 tok/s**, 평균 약 **1,496 tok/s/lane**;
+- 약 **141K–145K token** 장문 요청 3개를 동시에 넣어 262K ×3 capacity와 안정성을 검증했다.
 
-자세한 수치와 주의점은 [`RESULTS.md`](RESULTS.md), [`docs/reference-host-validation-20260929.md`](docs/reference-host-validation-20260929.md)를 보면 된다.
+**237.3 tok/s는 clean wall-clock aggregate가 아니라 lane-sum**이므로 그렇게 표기해야 한다. 2차 이전 throughput 수치는 이 레시피의 promoted 결과에서 제외한다.
+
+자세한 수치와 주의점은 [`RESULTS.md`](RESULTS.md), [`docs/undervolt-v2-20260929.md`](docs/undervolt-v2-20260929.md)를 보면 된다.
 
 ## 내 PC에 적용하는 순서
 
@@ -113,10 +117,10 @@ shared expert arena ~39.97 GiB
 
 ## 문서 지도
 
-- [`RESULTS.md`](RESULTS.md) — 기준 시스템 실측 결과
-- [`docs/reference-host-validation-20260929.md`](docs/reference-host-validation-20260929.md) — 개인정보성 식별자를 뺀 기준 시스템 검증 기록
+- [`RESULTS.md`](RESULTS.md) — 정본 기준 시스템 실측 결과
+- [`docs/undervolt-v2-20260929.md`](docs/undervolt-v2-20260929.md) — 정본 GPU 튜닝 및 PP/TG 데이터
+- [`docs/reference-host-validation-20260929.md`](docs/reference-host-validation-20260929.md) — 262K ×3 장문/서빙 검증 기록
 - [`docs/fork-and-implementation.md`](docs/fork-and-implementation.md) — 포크와 레시피의 역할 분리
-- [`docs/undervolt-v2-20260929.md`](docs/undervolt-v2-20260929.md) — 2차 언더볼팅 데이터
 - [`bench/README.md`](bench/README.md) — 측정 규칙
 
 ## 관련 프로젝트
