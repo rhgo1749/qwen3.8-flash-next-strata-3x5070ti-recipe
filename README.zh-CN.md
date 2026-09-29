@@ -19,6 +19,41 @@
 
 因此较慢的 GPU 只影响分配给它的请求，不会像紧耦合并行那样成为所有 GPU 的同步瓶颈。代价是单个请求通常只使用一个 GPU lane。
 
+## 硬件建议
+
+这套实现不是为某一台三卡主机硬编码的。最重要的原则是：
+
+> **每一张被选中的 GPU 都应先能独立运行一个可用的 single-GPU Strata lane；主机再提供足够的 RAM、CPU 和 PCIe 资源让所有 lane 同时工作。**
+
+| 项目 | 实用起点 | 多 lane 建议 | 已验证参考主机 |
+| --- | --- | --- | --- |
+| OS | Linux | 当前 64-bit Linux | Ubuntu Linux |
+| GPU 数量 | 2 张 NVIDIA GPU | 2–4 张 | 3 张 |
+| 每卡 VRAM | 足够容纳所选 single-GPU Strata 配置；upstream 支持的模型从 12 GB 起 | 为 hot-expert cache / resident KV 留余量时建议 **16 GB+ / GPU** | RTX 5070 Ti 16 GB ×3 |
+| 系统 RAM | 1 份 shared expert arena + 所有 lane 的 host-KV + OS/runtime 余量 | 按实际 quant/context 计算；**本 3-lane IQ3_XXS 262K ×3 配方已验证并推荐 128 GB** | 128 GB |
+| CPU | 当前自动分区至少需要每 lane 2 个 physical cores | 可用时建议从 **每个 active lane 4–6 个 physical cores** 起步 | Ryzen 9 9950X3D 16C/32T，5 / 6 / 5 |
+| PCIe | 每张 GPU 都有稳定可用的链路 | 能更宽则更好；不对称拓扑应按实测调参 | Gen5 x8 / x4 / x8 |
+| Storage | SSD | NVMe SSD | NVMe |
+| NVLink | 不需要 | 不需要 | 无 |
+| PSU / 散热 | 能承受 CPU + 所有 GPU 同时负载 | 为多 GPU 同时工作保留正常电气和散热余量 | 依主机而定 |
+
+这些只是**建议，不是通用最低规格**。更小的 quant、更少的 lane 或更短的 context 可以降低 RAM 需求；更多 lane、更长 context 或更大的模型则可能需要更多资源。
+
+RAM 可以用下面的方式理解：
+
+```text
+所需 host RAM ≈
+    1 份 shared expert arena
+  + lane 0 host-KV
+  + lane 1 host-KV
+  + ...
+  + OS / server / filesystem-cache 余量
+```
+
+不要把 expert arena 按 GPU 数量相乘；本 fork 的关键之一就是让这部分在物理 RAM 中共享。
+
+更完整的 sizing 和 bring-up 清单见实现仓库的 [`docs/multigpu-hardware-guide.md`](https://github.com/rhgo1749/Strata/blob/main/docs/multigpu-hardware-guide.md)。
+
 ## 参考主机
 
 ```text
@@ -32,31 +67,34 @@ resident KV         32768 / 32768 / 32768
 CPU cores           5 / 6 / 5
 pcie-frac           0.55 / 0.25 / 0.55
 shared expert arena ~39.97 GiB
+GPU V/F plateau     2300 MHz @ >=875 mV
+VRAM offset         +2500
 ```
 
 这些数值只属于参考主机，不是其他机器的默认值。
 
-## 如何理解性能数字
+## 正式性能数据
 
-本仓库会把不同测量条件分开，不把最大的数字直接当作统一结果。
+本 recipe 的公开性能基准以**第二次 undervolt 状态**为准；更早的 pre-second-undervolt throughput 不再作为主结果。
 
-- **controlled clean short-warm aggregate：** **216.1 tok/s**，clean wall-time 的最佳结果为 **221.1 tok/s**。
-- **长上下文真实工作负载 aggregate TG：** 约 **175–190 tok/s**。
-- **第二次 undervolt 后的 lane-local TG：** **78.8 / 78.4 / 80.1 tok/s**，合计 **237.3 tok/s lane-sum**。
-- **第二次 undervolt 后的 no-reuse PP spot check：** **1,529.7 / 1,421.6 / 1,536.9 tok/s**，平均约 **1,496 tok/s/lane**。
+- warm lane-local TG：**78.8 / 78.4 / 80.1 tok/s**；
+- lane-sum TG：**237.3 tok/s**；
+- no-reuse PP spot check：**1,529.7 / 1,421.6 / 1,536.9 tok/s**；
+- 三次独立 PP 观测的平均值约 **1,496 tok/s/lane**；
+- 约 **141K–145K token** 的三个 full-window 请求可并发完成，无 context overflow、CUDA OOM 或 lane death。
 
-> **第二次 undervolt 后观察到 237.3 tok/s lane-sum，但 clean wall-timed warm aggregate 的最佳结果仍是 221.1 tok/s。**
+> **237.3 tok/s 是各 lane 的 engine-reported TG 之和，也就是 lane-sum，不是 clean wall-clock aggregate。**
 
-237.3 不是 clean aggregate，因此不应写成“aggregate throughput 从 221.1 提升到了 237.3 tok/s”。这些测量的 workload、timing、cache state 和 speculative acceptance 并不相同。
+三次 PP 也是独立 spot check，不应直接相加成 aggregate PP。141K–145K ×3 的测试保留为 **262K ×3 capacity / client compatibility** 证据，而不是正式 throughput benchmark。
 
-详细测量结果：[`RESULTS.md`](RESULTS.md)  
+详细数据：[`RESULTS.md`](RESULTS.md)  
 第二次 undervolt 数据：[`docs/undervolt-v2-20260929.md`](docs/undervolt-v2-20260929.md)  
 完整参考主机验证：[`docs/reference-host-validation-20260929.md`](docs/reference-host-validation-20260929.md)  
 实现关系：[`docs/fork-and-implementation.md`](docs/fork-and-implementation.md)
 
 ## 迁移到其他机器
 
-先让普通 single-GPU Strata 配置稳定工作，再根据每张 GPU 的 VRAM、PCIe link、CPU/RAM 资源决定 lane 数量。CPU core、context、resident KV 和 PCIe 相关参数应在目标主机上重新测量，而不是直接复制参考值。
+先在准备使用的每张 GPU 上分别确认 single-GPU Strata 正常工作，再根据各卡 VRAM、实际 PCIe link 和 CPU/RAM 资源决定 lane 数量。CPU core、context、resident KV 和 PCIe 参数应在目标主机上重新测量，而不是直接复制参考值。
 
 ## 仓库职责
 
