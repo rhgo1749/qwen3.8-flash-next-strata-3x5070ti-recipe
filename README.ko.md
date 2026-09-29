@@ -4,7 +4,7 @@
 
 이 저장소는 **GPU 한 장당 독립 Strata generation lane 하나**를 두고, 큰 host-RAM expert arena는 lane들이 **물리적으로 한 벌만 공유**하는 서빙 패턴을 설명한다.
 
-실측 기준 시스템은 **RTX 5070 Ti 16 GB ×3 + Qwen3.8-Flash-Next IQ3_XXS**다. 구조는 tensor parallel이 아니라 request/session parallelism이다. 요청 하나는 보통 GPU lane 하나가 처리하고, 여러 요청을 서로 다른 GPU lane에서 동시에 처리한다.
+실측 기준 시스템은 **RTX 5070 Ti 16 GB ×3**다. IQ3_XXS는 performance-oriented 비교 기준으로 유지하고, 현재 기준 시스템의 실제 배포 모델은 **Qwen3.8-Flash-Next GSQ-RCO IQ3_S**다.
 
 구현: [`rhgo1749/Strata`](https://github.com/rhgo1749/Strata)  
 **현재 승격된 구현 pin:** [`9dda206`](https://github.com/rhgo1749/Strata/commit/9dda206874387b20cac20837a1452f115a8f9f93)  
@@ -63,13 +63,11 @@ CPU                 Ryzen 9 9950X3D, 16C/32T
 RAM                 128 GB DDR5
 GPUs                RTX 5070 Ti 16 GB ×3
 PCIe                Gen5 x8 / x4 / x8
-model               Qwen3.8-Flash-Next IQ3_XXS
 contexts            262144 / 262144 / 262144
 host-KV guard       786432
 resident KV         32768 / 32768 / 32768
 CPU cores           5 / 6 / 5
 pcie-frac           0.55 / 0.25 / 0.55
-shared expert arena ~39.97 GiB
 GPU V/F plateau     2300 MHz @ >=875 mV
 VRAM offset         +2500
 ```
@@ -91,38 +89,49 @@ expert arena는 GPU 수만큼 곱하지 않는다. 이 포크가 바로 그 큰 
 
 현재 레시피 baseline은 fork commit `9dda206`, engine 0.1.22다. 기존 3-lane 실행 명령과 설정 계약은 그대로 호환됐고 별도 migration flag는 필요 없었다.
 
-### clean warm 3동시 wall aggregate
+### IQ3_XXS performance reference
 
-동일한 짧은 요청 3개를 각 lane에 보내고 동일 prefix가 warm된 상태에서 유지한 두 라운드는 다음과 같다.
+- clean warm 3-request wall aggregate: **226.5–227.9 tok/s**
+- midpoint: 약 **227.2 tok/s**
+- 15,064-token no-reuse single-lane PP spot check: **2,492.2 tok/s**
 
-- **227.9 tok/s** wall aggregate — 384 completion tokens / 1.685 s
-- **226.5 tok/s** wall aggregate — 384 completion tokens / 1.695 s
+예전 237.3 tok/s IQ3_XXS 수치는 여전히 유효한 engine-reported lane-sum 역사값이지만 clean wall aggregate는 아니다.
 
-따라서 현재 headline multi-lane 수치는 **226.5–227.9 tok/s clean warm wall aggregate**이며 중간값은 약 **227.2 tok/s**다.
+### IQ3_S 현재 배포 벤치마크
 
-예전 **237.3 tok/s**는 각 lane의 engine-reported TG를 더한 **lane-sum**이었다. 유효한 역사 수치지만 clean wall aggregate가 아니므로 이제 대표 concurrent-serving 수치는 0.1.22의 226.5–227.9 tok/s를 사용한다.
+현재 IQ3_S runtime은 Strata 0.1.22에서 **46.84 GiB** shared expert arena와 lane당 **4524 slots / 8.63 GiB** hot-expert cache를 사용한다.
 
-### 15K no-reuse prompt-processing spot check
+두 backend session에서 유지한 clean warm round 4개는:
 
-262K lane 하나에서 **15,064-token no-reuse prompt**를 처리한 결과는 **2,492.2 tok/s**였다.
+```text
+183.9 / 190.8 / 196.8 / 209.7 tok/s wall aggregate
+```
 
-이 값은 같은 호스트에서 0.1.22 promotion을 검증한 소프트웨어 버전 spot check다. 모든 장문 prompt를 대표하는 보편 PP 수치로 해석하면 안 된다. 기존 45K–65K PP 관측은 prompt 길이와 benchmark generation이 달라 역사 데이터로 남긴다.
+따라서 **현재 IQ3_S warm 범위는 183.9–209.7 tok/s, 4회 평균은 195.3 tok/s**다.
 
-### 0.1.21 대비
+Concurrent no-reuse prompt processing:
+
+| 측정 | GPU0 x8 | GPU1 x4 | GPU2 x8 |
+| --- | ---: | ---: | ---: |
+| 15,048-token PP | **2,325.6** | **1,806.5** | **2,293.0 tok/s** |
+| 30,024-token PP | **2,352.1** | **1,812.9** | **2,348.3 tok/s** |
+
+30K run의 x8 lane 평균은 **2,350.2 tok/s**, 가운데 x4 lane은 그보다 약 **22.9% 느렸다**. 유지한 장문 요청은 모두 **0 reused**였고 CUDA OOM, API failure, lane death 없이 완료했다.
+
+과거 IQ3_S ~30K 데이터는 **1,553.7 / 1,323.9 / 1,545.1 tok/s**였다. 이번 0.1.22 수치는 그 역사 benchmark generation보다 대략 **+51.4% / +36.9% / +52.0%** 높다. 다만 prompt content와 runtime generation이 완전히 동일한 strict A/B는 아니므로 보편 speedup 주장으로 쓰지 않는다.
+
+자세한 기록: [`docs/iq3-s-3lane-benchmark-20260929.md`](docs/iq3-s-3lane-benchmark-20260929.md)
+
+### IQ3_XXS 0.1.21 대비
 
 직전 0.1.21 integration 검증값은:
 
 - warm 3-request wall aggregate: **198.2 tok/s**
 - ~15K PP spot check: **1,609.9 tok/s**
 
-이번 0.1.22 promotion run에서는 각각 약:
+IQ3_XXS 0.1.22 promotion run에서는 각각 약 **+14.6%**, **+54.8%**를 기록했다. 이 비율은 해당 promotion run끼리의 비교이며 모든 workload에 그대로 적용되는 보편 speedup 주장은 아니다.
 
-- **+14.6%** warm wall aggregate
-- **+54.8%** retained ~15K PP
-
-를 기록했다. 이 비율은 해당 promotion run끼리의 비교이며 모든 workload에 그대로 적용되는 보편 speedup 주장은 아니다.
-
-자세한 기록: [`docs/strata-0.1.22-promotion-20260929.md`](docs/strata-0.1.22-promotion-20260929.md)
+자세한 promotion 기록: [`docs/strata-0.1.22-promotion-20260929.md`](docs/strata-0.1.22-promotion-20260929.md)
 
 ## upstream layer-split challenger
 
@@ -131,7 +140,7 @@ expert arena는 GPU 수만큼 곱하지 않는다. 이 포크가 바로 그 큰 
 - 짧은 single-request decode: **80.6 tok/s**
 - 15,064-token no-reuse PP: **1,142.3 tok/s**
 
-같은 15K PP probe에서 request-per-lane A는 약 **2.18×**의 PP를 보였고, layer-split B는 single-request decode에서 우위를 유지했다.
+IQ3_XXS의 같은 15K PP probe에서 request-per-lane A는 약 **2.18×**의 PP를 보였고, layer-split B는 single-request decode에서 우위를 유지했다.
 
 따라서 architecture promotion 판단은 그대로다. **동시 agent serving의 production baseline은 independent request lanes**, layer-split은 single-request 중심 workload를 위한 challenger로 남긴다.
 
@@ -144,20 +153,6 @@ expert arena는 GPU 수만큼 곱하지 않는다. 이 포크가 바로 그 큰 
 - 144,777 input / 871 output tokens
 
 세 요청 모두 context overflow, CUDA OOM, API failure, lane death 없이 완료했다. 이 결과는 **262K ×3 capacity/client compatibility 검증**이며 throughput headline과는 분리한다.
-
-## IQ3_S quality-oriented challenger
-
-같은 262K ×3 정책으로 IQ3_S도 검증되어 있다.
-
-| 측정 | IQ3_S 결과 |
-| --- | ---: |
-| Shared host expert arena | **46.84 GiB** |
-| GPU당 hot-expert cache | **4548 slots / 8.67 GiB** |
-| Warm short-decode TG | **60.5 / 63.8 / 59.1 tok/s** |
-| Engine-reported lane-sum | **183.4 tok/s** |
-| Concurrent ~30K no-reuse PP | **1,553.7 / 1,323.9 / 1,545.1 tok/s** |
-
-IQ3_S는 quality-oriented challenger이며 current performance baseline은 계속 IQ3_XXS다.
 
 ## 내 PC에 적용하는 순서
 
@@ -177,8 +172,8 @@ IQ3_S는 quality-oriented challenger이며 current performance baseline은 계�
 
 - [`RESULTS.md`](RESULTS.md) — 현재/역사 기준 시스템 실측 결과와 reporting rule
 - [`docs/strata-0.1.22-promotion-20260929.md`](docs/strata-0.1.22-promotion-20260929.md) — 현재 0.1.22 promotion 기록
+- [`docs/iq3-s-3lane-benchmark-20260929.md`](docs/iq3-s-3lane-benchmark-20260929.md) — 현재 IQ3_S benchmark
 - [`docs/undervolt-v2-20260929.md`](docs/undervolt-v2-20260929.md) — 과거 2차 언더볼팅 lane-local 데이터
-- [`docs/iq3-s-3lane-benchmark-20260929.md`](docs/iq3-s-3lane-benchmark-20260929.md) — IQ3_S challenger benchmark
 - [`docs/reference-host-validation-20260929.md`](docs/reference-host-validation-20260929.md) — 262K ×3 장문/서빙 검증
 - [`docs/fork-and-implementation.md`](docs/fork-and-implementation.md) — 포크와 레시피의 역할 분리
 - [`bench/README.md`](bench/README.md) — benchmark/reporting contract
