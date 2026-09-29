@@ -7,8 +7,9 @@ A practical recipe for running **one independent Strata generation lane per GPU*
 The measured reference machine uses **3 × RTX 5070 Ti 16 GB**. IQ3_XXS is kept as the performance-oriented comparison profile, while the current reference-host deployment uses **Qwen3.8-Flash-Next GSQ-RCO IQ3_S**.
 
 Implementation: [`rhgo1749/Strata`](https://github.com/rhgo1749/Strata)  
-**Current promoted implementation pin:** [`9dda206`](https://github.com/rhgo1749/Strata/commit/9dda206874387b20cac20837a1452f115a8f9f93)  
-**Current promoted engine:** Strata **0.1.22**
+**Current promoted implementation pin:** [`3824f04`](https://github.com/rhgo1749/Strata/commit/3824f04003b79609a7cc6861ea5b4652a47d2ddb)  
+**0.1.24 integration merge:** [`82a5161`](https://github.com/rhgo1749/Strata/commit/82a51614517392f2c5b83af7c39ffbb7abbc783e)  
+**Current promoted engine:** Strata **0.1.24**
 
 ## Core idea
 
@@ -35,7 +36,7 @@ flowchart TB
 ### Lane-local
 
 - CUDA context and streams;
-- GPU hot-expert cache;
+- GPU hot-expert cache and adaptive replacement state;
 - GPU-resident KV window;
 - host-KV/session state;
 - speculative/MTP state;
@@ -54,7 +55,7 @@ There is no mandatory token-by-token cross-GPU synchronization in the production
 | Per-lane tuning is possible | Context, resident KV, CPU, PCIe fraction, clocks and undervolt can differ. |
 | NVLink is not required | Normal decode does not depend on mandatory GPU-to-GPU transfers. |
 
-The main trade-off is equally important: **one active request normally uses one GPU lane**. This design targets concurrent serving and aggregate throughput rather than maximum single-request speed.
+The trade-off is explicit: **one active request normally uses one GPU lane**. This design targets concurrent serving and aggregate throughput rather than maximum single-request speed.
 
 ## Reference host
 
@@ -76,10 +77,6 @@ These are **reference-host values, not universal defaults**.
 
 A useful sizing rule is:
 
-> Every selected GPU must first be able to run one usable single-GPU Strata lane. The host then needs enough RAM, CPU and PCIe capacity for all lanes concurrently.
-
-The host-RAM model is roughly:
-
 ```text
 required host RAM ≈
     one shared expert arena
@@ -89,46 +86,69 @@ required host RAM ≈
 
 Do **not** multiply the expert arena by GPU count; that is the allocation this fork physically shares.
 
-## Current promoted performance — Strata 0.1.22
+## Current promoted performance — Strata 0.1.24
 
-The current recipe baseline is fork commit `9dda206`, engine 0.1.22. The existing 3-lane launch contract remained compatible; no migration flag was required.
+The 0.1.24 promotion preserved the existing three-lane launch contract and passed **52 server/multi-GPU tests**, the production CUDA build, both quantization benchmark matrices, and a concurrent ~140K-token no-reuse long-prompt check.
 
-### IQ3_XXS performance reference
+### IQ3_XXS — independent lanes
 
-- clean warm three-request wall aggregate: **226.5–227.9 tok/s**;
-- midpoint: about **227.2 tok/s**;
-- no-reuse 15,064-token single-lane PP spot check: **2,492.2 tok/s**.
+- clean warm three-request wall aggregate: **218.4–233.7 tok/s**, mean **225.5 tok/s**;
+- 15K no-reuse PP, x8 / x4 / x8: **2453.5 / 2046.0 / 2450.8 tok/s**.
 
-The older 237.3 tok/s IQ3_XXS value remains a historical engine-reported lane-sum, not a clean wall aggregate.
+### IQ3_XXS — upstream 3-GPU layer-split
 
-### IQ3_S current deployment benchmark
+- clean warm single-request decode: **93.5–99.9 tok/s**;
+- 15K no-reuse PP: **1144.4 tok/s**.
 
-The current IQ3_S runtime uses a **46.84 GiB** shared expert arena and a **4524-slot / 8.63 GiB** hot-expert cache per lane on Strata 0.1.22.
+### IQ3_S — independent lanes
 
-Four retained clean warm rounds across two backend sessions measured:
+- clean warm three-request wall aggregate: **176.8–199.4 tok/s**, mean **187.1 tok/s**;
+- 15K no-reuse PP, x8 / x4 / x8: **2381.8 / 1852.2 / 2371.8 tok/s**;
+- ~140K no-reuse request on all three lanes concurrently: completed without CUDA OOM or lane death.
 
-```text
-183.9 / 190.8 / 196.8 / 209.7 tok/s wall aggregate
-```
+### IQ3_S — upstream 3-GPU layer-split
 
-**Current IQ3_S warm range: 183.9–209.7 tok/s, four-round mean 195.3 tok/s.**
+- clean warm single-request decode: **74.2–81.7 tok/s**;
+- 15K no-reuse PP: **938.0 tok/s**.
 
-Concurrent no-reuse prompt processing:
+These modes answer different questions. Layer-split improves a single request by coupling GPUs. GPU-per-lane serves multiple independent requests without making the slower card a mandatory token-step pace setter. For this recipe's concurrent-agent workload, **independent lanes remain the production baseline; layer-split remains the single-request challenger**.
 
-| Measurement | GPU0 x8 | GPU1 x4 | GPU2 x8 |
+Full promotion record: [`docs/strata-0.1.24-promotion-20260930.md`](docs/strata-0.1.24-promotion-20260930.md).
+
+## Adaptive hot-expert replacement — 0.1.24
+
+Strata 0.1.24 can adapt the full hot-expert cache to the current conversation. The default policy samples routing usage and, every four rounds, can replace up to 96 low-value resident experts with more frequently routed non-resident experts.
+
+A controlled IQ3_S single-lane A/B retained two 512-token rounds per condition:
+
+| Mode | Mean TG | Decode expert-cache hit rate |
+| --- | ---: | ---: |
+| Adaptive replacement | **69.43 tok/s** | **86.5–87%** |
+| Static residency (`--adapt-swaps 0`) | **54.14 tok/s** | about **61%** |
+
+Measured improvement on this workload: **+28.3%**.
+
+This is a same-host workload result, not a universal speedup claim.
+
+### `miss -> adaptive swap -> GPU resident -> later GPU hit`
+
+`STRATA_ADAPT_TRACE` was used to timestamp the state transition directly. The retained trace observed **22,996 selections**, **22,900 residency publications**, and **6,937 first later GPU-hit observations**.
+
+| Interval | median | p95 | fastest retained |
 | --- | ---: | ---: | ---: |
-| 15,048-token PP | **2,325.6** | **1,806.5** | **2,293.0 tok/s** |
-| 30,024-token PP | **2,352.1** | **1,812.9** | **2,348.3 tok/s** |
+| selected swap H2D/event wall -> residency publication | **33.876 ms** | 49.751 ms | 12.948 ms |
+| first miss -> residency publication | **10.716 s** | 26.602 s | 20.205 ms |
+| residency publication -> first later GPU hit | **154.249 ms** | 1.228 s | **0.306 ms** |
+| first miss -> first later GPU hit | **3.430 s** | 18.126 s | 57.284 ms |
 
-For the 30K run, the x8 lanes averaged **2,350.2 tok/s**, while the x4 middle lane was about **22.9% slower**. All retained long-prompt requests reported **0 reused** and completed without CUDA OOM, API failure, or lane death.
+The long `first miss -> resident` interval is **not raw PCIe latency**: the adaptive policy first waits for enough routing evidence to justify evicting a current resident. Likewise, the H2D/event number is a batched runtime wall interval, not the old standalone memcpy microbenchmark.
 
-The older IQ3_S ~30K dataset was **1,553.7 / 1,323.9 / 1,545.1 tok/s**. The new 0.1.22 rates are roughly **+51.4% / +36.9% / +52.0%** versus that historical benchmark generation, but this is not a strict same-prompt A/B.
+Detailed timing interpretation: [`docs/strata-0.1.24-promotion-20260930.md`](docs/strata-0.1.24-promotion-20260930.md).  
+Machine-readable summary: [`bench/adaptive-swap-20260930.csv`](bench/adaptive-swap-20260930.csv).
 
-Full IQ3_S record: [`docs/iq3-s-3lane-benchmark-20260929.md`](docs/iq3-s-3lane-benchmark-20260929.md).
+## Controlled systems ablations — IQ3_S
 
-### Controlled systems ablations — IQ3_S
-
-A separate controlled benchmark set tests the architecture itself rather than replacing the warm-throughput headline above.
+The earlier architecture experiments remain useful evidence independent of engine-version promotion.
 
 | Question | Measured result |
 | --- | --- |
@@ -141,41 +161,42 @@ A separate controlled benchmark set tests the architecture itself rather than re
 
 The heterogeneous result is the clearest isolation check: within run-to-run noise, the slower RTX 5060 Ti lane did **not** reduce the RTX 5070 Ti lane's decode throughput.
 
-A free-slot expert-admission microbenchmark also measured layer-weighted H2D wall means of about **0.081 ms pinned / 0.117 ms ordinary host memory on the 5070 Ti x8**, and **0.155 / 0.190 ms on the 5060 Ti x4**. This is **not** a full-cache miss penalty: the current hot-expert cache has no eviction, so a full-cache non-resident expert falls back to the CPU path.
+The historical free-slot expert-admission microbenchmark measured layer-weighted H2D wall means of about **0.081 ms pinned / 0.117 ms ordinary host memory on the 5070 Ti x8**, and **0.155 / 0.190 ms on the 5060 Ti x4**. Those figures remain valid for **free-slot transfer only**. The old statement that a full cache never evicts is historical behavior; 0.1.24 now has adaptive victim replacement.
 
-Full methodology, caveats, and raw retained observations: [`docs/systems-ablation-20260929.md`](docs/systems-ablation-20260929.md) and [`bench/systems-ablation-20260929.csv`](bench/systems-ablation-20260929.csv).
+Full methodology: [`docs/systems-ablation-20260929.md`](docs/systems-ablation-20260929.md) and [`bench/systems-ablation-20260929.csv`](bench/systems-ablation-20260929.csv).
 
-### 0.1.21 comparison for IQ3_XXS
+## Historical 0.1.22 reference
 
-The immediately preceding 0.1.21 integration validation measured:
+For version-to-version context, the prior promoted 0.1.22 results were:
 
-- warm three-request wall aggregate: **198.2 tok/s**;
-- ~15K prompt-processing spot check: **1,609.9 tok/s**.
+- IQ3_XXS clean warm aggregate: **226.5–227.9 tok/s**;
+- IQ3_XXS 15,064-token no-reuse PP spot check: **2492.2 tok/s**;
+- IQ3_S clean warm aggregate: **183.9–209.7 tok/s**, mean **195.3 tok/s**;
+- IQ3_S 15K PP: **2325.6 / 1806.5 / 2293.0 tok/s**;
+- IQ3_S 30K PP: **2352.1 / 1812.9 / 2348.3 tok/s**.
 
-The IQ3_XXS 0.1.22 promotion measured about **+14.6%** warm wall aggregate and **+54.8%** on that retained ~15K PP comparison. These are promotion-run deltas, not universal model speedup claims.
-
-Full promotion record: [`docs/strata-0.1.22-promotion-20260929.md`](docs/strata-0.1.22-promotion-20260929.md).
-
-## Layer-split challenger
-
-The same `9dda206` binary also preserves upstream Strata 3-GPU layer-split at 262K.
-
-- short single-request decode: **80.6 tok/s**;
-- 15,064-token no-reuse PP: **1,142.3 tok/s**.
-
-On the retained IQ3_XXS 15K PP probe, the request-per-lane path measured about **2.18×** the layer-split PP rate. Layer-split still showed the expected single-request decode advantage.
-
-The architecture decision remains unchanged: **independent request lanes are the production baseline for concurrent-agent serving; layer-split remains a challenger for single-request-oriented workloads.**
+Do not treat unmatched prompt generations as strict version A/Bs. Historical records remain in the older benchmark documents.
 
 ## Full-window validation
 
-Three real software-review prompts were run concurrently with every lane configured for a 262K context window:
+The recipe has retained two generations of long-context validation:
 
-- 141,578 input tokens / 992 output tokens
-- 144,875 input tokens / 1,295 output tokens
-- 144,777 input tokens / 871 output tokens
+- 0.1.22: three concurrent real software-review prompts of **141,578 / 144,875 / 144,777 input tokens**, all completed without context overflow, CUDA OOM, API failure, or lane death;
+- 0.1.24: a fresh **~140K no-reuse request on all three IQ3_S lanes concurrently**, again without OOM or lane death.
 
-All three completed without context overflow, CUDA OOM, API failure, or lane death. This is retained as **262K ×3 capacity/client-compatibility evidence**, not as the canonical throughput benchmark.
+These are capacity/stability/client-compatibility checks, not throughput headlines.
+
+## Production status
+
+The reference server is now running the 0.1.24 production build with adaptive replacement enabled by default:
+
+```text
+public proxy       127.0.0.1:8087
+backend            127.0.0.1:18087
+private lanes      127.0.0.1:19087-19089
+engine             build-production-024/strata
+quantization       IQ3_S
+```
 
 ## How to adapt it to another PC
 
@@ -194,12 +215,13 @@ The measured launch example is in [`recipe/launch-3lane.sh.example`](recipe/laun
 ## Repository map
 
 - [`RESULTS.md`](RESULTS.md) — current and historical reference-host results
-- [`docs/systems-ablation-20260929.md`](docs/systems-ablation-20260929.md) — controlled scaling, RAM-sharing, heterogeneous-isolation and expert-admission results
-- [`bench/systems-ablation-20260929.csv`](bench/systems-ablation-20260929.csv) — retained machine-readable observations for the systems ablations
-- [`docs/strata-0.1.22-promotion-20260929.md`](docs/strata-0.1.22-promotion-20260929.md) — current 0.1.22 promotion record
-- [`docs/iq3-s-3lane-benchmark-20260929.md`](docs/iq3-s-3lane-benchmark-20260929.md) — current IQ3_S benchmark
-- [`docs/undervolt-v2-20260929.md`](docs/undervolt-v2-20260929.md) — historical second-undervolt GPU tuning / lane-local dataset
-- [`docs/reference-host-validation-20260929.md`](docs/reference-host-validation-20260929.md) — 262K ×3 full-window serving validation
+- [`docs/strata-0.1.24-promotion-20260930.md`](docs/strata-0.1.24-promotion-20260930.md) — current 0.1.24 promotion, per-lane/layer-split and adaptive replacement evidence
+- [`bench/adaptive-swap-20260930.csv`](bench/adaptive-swap-20260930.csv) — adaptive timing and A/B summary
+- [`docs/systems-ablation-20260929.md`](docs/systems-ablation-20260929.md) — controlled scaling, RAM-sharing, heterogeneous-isolation and free-slot expert-admission results
+- [`bench/systems-ablation-20260929.csv`](bench/systems-ablation-20260929.csv) — machine-readable systems-ablation observations
+- [`docs/strata-0.1.22-promotion-20260929.md`](docs/strata-0.1.22-promotion-20260929.md) — historical 0.1.22 promotion
+- [`docs/iq3-s-3lane-benchmark-20260929.md`](docs/iq3-s-3lane-benchmark-20260929.md) — historical/current-model IQ3_S benchmark details
+- [`docs/reference-host-validation-20260929.md`](docs/reference-host-validation-20260929.md) — 262K ×3 serving validation
 - [`docs/fork-and-implementation.md`](docs/fork-and-implementation.md) — fork/recipe ownership boundary
 - [`bench/README.md`](bench/README.md) — benchmark/reporting contract
 
