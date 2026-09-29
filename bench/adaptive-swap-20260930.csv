@@ -1,0 +1,14 @@
+measurement,n,min_us,median_us,p95_us,mean_us,max_us,notes
+swap_copy_publish,22900,12948.026,33875.986,49750.574,33044.251,83533.341,async H2D enqueue to completion observation and residency publication; batch/event wall interval
+first_miss_to_resident,22900,20204.995,10715785.234,26601904.758,11842007.397,29920155.495,includes adaptive policy dwell plus transfer/publication; not raw PCIe latency
+resident_to_first_gpu_hit,6937,305.632,154248.501,1227833.828,325423.066,6741661.467,first later GPU-resident hit per traced expert
+first_miss_to_first_gpu_hit,6937,57284.125,3430145.818,18126334.052,5761139.445,28649935.067,first miss through adaptive policy and residency to first later GPU hit
+
+ab_variant,retained_rounds,mean_tg_tok_s,hit_rate,relative_vs_static
+adaptive,2,69.43,86.5-87%,+28.3%
+static_adapt_swaps_0,2,54.14,~61%,baseline
+
+event_kind,count
+select,22996
+resident,22900
+gpu_hit_first_observation,6937
