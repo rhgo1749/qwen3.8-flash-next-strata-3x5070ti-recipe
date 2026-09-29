@@ -11,7 +11,7 @@ This repository owns the reference-host measurements for the GPU-per-lane Strata
 - model: Qwen3.8-Flash-Next, Strata IQ3_XXS
 - sanitized implementation pin: [`rhgo1749/Strata@844d6206`](https://github.com/rhgo1749/Strata/commit/844d62064b4327f80eae0f2980ccbd83b04fbe9a)
 
-## Promoted three-lane policy
+## Canonical three-lane policy
 
 ```text
 lane contexts       262144 / 262144 / 262144
@@ -20,58 +20,76 @@ resident KV         32768 / 32768 / 32768
 physical CPU cores  5 / 6 / 5
 pcie-frac           0.55 / 0.25 / 0.55
 shared expert arena ~39.97 GiB
+core V/F plateau    2300 MHz @ >=875 mV
+VRAM offset         +2500
+power limit         250 W cap per GPU
 ```
 
-## Headline measurements
+The GPU tuning state above is the **canonical public measurement state** for this recipe. Earlier pre-second-undervolt throughput figures are intentionally not used as promoted results.
 
-- long-context prompt processing: roughly **1.5–1.6k tok/s per lane**;
-- long-context aggregate prompt processing: roughly **4.5–4.8k tok/s**;
-- long-context decode: roughly **54–64 tok/s per lane**;
-- long-context aggregate decode: roughly **175–190 tok/s**;
-- short warm pre-second-undervolt aggregate: **216.1 tok/s**, best observed round **221.1 tok/s**;
-- second-undervolt warm lane-local result: **78.8 / 78.4 / 80.1 tok/s**, or **237.3 tok/s lane-sum**.
+## Canonical performance measurements
 
-The 237.3 tok/s value is a lane-sum rather than a clean wall-timed aggregate and should not be presented as proof that undervolting caused a speedup.
+### Warm lane-local decode
 
-## Long-context validation
+Fixed short probes used `temperature=0` and `max_tokens=256`.
 
-Three independent real software-review prompts were launched concurrently. Their source repositories and local session identifiers are intentionally omitted from this public record.
+| Lane | Prompt reuse | TG | MTP/spec accepted |
+| --- | --- | ---: | ---: |
+| GPU0 | 72 reused + 5 read | **78.8 tok/s** | 126 / 166 (**75.9%**) |
+| GPU1 | 69 reused + 5 read | **78.4 tok/s** | 129 / 157 (**82.2%**) |
+| GPU2 | 73 reused + 5 read | **80.1 tok/s** | 141 / 177 (**79.7%**) |
 
-| Client | Input tokens | Output tokens | API latency | Finish |
-| --- | ---: | ---: | ---: | --- |
-| A | 141,578 | 992 | 298.7 s | `stop` |
-| B | 144,875 | 1,295 | 229.3 s | `stop` |
-| C | 144,777 | 871 | 211.4 s | `stop` |
+Lane-sum:
+
+```text
+78.8 + 78.4 + 80.1 = 237.3 tok/s
+```
+
+**237.3 tok/s is a lane-sum of engine-reported TG, not a clean wall-clock aggregate.** It should be labeled as such in public comparisons.
+
+### No-reuse prompt-processing spot checks
+
+These are independent lane observations with zero reused prompt tokens. They were not one synchronized three-lane prefill and therefore must not be summed into an aggregate PP number.
+
+| Lane | Prompt tokens | Read time | PP | Following TG |
+| --- | ---: | ---: | ---: | ---: |
+| GPU0 | 45,519 | 29,756 ms | **1,529.7 tok/s** | 56.4 tok/s |
+| GPU1 | 45,812 | 32,226 ms | **1,421.6 tok/s** | 50.1 tok/s |
+| GPU2 | 64,972 | 42,275 ms | **1,536.9 tok/s** | 57.2 tok/s |
+
+Mean PP across the three independent spot checks is about **1,496 tok/s/lane**.
+
+## Full-window concurrency validation
+
+Separately from the canonical performance dataset, the runtime was capacity-validated with three independent real software-review prompts running concurrently:
+
+| Client | Input tokens | Output tokens | Finish |
+| --- | ---: | ---: | --- |
+| A | 141,578 | 992 | `stop` |
+| B | 144,875 | 1,295 | `stop` |
+| C | 144,777 | 871 | `stop` |
 
 All three inputs exceeded the former 131,072-token per-lane limit. No context-overflow error, CUDA OOM, API failure, or lane death occurred.
 
-These latencies are not a raw throughput benchmark because a small amount of earlier work was still draining near the start of the run.
-
-## CPU affinity progression
-
-Representative warm measurements:
-
-| CPU cores | per-lane `pcie-frac` | warm aggregate |
-| --- | --- | ---: |
-| overlap-prone baseline | default | ~50 tok/s |
-| disjoint automatic partition | default | ~136–138 tok/s |
-| 5/6/5 | 0.55 / 0.55 / 0.55 | 174.5 tok/s |
-| 5/6/5 | 0.55 / 0.35 / 0.55 | 202.9 tok/s |
-| **5/6/5** | **0.55 / 0.25 / 0.55** | **216.1 tok/s** |
-| 5/6/5 | 0.55 / 0.15 / 0.55 | 213.1 tok/s |
-| 5/6/5 | 0.65 / 0.25 / 0.65 | 206.9 tok/s |
-| 5/7/4 | 0.55 / 0.25 / 0.55 | 215.1 tok/s |
-
-These values are specific to the reference host and should not be copied blindly to another topology.
+This run is retained as **262K ×3 capacity and client-compatibility evidence**, not as the canonical throughput benchmark.
 
 ## Resident-KV boundary
 
-Increasing one lane from 32K to 64K GPU-resident KV reduced hot-expert cache capacity, pushed the measured expert-cache hit rate down to 54.2%, and reduced cold long-context decode from 60.1 tok/s to 45.0 tok/s. The promoted reference host therefore keeps 32K resident KV on each lane.
+Testing a larger GPU-resident KV window showed that giving KV more VRAM can displace the hot-expert tier. The promoted reference host therefore keeps **32K resident KV on each lane** rather than maximizing resident KV in isolation.
+
+## Reporting rule
+
+For this repository:
+
+- the 2300 MHz / 875 mV tuning state above is the canonical performance state;
+- `237.3 tok/s` must be described as **lane-sum**, not wall aggregate;
+- independent PP spot checks must not be summed unless their prefill intervals are known to overlap;
+- full-window validation is reported separately from short warm performance.
 
 ## More detail
 
-- [`docs/reference-host-validation-20260929.md`](docs/reference-host-validation-20260929.md) — full sanitized reference-host validation
-- [`docs/undervolt-v2-20260929.md`](docs/undervolt-v2-20260929.md) — second-undervolt dataset
+- [`docs/undervolt-v2-20260929.md`](docs/undervolt-v2-20260929.md) — canonical GPU tuning and PP/TG dataset
+- [`docs/reference-host-validation-20260929.md`](docs/reference-host-validation-20260929.md) — sanitized full-window and serving validation
 - [`bench/README.md`](bench/README.md) — measurement/reporting rules
-- [`docs/multigpu-shared-runtime.md`](https://github.com/rhgo1749/Strata/blob/844d62064b4327f80eae0f2980ccbd83b04fbe9a/docs/multigpu-shared-runtime.md) — generic implementation contract
-- [`docs/multigpu-roadmap.md`](https://github.com/rhgo1749/Strata/blob/844d62064b4327f80eae0f2980ccbd83b04fbe9a/docs/multigpu-roadmap.md) — generic implementation roadmap
+- [`docs/multigpu-shared-runtime.md`](https://github.com/rhgo1749/Strata/blob/main/docs/multigpu-shared-runtime.md) — generic implementation contract
+- [`docs/multigpu-roadmap.md`](https://github.com/rhgo1749/Strata/blob/main/docs/multigpu-roadmap.md) — generic implementation roadmap
