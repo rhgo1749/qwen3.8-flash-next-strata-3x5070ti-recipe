@@ -4,116 +4,57 @@
 
 A practical recipe for running **one independent Strata generation lane per GPU** while sharing one large host-RAM expert arena between lanes.
 
-The measured reference machine uses **3 × RTX 5070 Ti 16 GB** with Qwen3.8-Flash-Next IQ3_XXS, but the architecture is not tied to three GPUs or to one GPU model. The same pattern can be adapted to more or fewer GPUs, including mixed-performance GPUs, as long as every lane can fit its own GPU-resident runtime state and the host has enough CPU, RAM, and PCIe capacity.
-
-The same reference host has also been validated with **Qwen3.8-Flash-Next GSQ-RCO IQ3_S at 262K context on all three lanes**. IQ3_S is documented here as a **quality-oriented challenger profile** rather than a replacement for the faster IQ3_XXS production baseline.
+The measured reference machine uses **3 × RTX 5070 Ti 16 GB** with Qwen3.8-Flash-Next IQ3_XXS. The architecture is request/session parallelism, not tensor parallelism: one request normally runs on one GPU lane, while multiple requests run concurrently on different GPUs.
 
 Implementation: [`rhgo1749/Strata`](https://github.com/rhgo1749/Strata)  
-Sanitized implementation pin: [`844d6206`](https://github.com/rhgo1749/Strata/commit/844d62064b4327f80eae0f2980ccbd83b04fbe9a)
+**Current promoted implementation pin:** [`9dda206`](https://github.com/rhgo1749/Strata/commit/9dda206874387b20cac20837a1452f115a8f9f93)  
+**Current promoted engine:** Strata **0.1.22**
 
 ## Core idea
 
 **One request is processed by one GPU lane. Multiple requests run concurrently on different GPUs. The large expert weights in system RAM are physically shared instead of copied once per process.**
 
-This is request/session parallelism, not tensor parallelism.
-
 ```mermaid
 flowchart TB
     C[Clients / agents / OpenAI-compatible API] --> D[Request dispatcher]
-
-    subgraph RAM[System RAM]
-        E[Shared expert arena\none physical copy]
-        K0[Lane 0 host KV]
-        K1[Lane 1 host KV]
-        K2[Lane 2 host KV]
-    end
-
-    subgraph G0[GPU 0]
-        L0[Strata lane 0\nlocal CUDA + hot cache]
-    end
-    subgraph G1[GPU 1]
-        L1[Strata lane 1\nlocal CUDA + hot cache]
-    end
-    subgraph G2[GPU 2]
-        L2[Strata lane 2\nlocal CUDA + hot cache]
-    end
-
-    D -->|request A| L0
-    D -->|request B| L1
-    D -->|request C| L2
-    E --> L0
-    E --> L1
-    E --> L2
-    K0 --> L0
-    K1 --> L1
-    K2 --> L2
+    D -->|request A| G0[GPU 0 lane]
+    D -->|request B| G1[GPU 1 lane]
+    D -->|request C| G2[GPU 2 lane]
+    E[Shared host expert arena] --> G0
+    E --> G1
+    E --> G2
 ```
 
-### What is shared
+### Shared
 
-- the large host expert arena: one physical RAM copy;
+- one physical host expert arena;
 - host memory bandwidth and CPU resources;
 - PCIe/root-complex bandwidth;
-- storage used by the runtime.
+- runtime storage.
 
-### What stays lane-local
+### Lane-local
 
 - CUDA context and streams;
 - GPU hot-expert cache;
 - GPU-resident KV window;
 - host-KV/session state;
 - speculative/MTP state;
-- generation request and decode loop.
+- generation/decode loop.
 
-There is no required token-by-token synchronization between GPUs in the production design.
+There is no mandatory token-by-token cross-GPU synchronization in the production path.
 
 ## Why this architecture
 
 | Property | Practical effect |
 | --- | --- |
-| Slower GPUs are isolated to their own lane | A slower card does not set every other lane's token rate. |
-| Mixed GPUs are practical | Different-performance cards can serve independent requests. |
-| Host expert weights are shared | Multiple processes do not need multiple physical RAM copies of the large expert arena. |
-| Failure isolation is comparatively strong | One lane can fail or restart without turning every token step into a shared failure domain. |
-| Per-lane tuning is possible | Context, resident KV, CPU allocation, PCIe fraction, clock and undervolt policy can differ by lane. |
-| No NVLink is required | Normal decode does not depend on mandatory GPU-to-GPU transfers. |
+| Slower GPUs stay isolated to their lane | A slower card does not set every other lane's token rate. |
+| Mixed GPUs are practical | Different cards can serve independent requests. |
+| Host experts are shared | The largest RAM allocation is not duplicated once per lane. |
+| Failure isolation stays comparatively strong | One lane can fail/restart without making every token step distributed. |
+| Per-lane tuning is possible | Context, resident KV, CPU, PCIe fraction, clocks and undervolt can differ. |
+| NVLink is not required | Normal decode does not depend on mandatory GPU-to-GPU transfers. |
 
-The main trade-off is equally important: **one request normally uses one GPU lane**. If there is only one active request, the other generation lanes may be idle. This design optimizes concurrent serving and aggregate throughput rather than maximum single-request speed.
-
-## Hardware guidance
-
-The fork is configurable rather than tied to the reference machine. A useful sizing rule is:
-
-> **Every selected GPU must first be able to run one usable single-GPU Strata lane. The host then needs enough RAM, CPU and PCIe capacity for all lanes concurrently.**
-
-| Component | Practical starting point | Recommended for multi-lane use | Validated reference host |
-| --- | --- | --- | --- |
-| OS | Linux | Current 64-bit Linux | Ubuntu Linux |
-| GPU count | 2 NVIDIA GPUs | 2–4 GPUs | 3 GPUs |
-| VRAM per GPU | Enough for the selected single-GPU Strata configuration; upstream Strata starts at 12 GB for supported model sizes | **16 GB+ per GPU** for more hot-cache/KV headroom | 3 × RTX 5070 Ti 16 GB |
-| System RAM | One shared expert arena + every lane's host-KV + OS/runtime headroom | Size from the actual quant/context plan; **128 GB is the validated recommendation for this 3-lane 262K ×3 IQ3_XXS recipe** | 128 GB |
-| CPU | Current automatic partitioning needs at least 2 physical cores per lane | **4–6 physical cores per active lane** is a useful starting target | Ryzen 9 9950X3D 16C/32T, split 5 / 6 / 5 |
-| PCIe | Stable usable link for each GPU | Prefer wider links where available; tune asymmetric lanes from measurements | Gen5 x8 / x4 / x8 |
-| Storage | SSD | NVMe SSD | NVMe |
-| NVLink | Not required | Not required | None |
-| PSU / cooling | Must sustain the selected CPU and GPUs together | Leave normal electrical and thermal headroom for simultaneous multi-GPU load | Host-specific |
-
-These are **guidelines, not universal minimums**. Smaller quants, fewer lanes or shorter contexts can require less RAM; more lanes, larger contexts or a larger model can require more.
-
-The important RAM model is:
-
-```text
-required host RAM ≈
-    one shared expert arena
-  + lane 0 host-KV
-  + lane 1 host-KV
-  + ...
-  + OS / server / filesystem-cache headroom
-```
-
-Do **not** multiply the expert arena by the number of GPUs: that is the part this fork physically shares.
-
-For generic sizing and bring-up guidance, see the implementation fork's [`docs/multigpu-hardware-guide.md`](https://github.com/rhgo1749/Strata/blob/main/docs/multigpu-hardware-guide.md).
+The main trade-off is equally important: **one active request normally uses one GPU lane**. This design targets concurrent serving and aggregate throughput rather than maximum single-request speed.
 
 ## Reference host
 
@@ -135,27 +76,77 @@ VRAM offset         +2500
 
 These are **reference-host values, not universal defaults**.
 
-## Canonical performance measurements
+A useful sizing rule is:
 
-The **second-undervolt state above is the canonical public performance state** for this recipe. Earlier pre-second-undervolt throughput figures are intentionally not promoted here.
+> Every selected GPU must first be able to run one usable single-GPU Strata lane. The host then needs enough RAM, CPU and PCIe capacity for all lanes concurrently.
 
-- warm lane-local TG: **78.8 / 78.4 / 80.1 tok/s**;
-- lane-sum TG: **237.3 tok/s**;
-- no-reuse PP spot checks: **1,529.7 / 1,421.6 / 1,536.9 tok/s**;
-- mean no-reuse PP across those independent lane observations: about **1,496 tok/s/lane**;
-- three concurrent full-window requests of roughly **141K–145K tokens each** completed without context overflow, CUDA OOM, or lane death.
+The host-RAM model is roughly:
 
-> **237.3 tok/s is a lane-sum of engine-reported TG, not a clean wall-clock aggregate.**
+```text
+required host RAM ≈
+    one shared expert arena
+  + every lane's host-KV
+  + OS / server / filesystem-cache headroom
+```
 
-The three PP observations were also independent spot checks rather than one synchronized prefill interval, so they should not be summed into an aggregate PP claim.
+Do **not** multiply the expert arena by GPU count; that is the allocation this fork physically shares.
 
-The 141K–145K ×3 run is retained as **262K ×3 capacity and client-compatibility evidence**, not as the canonical throughput benchmark.
+## Current promoted performance — Strata 0.1.22
 
-See [`RESULTS.md`](RESULTS.md) and [`docs/undervolt-v2-20260929.md`](docs/undervolt-v2-20260929.md) for the full dataset and reporting rules.
+The current recipe baseline is fork commit `9dda206`, engine 0.1.22. The existing 3-lane launch contract remained compatible; no migration flag was required.
+
+### Clean warm concurrent decode
+
+Three identical short requests were warmed so all lanes could reuse the same short prefix. Two retained warm rounds measured:
+
+- **227.9 tok/s** wall aggregate (384 completion tokens / 1.685 s)
+- **226.5 tok/s** wall aggregate (384 completion tokens / 1.695 s)
+
+**Current headline multi-lane result: 226.5–227.9 tok/s clean warm wall aggregate** (about 227.2 tok/s midpoint).
+
+This replaces the older 237.3 tok/s lane-sum as the preferred headline metric because the new number is derived from one common wall interval. The old 237.3 tok/s observation remains valid historical lane-local evidence, but it was never a wall-clock aggregate.
+
+### Current prompt-processing spot check
+
+A no-reuse **15,064-token** prompt on one 262K lane processed at **2,492.2 tok/s**.
+
+This is a promoted same-host 0.1.22 software-version spot check, not a universal long-prompt PP claim. Older 45K–65K prompt-processing observations remain useful historical data but are a different prompt-length/run generation.
+
+### 0.1.21 comparison
+
+The immediately preceding 0.1.21 integration validation measured:
+
+- warm three-request wall aggregate: **198.2 tok/s**;
+- ~15K prompt-processing spot check: **1,609.9 tok/s**.
+
+The 0.1.22 promotion therefore measured about **+14.6%** warm wall aggregate and **+54.8%** on that retained ~15K PP comparison. These are promotion-run deltas, not universal model speedup claims.
+
+Full promotion record: [`docs/strata-0.1.22-promotion-20260929.md`](docs/strata-0.1.22-promotion-20260929.md).
+
+## Layer-split challenger
+
+The same `9dda206` binary also preserves upstream Strata 3-GPU layer-split at 262K.
+
+- short single-request decode: **80.6 tok/s**;
+- 15,064-token no-reuse PP: **1,142.3 tok/s**.
+
+On the retained 15K PP probe, the request-per-lane path measured about **2.18×** the layer-split PP rate. Layer-split still showed the expected single-request decode advantage.
+
+The architecture decision therefore remains unchanged: **independent request lanes are the production baseline for concurrent-agent serving; layer-split remains a challenger for single-request-oriented workloads.**
+
+## Full-window validation
+
+Three real software-review prompts were run concurrently with every lane configured for a 262K context window:
+
+- 141,578 input tokens / 992 output tokens
+- 144,875 input tokens / 1,295 output tokens
+- 144,777 input tokens / 871 output tokens
+
+All three completed without context overflow, CUDA OOM, API failure, or lane death. This is retained as **262K ×3 capacity/client-compatibility evidence**, not as the canonical throughput benchmark.
 
 ## IQ3_S quality-oriented challenger
 
-A clean three-lane run also validated **Qwen3.8-Flash-Next GSQ-RCO IQ3_S** on the same 3 × 16 GB GPU / 128 GB host with **262144 context configured on every lane**.
+A clean three-lane IQ3_S run also validated the same 262K ×3 policy on the reference host.
 
 | Measurement | IQ3_S result |
 | --- | ---: |
@@ -164,60 +155,32 @@ A clean three-lane run also validated **Qwen3.8-Flash-Next GSQ-RCO IQ3_S** on th
 | Warm short-decode TG | **60.5 / 63.8 / 59.1 tok/s** |
 | Engine-reported TG lane-sum | **183.4 tok/s** |
 | Concurrent ~30K no-reuse PP | **1,553.7 / 1,323.9 / 1,545.1 tok/s** |
-| x8-lane mean ~30K PP | **~1,549 tok/s** |
 
-The larger IQ3_S quant increased the shared expert arena from roughly **39.97 GiB to 46.84 GiB (~17%)**. The middle PCIe Gen5 x4 lane reached **1,323.9 tok/s** in the ~30K no-reuse prefill run, about **14.6% below** the mean of the two x8 lanes, making the asymmetric PCIe topology more visible with this profile.
-
-Compared with the canonical IQ3_XXS short-probe lane-sum of 237.3 tok/s, the separate IQ3_S run's 183.4 tok/s suggests an **indicative ~23% decode penalty**. This is **not a controlled quantization A/B**: the measurements were taken from different short-probe datasets and must not be presented as a same-prompt, same-generation-length delta.
-
-IQ3_S is therefore kept as the **higher-quality challenger profile** while IQ3_XXS remains the canonical performance profile. A controlled same-prompt quality/performance A/B is still needed before promoting IQ3_S for the intended agent workload.
-
-Full IQ3_S setup, measurement hygiene, per-lane results and power samples: [`docs/iq3-s-3lane-benchmark-20260929.md`](docs/iq3-s-3lane-benchmark-20260929.md).
+IQ3_S remains a quality-oriented challenger profile rather than the canonical performance profile.
 
 ## How to adapt it to another PC
 
-Do not copy the reference machine's `5/6/5` CPU split or `0.55/0.25/0.55` PCIe fractions blindly.
-
-1. Get one normal single-GPU Strata configuration working first on every GPU you intend to use.
-2. Inventory each GPU's VRAM, negotiated PCIe link, and expected relative performance.
-3. Make sure every selected GPU can fit one complete lane runtime.
-4. Confirm system-RAM headroom after the shared expert arena is loaded.
+1. Get one normal single-GPU Strata configuration working on every GPU you intend to use.
+2. Inventory VRAM, negotiated PCIe links, and relative GPU performance.
+3. Confirm each GPU can fit one complete lane runtime.
+4. Confirm host-RAM headroom after the shared expert arena is loaded.
 5. Partition physical CPU cores so lane worker pools do not overlap.
-6. Start with conservative context / resident-KV / topology settings and measure each lane alone.
+6. Start with conservative context / resident-KV / topology values and measure each lane alone.
 7. Test two lanes, then all lanes concurrently.
 8. Test cold long prompts as well as warm short prompts.
-9. Validate streaming, tool calls, cancellation, and lane recovery before treating a configuration as production-ready.
+9. Validate streaming, tool calls, cancellation, and lane recovery before production promotion.
 
-The measured three-lane launch example is in [`recipe/launch-3lane.sh.example`](recipe/launch-3lane.sh.example).
-
-## Implementation relationship
-
-The upstream engine stays responsible for the normal single-GPU numerical path. The implementation fork adds the shared arena, multi-lane supervisor, request-level routing, serving hardening, tests, and generic architecture contracts. This recipe repository owns **hardware-specific tuning and benchmark evidence**.
-
-See [`docs/fork-and-implementation.md`](docs/fork-and-implementation.md) for the exact relationship.
-
-## Current non-goals
-
-The production path does not require:
-
-- tensor parallelism;
-- pipeline parallelism;
-- mandatory cross-GPU expert ownership;
-- GPU-to-GPU KV migration;
-- a dynamic shared KV allocator;
-- single-process multi-GPU decode.
-
-Those remain architecture challengers rather than assumed upgrades. The implementation roadmap is maintained in [`rhgo1749/Strata`](https://github.com/rhgo1749/Strata/blob/main/docs/multigpu-roadmap.md).
+The measured launch example is in [`recipe/launch-3lane.sh.example`](recipe/launch-3lane.sh.example).
 
 ## Repository map
 
-- [`RESULTS.md`](RESULTS.md) — reference-host results and reporting rules
-- [`docs/undervolt-v2-20260929.md`](docs/undervolt-v2-20260929.md) — canonical second-undervolt GPU tuning and PP/TG dataset
-- [`docs/iq3-s-3lane-benchmark-20260929.md`](docs/iq3-s-3lane-benchmark-20260929.md) — IQ3_S three-lane challenger benchmark, PP/TG and power samples
-- [`docs/reference-host-validation-20260929.md`](docs/reference-host-validation-20260929.md) — sanitized full-window serving validation
+- [`RESULTS.md`](RESULTS.md) — current and historical reference-host results
+- [`docs/strata-0.1.22-promotion-20260929.md`](docs/strata-0.1.22-promotion-20260929.md) — current 0.1.22 promotion record
+- [`docs/undervolt-v2-20260929.md`](docs/undervolt-v2-20260929.md) — historical second-undervolt GPU tuning / lane-local dataset
+- [`docs/iq3-s-3lane-benchmark-20260929.md`](docs/iq3-s-3lane-benchmark-20260929.md) — IQ3_S challenger benchmark
+- [`docs/reference-host-validation-20260929.md`](docs/reference-host-validation-20260929.md) — 262K ×3 full-window serving validation
 - [`docs/fork-and-implementation.md`](docs/fork-and-implementation.md) — fork/recipe ownership boundary
-- [`bench/README.md`](bench/README.md) — benchmark/reporting rules
-- [`recipe/launch-3lane.sh.example`](recipe/launch-3lane.sh.example) — measured launch example
+- [`bench/README.md`](bench/README.md) — benchmark/reporting contract
 
 ## Related projects
 
