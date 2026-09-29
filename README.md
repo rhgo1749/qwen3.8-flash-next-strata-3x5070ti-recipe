@@ -78,6 +78,41 @@ There is no required token-by-token synchronization between GPUs in the producti
 
 The main trade-off is equally important: **one request normally uses one GPU lane**. If there is only one active request, the other generation lanes may be idle. This design optimizes concurrent serving and aggregate throughput rather than maximum single-request speed.
 
+## Hardware guidance
+
+The fork is configurable rather than tied to the reference machine. A useful sizing rule is:
+
+> **Every selected GPU must first be able to run one usable single-GPU Strata lane. The host then needs enough RAM, CPU and PCIe capacity for all lanes concurrently.**
+
+| Component | Practical starting point | Recommended for multi-lane use | Validated reference host |
+| --- | --- | --- | --- |
+| OS | Linux | Current 64-bit Linux | Ubuntu Linux |
+| GPU count | 2 NVIDIA GPUs | 2–4 GPUs | 3 GPUs |
+| VRAM per GPU | Enough for the selected single-GPU Strata configuration; upstream Strata starts at 12 GB for supported model sizes | **16 GB+ per GPU** for more hot-cache/KV headroom | 3 × RTX 5070 Ti 16 GB |
+| System RAM | One shared expert arena + every lane's host-KV + OS/runtime headroom | Size from the actual quant/context plan; **128 GB is the validated recommendation for this 3-lane 262K ×3 IQ3_XXS recipe** | 128 GB |
+| CPU | Current automatic partitioning needs at least 2 physical cores per lane | **4–6 physical cores per active lane** is a useful starting target | Ryzen 9 9950X3D 16C/32T, split 5 / 6 / 5 |
+| PCIe | Stable usable link for each GPU | Prefer wider links where available; tune asymmetric lanes from measurements | Gen5 x8 / x4 / x8 |
+| Storage | SSD | NVMe SSD | NVMe |
+| NVLink | Not required | Not required | None |
+| PSU / cooling | Must sustain the selected CPU and GPUs together | Leave normal electrical and thermal headroom for simultaneous multi-GPU load | Host-specific |
+
+These are **guidelines, not universal minimums**. Smaller quants, fewer lanes or shorter contexts can require less RAM; more lanes, larger contexts or a larger model can require more.
+
+The important RAM model is:
+
+```text
+required host RAM ≈
+    one shared expert arena
+  + lane 0 host-KV
+  + lane 1 host-KV
+  + ...
+  + OS / server / filesystem-cache headroom
+```
+
+Do **not** multiply the expert arena by the number of GPUs: that is the part this fork physically shares.
+
+For generic sizing and bring-up guidance, see the implementation fork's [`docs/multigpu-hardware-guide.md`](https://github.com/rhgo1749/Strata/blob/main/docs/multigpu-hardware-guide.md).
+
 ## Reference host
 
 ```text
@@ -92,40 +127,45 @@ resident KV         32768 / 32768 / 32768
 CPU cores           5 / 6 / 5
 pcie-frac           0.55 / 0.25 / 0.55
 shared expert arena ~39.97 GiB
+GPU V/F plateau     2300 MHz @ >=875 mV
+VRAM offset         +2500
 ```
 
 These are **reference-host values, not universal defaults**.
 
-## How to read the performance numbers
+## Canonical performance measurements
 
-This repository deliberately keeps different measurement classes separate.
+The **second-undervolt state above is the canonical public performance state** for this recipe. Earlier pre-second-undervolt throughput figures are intentionally not promoted here.
 
-- **Controlled clean short-warm aggregate:** **216.1 tok/s**, with a best observed clean wall-timed round of **221.1 tok/s**.
-- **Long-context real-workload aggregate TG:** approximately **175–190 tok/s**.
-- **Second-undervolt lane-local TG:** **78.8 / 78.4 / 80.1 tok/s**, which sums to **237.3 tok/s lane-sum**.
-- **Post-second-undervolt no-reuse PP spot checks:** **1,529.7 / 1,421.6 / 1,536.9 tok/s**, mean about **1,496 tok/s/lane**.
-- Three concurrent full-window requests of roughly **141K–145K tokens each** completed without context overflow, CUDA OOM, or lane death.
+- warm lane-local TG: **78.8 / 78.4 / 80.1 tok/s**;
+- lane-sum TG: **237.3 tok/s**;
+- no-reuse PP spot checks: **1,529.7 / 1,421.6 / 1,536.9 tok/s**;
+- mean no-reuse PP across those independent lane observations: about **1,496 tok/s/lane**;
+- three concurrent full-window requests of roughly **141K–145K tokens each** completed without context overflow, CUDA OOM, or lane death.
 
-> **237.3 tok/s lane-sum was observed after the second undervolt pass, while 221.1 tok/s remains the best clean wall-timed warm aggregate.**
+> **237.3 tok/s is a lane-sum of engine-reported TG, not a clean wall-clock aggregate.**
 
-The 237.3 figure is **not** promoted as a clean aggregate and is not evidence by itself that undervolting increased aggregate throughput from 221.1 to 237.3 tok/s. The workload, timing method, cache state and speculative acceptance differ between those measurements.
+The three PP observations were also independent spot checks rather than one synchronized prefill interval, so they should not be summed into an aggregate PP claim.
 
-See [`RESULTS.md`](RESULTS.md) and [`docs/undervolt-v2-20260929.md`](docs/undervolt-v2-20260929.md) for caveats and full measurements.
+The 141K–145K ×3 run is retained as **262K ×3 capacity and client-compatibility evidence**, not as the canonical throughput benchmark.
+
+See [`RESULTS.md`](RESULTS.md) and [`docs/undervolt-v2-20260929.md`](docs/undervolt-v2-20260929.md) for the full dataset and reporting rules.
 
 ## How to adapt it to another PC
 
 Do not copy the reference machine's `5/6/5` CPU split or `0.55/0.25/0.55` PCIe fractions blindly.
 
-1. Get one normal single-GPU Strata configuration working first.
+1. Get one normal single-GPU Strata configuration working first on every GPU you intend to use.
 2. Inventory each GPU's VRAM, negotiated PCIe link, and expected relative performance.
 3. Make sure every selected GPU can fit one complete lane runtime.
-4. Partition physical CPU cores so lane worker pools do not overlap.
-5. Start with conservative topology/cache settings and measure each lane alone.
-6. Test two lanes, then all lanes concurrently.
-7. Test cold long prompts as well as warm short prompts.
-8. Validate streaming, tool calls, cancellation, and lane recovery before treating a configuration as production-ready.
+4. Confirm system-RAM headroom after the shared expert arena is loaded.
+5. Partition physical CPU cores so lane worker pools do not overlap.
+6. Start with conservative context / resident-KV / topology settings and measure each lane alone.
+7. Test two lanes, then all lanes concurrently.
+8. Test cold long prompts as well as warm short prompts.
+9. Validate streaming, tool calls, cancellation, and lane recovery before treating a configuration as production-ready.
 
-The original measured three-lane launch example is in [`recipe/launch-3lane.sh.example`](recipe/launch-3lane.sh.example).
+The measured three-lane launch example is in [`recipe/launch-3lane.sh.example`](recipe/launch-3lane.sh.example).
 
 ## Implementation relationship
 
@@ -149,7 +189,7 @@ Those remain architecture challengers rather than assumed upgrades. The implemen
 ## Repository map
 
 - [`RESULTS.md`](RESULTS.md) — reference-host results and reporting rules
-- [`docs/undervolt-v2-20260929.md`](docs/undervolt-v2-20260929.md) — second-undervolt GPU tuning and PP/TG dataset
+- [`docs/undervolt-v2-20260929.md`](docs/undervolt-v2-20260929.md) — canonical second-undervolt GPU tuning and PP/TG dataset
 - [`docs/reference-host-validation-20260929.md`](docs/reference-host-validation-20260929.md) — sanitized full-window serving validation
 - [`docs/fork-and-implementation.md`](docs/fork-and-implementation.md) — fork/recipe ownership boundary
 - [`bench/README.md`](bench/README.md) — benchmark/reporting rules
