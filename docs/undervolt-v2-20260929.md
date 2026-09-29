@@ -1,10 +1,10 @@
-# Second undervolt PP/TG experiment — 2026-09-29
+# Canonical GPU tuning and PP/TG dataset — 2026-09-29
 
-This record documents the second GPU undervolt pass on the measured 3 × RTX 5070 Ti Strata reference host.
+This record documents the **canonical public performance state** for the measured 3 × RTX 5070 Ti Strata reference host.
 
-The useful result is **no observed throughput regression at the 2300 MHz undervolt plateau**. A warm lane-local round reached 78.8 / 78.4 / 80.1 tok/s, or **237.3 tok/s lane-sum**. That value is not presented as proof that undervolting itself caused a speedup because the wall-timed interval was not clean enough for a strict stock-vs-undervolt A/B.
+Earlier pre-second-undervolt throughput figures are intentionally not part of the promoted recipe. Public performance claims for this repository should use the measurements in this document and preserve the distinction between lane-local rates, lane-sum, and wall-clock aggregate throughput.
 
-## Runtime held constant
+## Runtime configuration
 
 - model: Qwen3.8-Flash-Next Strata IQ3_XXS
 - GPUs: 3 × RTX 5070 Ti 16 GiB
@@ -20,7 +20,7 @@ The useful result is **no observed throughput regression at the 2300 MHz undervo
 
 For the short throughput probe, requests used `temperature=0` and `max_tokens=256` to reduce sampling variance.
 
-## GPU tuning state
+## Canonical GPU tuning state
 
 The same V/F policy was applied to all three cards:
 
@@ -37,7 +37,7 @@ The 250 W value is a limit, not measured workload draw.
 
 Observed loaded graphics clocks during Strata traffic were roughly **2257–2302 MHz**. The observed memory clock was **15051 MHz** in `nvidia-smi`.
 
-Workload-dependent board-power samples were roughly **90–150 W/GPU**, but this experiment did not provide a clean enough power A/B to publish a normalized power-efficiency claim.
+Workload-dependent board-power samples were roughly **90–150 W/GPU**, but this dataset does not provide a clean normalized power-efficiency claim.
 
 ## Environment-neutral measurement procedure
 
@@ -52,7 +52,7 @@ Before benchmarking:
 
 Do not copy a specific process-manager command, localhost port or service name from another deployment. The requirement is simply **no unrelated model traffic during the timed interval**.
 
-One wall-timed attempt in this experiment was discarded because pre-existing work overlapped the benchmark.
+One wall-timed attempt in this dataset was discarded because pre-existing work overlapped the benchmark.
 
 ### 2. Verify the applied clock state
 
@@ -82,7 +82,7 @@ Read TG from each lane's own Strata engine summary, including speculative accept
 ... generated in ... ms (... tok/s), drafts accepted A of B
 ```
 
-## Warm TG result
+## Canonical warm TG result
 
 | Lane | Prompt reuse | Generated | TG | MTP/spec drafts accepted |
 | --- | --- | ---: | ---: | ---: |
@@ -96,13 +96,11 @@ Lane-sum:
 78.8 + 78.4 + 80.1 = 237.3 tok/s
 ```
 
-This is a **lane-sum of engine-reported decode rates**, not a clean wall aggregate.
+This is a **lane-sum of engine-reported decode rates**, not a clean wall-clock aggregate. Do not publish it as an aggregate wall throughput result.
 
-For reference, the earlier controlled warm result was 216.1 tok/s wall aggregate, with a best observed round of 221.1 tok/s. The later lane-local result therefore supports the narrower conclusion that the 2300 MHz plateau did not create an obvious decode regression.
+## Canonical no-reuse PP spot checks
 
-## Post-undervolt PP spot checks
-
-Each row below had zero reused prompt tokens. They are useful no-reuse sanity checks, but they were not one synchronized three-lane cold-prefill run and therefore must not be summed.
+Each row below had zero reused prompt tokens. They are independent lane observations, not one synchronized three-lane cold-prefill run, and therefore must not be summed.
 
 | Lane | Prompt | Reused | Read time | PP | Following TG |
 | --- | ---: | ---: | ---: | ---: | ---: |
@@ -114,21 +112,22 @@ Mean PP of these three independent spot checks is about **1,496 tok/s/lane**.
 
 ## Interpretation
 
-- the 2300 MHz / 875 mV plateau did not visibly starve the measured Strata decode path;
-- warm lane-local TG remained in the high-70s to ~80 tok/s when speculative acceptance was healthy;
-- no-reuse PP remained around 1.4–1.54k tok/s/lane in the measured post-undervolt workload;
-- speculative acceptance in the highlighted warm round was about 76–82%;
+- the promoted 2300 MHz / 875 mV plateau is the recipe's canonical GPU tuning state;
+- warm lane-local TG was **78.4–80.1 tok/s** in the highlighted fixed-output round;
+- the corresponding engine-reported **lane-sum was 237.3 tok/s**, not a wall aggregate;
+- no-reuse PP remained around **1.42–1.54k tok/s/lane**, with a mean of about **1.496k tok/s/lane** across the three independent spot checks;
+- speculative acceptance in the highlighted warm round was about **76–82%**;
 - expert-cache state, CPU expert work, PCIe behavior, prompt reuse and speculative acceptance remain important confounders.
 
-## Cleaner future power A/B
+## Reporting rule
 
-For a defensible efficiency comparison, repeat the same fixed request set with only the V/F curve changed:
+When citing this dataset publicly:
 
-1. baseline V/F curve;
-2. 875 mV / 2300 MHz plateau;
-3. identical warmup;
-4. identical concurrent decode requests;
-5. identical cold-prefill prompts;
-6. record PP/TG, speculative acceptance, average/peak GPU power, temperature, actual clock and wall power over the same interval.
+```text
+Warm TG / lane: 78.8 / 78.4 / 80.1 tok/s
+Lane-sum:       237.3 tok/s  (NOT wall aggregate)
+No-reuse PP:    1,529.7 / 1,421.6 / 1,536.9 tok/s
+Mean PP:        ~1,496 tok/s/lane
+```
 
-Until such an A/B is available, this document makes no percentage power-savings claim.
+Do not mix these values with earlier pre-second-undervolt throughput figures. A future clean synchronized wall-timed run should be added as a new canonical dataset rather than retroactively combining measurement generations.
