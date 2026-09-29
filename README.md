@@ -1,4 +1,4 @@
-# Strata GPU-per-Lane Parallel Serving Recipe
+# Qwen3.8-Flash-Next / Strata GPU-per-Lane Parallel Serving Recipe
 
 **English** | [한국어](README.ko.md) | [简体中文](README.zh-CN.md) | [日本語](README.ja.md)
 
@@ -92,20 +92,23 @@ resident KV         32768 / 32768 / 32768
 CPU cores           5 / 6 / 5
 pcie-frac           0.55 / 0.25 / 0.55
 shared expert arena ~39.97 GiB
-core V/F plateau    2300 MHz @ >=875 mV
-VRAM offset         +2500
 ```
 
 These are **reference-host values, not universal defaults**.
 
-The canonical public performance dataset uses the tuning state above. Measured highlights:
+## How to read the performance numbers
 
-- warm lane-local TG: **78.8 / 78.4 / 80.1 tok/s**;
-- lane-sum of those engine-reported rates: **237.3 tok/s**;
-- independent no-reuse PP spot checks: **1,529.7 / 1,421.6 / 1,536.9 tok/s**, mean about **1,496 tok/s/lane**;
-- three concurrent full-window requests of roughly **141K–145K tokens each** completed without context overflow, CUDA OOM, or lane death.
+This repository deliberately keeps different measurement classes separate.
 
-**237.3 tok/s is a lane-sum, not a clean wall-clock aggregate.** Earlier pre-second-undervolt throughput figures are intentionally not promoted in this recipe.
+- **Controlled clean short-warm aggregate:** **216.1 tok/s**, with a best observed clean wall-timed round of **221.1 tok/s**.
+- **Long-context real-workload aggregate TG:** approximately **175–190 tok/s**.
+- **Second-undervolt lane-local TG:** **78.8 / 78.4 / 80.1 tok/s**, which sums to **237.3 tok/s lane-sum**.
+- **Post-second-undervolt no-reuse PP spot checks:** **1,529.7 / 1,421.6 / 1,536.9 tok/s**, mean about **1,496 tok/s/lane**.
+- Three concurrent full-window requests of roughly **141K–145K tokens each** completed without context overflow, CUDA OOM, or lane death.
+
+> **237.3 tok/s lane-sum was observed after the second undervolt pass, while 221.1 tok/s remains the best clean wall-timed warm aggregate.**
+
+The 237.3 figure is **not** promoted as a clean aggregate and is not evidence by itself that undervolting increased aggregate throughput from 221.1 to 237.3 tok/s. The workload, timing method, cache state and speculative acceptance differ between those measurements.
 
 See [`RESULTS.md`](RESULTS.md) and [`docs/undervolt-v2-20260929.md`](docs/undervolt-v2-20260929.md) for caveats and full measurements.
 
@@ -145,8 +148,8 @@ Those remain architecture challengers rather than assumed upgrades. The implemen
 
 ## Repository map
 
-- [`RESULTS.md`](RESULTS.md) — canonical reference-host results
-- [`docs/undervolt-v2-20260929.md`](docs/undervolt-v2-20260929.md) — canonical GPU tuning and PP/TG dataset
+- [`RESULTS.md`](RESULTS.md) — reference-host results and reporting rules
+- [`docs/undervolt-v2-20260929.md`](docs/undervolt-v2-20260929.md) — second-undervolt GPU tuning and PP/TG dataset
 - [`docs/reference-host-validation-20260929.md`](docs/reference-host-validation-20260929.md) — sanitized full-window serving validation
 - [`docs/fork-and-implementation.md`](docs/fork-and-implementation.md) — fork/recipe ownership boundary
 - [`bench/README.md`](bench/README.md) — benchmark/reporting rules
