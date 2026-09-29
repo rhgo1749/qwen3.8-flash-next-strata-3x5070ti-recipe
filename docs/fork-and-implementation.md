@@ -18,11 +18,12 @@ rhgo1749/Strata
   - generic architecture/roadmap docs
           |
           v
-rhgo1749/strata-gpu-per-lane-serving-recipe
+rhgo1749/qwen3.8-flash-next-strata-gpu-per-lane-recipe
   public recipe
   - reference hardware
   - host-specific CPU/PCIe/KV tuning
-  - benchmark and validation records
+  - canonical GPU tuning and benchmark records
+  - capacity / serving validation
   - launch examples
 ```
 
@@ -85,11 +86,15 @@ lane contexts        262144 / 262144 / 262144
 resident KV          32768 / 32768 / 32768
 host-KV guard        786432 tokens
 shared expert arena  ~39.97 GiB
+core V/F plateau     2300 MHz @ >=875 mV
+VRAM offset          +2500
 ```
 
-These values are **not** generic defaults. They were promoted only after measurement on the reference machine. Another host should begin from its own topology and validate each lane independently and concurrently.
+These values are **not** generic defaults. Another host should begin from its own topology and validate each lane independently and concurrently.
 
-The complete sanitized evidence is in [`reference-host-validation-20260929.md`](reference-host-validation-20260929.md).
+The current public performance source of truth is [`undervolt-v2-20260929.md`](undervolt-v2-20260929.md). Earlier pre-second-undervolt throughput figures are intentionally not promoted by the recipe.
+
+Full-window capacity and serving validation is kept separately in [`reference-host-validation-20260929.md`](reference-host-validation-20260929.md).
 
 ## Why not cross-GPU decode by default?
 
@@ -121,6 +126,6 @@ These remain possible roadmap challengers rather than assumed upgrades.
 
 The implementation fork keeps the generic development roadmap:
 
-[`rhgo1749/Strata/docs/multigpu-roadmap.md`](https://github.com/rhgo1749/Strata/blob/844d62064b4327f80eae0f2980ccbd83b04fbe9a/docs/multigpu-roadmap.md)
+[`rhgo1749/Strata/docs/multigpu-roadmap.md`](https://github.com/rhgo1749/Strata/blob/main/docs/multigpu-roadmap.md)
 
 The roadmap's promotion rule is evidence-first: a more coupled architecture should replace the independent-lane baseline only after repeatable end-to-end measurements show a material benefit without giving up required context capacity, correctness, stability, or a clean fallback path.
