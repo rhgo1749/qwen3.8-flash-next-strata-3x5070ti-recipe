@@ -4,11 +4,12 @@
 
 이 저장소는 **GPU 한 장당 독립 Strata generation lane 하나**를 두고, 큰 host-RAM expert arena는 lane들이 **물리적으로 한 벌만 공유**하는 서빙 패턴을 설명한다.
 
-실측 기준 시스템은 **RTX 5070 Ti 16 GB ×3**다. IQ3_XXS는 performance-oriented 비교 기준으로 유지하고, 현재 기준 시스템의 실제 배포 모델은 **Qwen3.8-Flash-Next GSQ-RCO IQ3_S**다.
+실측 기준 시스템은 **RTX 5070 Ti 16 GB ×3**다. IQ3_XXS는 성능 비교용 기준으로 유지하고, 현재 기준 시스템의 실제 배포 모델은 **Qwen3.8-Flash-Next GSQ-RCO IQ3_S**다.
 
 구현: [`rhgo1749/Strata`](https://github.com/rhgo1749/Strata)  
-**현재 승격된 구현 pin:** [`9dda206`](https://github.com/rhgo1749/Strata/commit/9dda206874387b20cac20837a1452f115a8f9f93)  
-**현재 승격 엔진:** Strata **0.1.22**
+**현재 승격된 구현 pin:** [`3824f04`](https://github.com/rhgo1749/Strata/commit/3824f04003b79609a7cc6861ea5b4652a47d2ddb)  
+**0.1.24 통합 merge:** [`82a5161`](https://github.com/rhgo1749/Strata/commit/82a51614517392f2c5b83af7c39ffbb7abbc783e)  
+**현재 승격 엔진:** Strata **0.1.24**
 
 ## 핵심 개념
 
@@ -35,7 +36,7 @@ flowchart TB
 ### lane마다 독립인 것
 
 - CUDA context/stream;
-- GPU hot-expert cache;
+- GPU hot-expert cache와 adaptive replacement 상태;
 - GPU-resident KV;
 - host-KV/session state;
 - speculative/MTP state;
@@ -85,46 +86,71 @@ RAM은 대략 다음 식으로 잡는다.
 
 expert arena는 GPU 수만큼 곱하지 않는다. 이 포크가 바로 그 큰 arena를 물리 RAM에서 공유한다.
 
-## 현재 승격 성능 — Strata 0.1.22
+## 현재 승격 성능 — Strata 0.1.24
 
-현재 레시피 baseline은 fork commit `9dda206`, engine 0.1.22다. 기존 3-lane 실행 명령과 설정 계약은 그대로 호환됐고 별도 migration flag는 필요 없었다.
+0.1.24 승격은 기존 3-lane launch contract를 그대로 유지했고, **server/multi-GPU 테스트 52개**, production CUDA build, 두 quantization의 per-lane/layer-split 벤치, IQ3_S 약 140K no-reuse ×3 동시 장문 검증을 통과했다.
 
-### IQ3_XXS performance reference
+### IQ3_XXS — 독립 lane
 
-- clean warm 3-request wall aggregate: **226.5–227.9 tok/s**
-- midpoint: 약 **227.2 tok/s**
-- 15,064-token no-reuse single-lane PP spot check: **2,492.2 tok/s**
+- clean warm 3-request wall aggregate: **218.4–233.7 tok/s**, 평균 **225.5 tok/s**
+- 15K no-reuse PP x8 / x4 / x8: **2453.5 / 2046.0 / 2450.8 tok/s**
 
-예전 237.3 tok/s IQ3_XXS 수치는 여전히 유효한 engine-reported lane-sum 역사값이지만 clean wall aggregate는 아니다.
+### IQ3_XXS — upstream 3-GPU layer-split
 
-### IQ3_S 현재 배포 벤치마크
+- clean warm single-request decode: **93.5–99.9 tok/s**
+- 15K no-reuse PP: **1144.4 tok/s**
 
-현재 IQ3_S runtime은 Strata 0.1.22에서 **46.84 GiB** shared expert arena와 lane당 **4524 slots / 8.63 GiB** hot-expert cache를 사용한다.
+### IQ3_S — 독립 lane
 
-두 backend session에서 유지한 clean warm round 4개는:
+- clean warm 3-request wall aggregate: **176.8–199.4 tok/s**, 평균 **187.1 tok/s**
+- 15K no-reuse PP x8 / x4 / x8: **2381.8 / 1852.2 / 2371.8 tok/s**
+- 약 140K no-reuse 요청을 3 lane에 동시에 실행: **CUDA OOM / lane death 없이 완료**
 
-```text
-183.9 / 190.8 / 196.8 / 209.7 tok/s wall aggregate
-```
+### IQ3_S — upstream 3-GPU layer-split
 
-따라서 **현재 IQ3_S warm 범위는 183.9–209.7 tok/s, 4회 평균은 195.3 tok/s**다.
+- clean warm single-request decode: **74.2–81.7 tok/s**
+- 15K no-reuse PP: **938.0 tok/s**
 
-Concurrent no-reuse prompt processing:
+두 구조는 목적이 다르다. layer-split은 여러 GPU를 결합해 요청 하나를 처리하고, GPU-per-lane은 여러 독립 요청을 동시에 처리하면서 느린 카드가 모든 token step의 pace setter가 되지 않게 한다. 현재 목표인 concurrent agent serving에서는 **independent lane을 production baseline으로 유지하고, layer-split은 single-request challenger로 유지한다.**
 
-| 측정 | GPU0 x8 | GPU1 x4 | GPU2 x8 |
+상세 승격 기록: [`docs/strata-0.1.24-promotion-20260930.md`](docs/strata-0.1.24-promotion-20260930.md)
+
+## Adaptive hot-expert replacement — 0.1.24
+
+Strata 0.1.24는 가득 찬 hot-expert cache도 현재 대화의 routing 분포에 맞게 적응시킬 수 있다. 기본 정책은 routing usage를 누적/감쇠하고, 4 round마다 최대 96개의 저가치 resident expert를 더 자주 호출되는 non-resident expert와 교체할 수 있다.
+
+IQ3_S 단일 lane에서 512-token retained round 2개씩 비교한 결과:
+
+| 모드 | 평균 TG | decode expert-cache hit rate |
+| --- | ---: | ---: |
+| Adaptive replacement | **69.43 tok/s** | **86.5–87%** |
+| Static residency (`--adapt-swaps 0`) | **54.14 tok/s** | 약 **61%** |
+
+이 workload에서의 실측 개선은 **+28.3%**다. 모든 prompt/GPU/quantization에서 동일한 비율을 보장한다는 뜻은 아니다.
+
+### `miss → adaptive swap → GPU resident → 이후 GPU hit`
+
+`STRATA_ADAPT_TRACE`로 상태 전이를 직접 계측했다. retained trace에는 **22,996 selection**, **22,900 residency publication**, **6,937개의 first-later-GPU-hit 관측**이 있다.
+
+| 구간 | median | p95 | 가장 빠른 retained 관측 |
 | --- | ---: | ---: | ---: |
-| 15,048-token PP | **2,325.6** | **1,806.5** | **2,293.0 tok/s** |
-| 30,024-token PP | **2,352.1** | **1,812.9** | **2,348.3 tok/s** |
+| 선택된 swap의 H2D/event wall → residency publish | **33.876 ms** | 49.751 ms | 12.948 ms |
+| first miss → residency publish | **10.716 s** | 26.602 s | 20.205 ms |
+| residency publish → 이후 첫 GPU hit | **154.249 ms** | 1.228 s | **0.306 ms** |
+| first miss → 이후 첫 GPU hit | **3.430 s** | 18.126 s | 57.284 ms |
 
-30K run의 x8 lane 평균은 **2,350.2 tok/s**, 가운데 x4 lane은 그보다 약 **22.9% 느렸다**. 유지한 장문 요청은 모두 **0 reused**였고 CUDA OOM, API failure, lane death 없이 완료했다.
+여기서 `first miss → resident`는 **순수 PCIe 복사시간이 아니다.** 해당 expert가 충분한 routing evidence를 쌓아 기존 resident victim을 밀어낼 가치가 있다고 adaptive policy가 판단할 때까지의 대기시간이 포함된다. H2D/event 숫자 역시 여러 swap의 async copy/event 완료를 묶어 보는 runtime wall interval이므로 과거의 standalone memcpy microbenchmark와 같은 지표가 아니다.
 
-과거 IQ3_S ~30K 데이터는 **1,553.7 / 1,323.9 / 1,545.1 tok/s**였다. 이번 0.1.22 수치는 그 역사 benchmark generation보다 대략 **+51.4% / +36.9% / +52.0%** 높다. 다만 prompt content와 runtime generation이 완전히 동일한 strict A/B는 아니므로 보편 speedup 주장으로 쓰지 않는다.
+반면 `resident → first later GPU hit`은 새 residency가 publish된 다음 해당 expert가 실제 GPU-resident path에서 다시 사용되기까지의 시간이다. 가장 빠른 관측은 약 **0.306 ms**, median은 약 **154 ms**였다.
 
-자세한 기록: [`docs/iq3-s-3lane-benchmark-20260929.md`](docs/iq3-s-3lane-benchmark-20260929.md)
+즉 요청했던 **`miss → adaptive swap → GPU resident` 전이는 실제 runtime trace로 확인됐고**, 이후 GPU hit와 성능/hit-rate 개선까지 같이 관측됐다.
 
-### Controlled systems ablation — IQ3_S
+상세 해석: [`docs/strata-0.1.24-promotion-20260930.md`](docs/strata-0.1.24-promotion-20260930.md)  
+machine-readable 요약: [`bench/adaptive-swap-20260930.csv`](bench/adaptive-swap-20260930.csv)
 
-아래는 기존 warm-throughput headline을 대체하는 값이 아니라 **아키텍처의 scaling / RAM sharing / heterogeneous isolation**을 따로 검증한 controlled benchmark다.
+## Controlled systems ablation — IQ3_S
+
+0.1.24 승격과 별개로, 기존의 아키텍처 자체를 검증한 controlled 결과도 유지한다.
 
 | 질문 | 실측 결과 |
 | --- | --- |
@@ -135,44 +161,45 @@ Concurrent no-reuse prompt processing:
 | RTX 5060 Ti x4와 동시 구동 중 RTX 5070 Ti | **70.321 tok/s**, 실측 감소 **0.0215%** |
 | 동시 RTX 5060 Ti x4 lane | **57.246 tok/s** |
 
-특히 heterogeneous isolation 결과가 인상적이다. 측정 오차 범위에서 **느린 RTX 5060 Ti lane이 동시에 돌아가도 RTX 5070 Ti lane의 decode throughput이 내려가지 않았다.** 즉 느린 카드가 전체 token step의 pace setter가 아니라 **자기 요청만 느리게 처리**하는 구조적 의도가 그대로 관측됐다.
+heterogeneous isolation에서는 측정 오차 범위에서 **느린 RTX 5060 Ti lane이 동시에 돌아가도 RTX 5070 Ti lane의 decode throughput이 내려가지 않았다.**
 
-빈 expert-cache slot에 expert 하나를 admission하는 H2D microbenchmark에서는 layer-weighted wall mean이 5070 Ti x8에서 약 **0.081 ms pinned / 0.117 ms ordinary host memory**, 5060 Ti x4에서 **0.155 / 0.190 ms**였다. 다만 이것은 **full-cache miss penalty가 아니다.** 현재 hot-expert cache에는 eviction이 없어서 cache가 가득 찬 뒤 non-resident expert는 CPU path로 fallback한다.
+과거 free-slot expert admission H2D microbenchmark는 5070 Ti x8에서 약 **0.081 ms pinned / 0.117 ms ordinary host memory**, 5060 Ti x4에서 **0.155 / 0.190 ms**였다. 이 숫자는 여전히 **빈 slot으로 단순 전송하는 비용**을 설명하는 데 유효하다. 다만 과거 문서의 “full cache에는 eviction이 없다”는 설명은 이제 historical behavior다. 0.1.24에서는 adaptive victim replacement가 존재한다.
 
-상세 방법론/주의사항: [`docs/systems-ablation-20260929.md`](docs/systems-ablation-20260929.md)  
+상세 방법론: [`docs/systems-ablation-20260929.md`](docs/systems-ablation-20260929.md)  
 trial-level 원시 관측값: [`bench/systems-ablation-20260929.csv`](bench/systems-ablation-20260929.csv)
 
-### IQ3_XXS 0.1.21 대비
+## 역사적 0.1.22 기준
 
-직전 0.1.21 integration 검증값은:
+직전 promoted 0.1.22 결과는 비교용 history로 유지한다.
 
-- warm 3-request wall aggregate: **198.2 tok/s**
-- ~15K PP spot check: **1,609.9 tok/s**
+- IQ3_XXS clean warm aggregate: **226.5–227.9 tok/s**
+- IQ3_XXS 15,064-token no-reuse PP: **2492.2 tok/s**
+- IQ3_S clean warm aggregate: **183.9–209.7 tok/s**, 평균 **195.3 tok/s**
+- IQ3_S 15K PP: **2325.6 / 1806.5 / 2293.0 tok/s**
+- IQ3_S 30K PP: **2352.1 / 1812.9 / 2348.3 tok/s**
 
-IQ3_XXS 0.1.22 promotion run에서는 각각 약 **+14.6%**, **+54.8%**를 기록했다. 이 비율은 해당 promotion run끼리의 비교이며 모든 workload에 그대로 적용되는 보편 speedup 주장은 아니다.
+prompt generation이나 조건이 다른 데이터끼리는 strict version A/B로 해석하지 않는다.
 
-자세한 promotion 기록: [`docs/strata-0.1.22-promotion-20260929.md`](docs/strata-0.1.22-promotion-20260929.md)
+## 장문 검증
 
-## upstream layer-split challenger
+두 세대의 long-context evidence를 유지한다.
 
-같은 `9dda206` 바이너리에서 upstream 3-GPU layer-split도 262K로 정상 기동했다.
+- 0.1.22: 141,578 / 144,875 / 144,777 input-token 실제 software-review prompt를 3 lane에서 동시에 완료
+- 0.1.24: 새 약 **140K no-reuse 요청을 IQ3_S 3 lane에서 동시에 완료**, OOM/lane death 없음
 
-- 짧은 single-request decode: **80.6 tok/s**
-- 15,064-token no-reuse PP: **1,142.3 tok/s**
+이 값들은 throughput headline이 아니라 **262K ×3 capacity/stability/client compatibility 검증**이다.
 
-IQ3_XXS의 같은 15K PP probe에서 request-per-lane A는 약 **2.18×**의 PP를 보였고, layer-split B는 single-request decode에서 우위를 유지했다.
+## 현재 production 상태
 
-따라서 architecture promotion 판단은 그대로다. **동시 agent serving의 production baseline은 independent request lanes**, layer-split은 single-request 중심 workload를 위한 challenger로 남긴다.
+기준 서버는 현재 0.1.24 production build로 승격되어 있고 adaptive replacement는 기본값으로 켜져 있다.
 
-## 262K ×3 장문 검증
-
-실제 software-review prompt 3개를 모든 lane이 262K context로 설정된 상태에서 동시에 실행했다.
-
-- 141,578 input / 992 output tokens
-- 144,875 input / 1,295 output tokens
-- 144,777 input / 871 output tokens
-
-세 요청 모두 context overflow, CUDA OOM, API failure, lane death 없이 완료했다. 이 결과는 **262K ×3 capacity/client compatibility 검증**이며 throughput headline과는 분리한다.
+```text
+public proxy       127.0.0.1:8087
+backend            127.0.0.1:18087
+private lanes      127.0.0.1:19087-19089
+engine             build-production-024/strata
+quantization       IQ3_S
+```
 
 ## 내 PC에 적용하는 순서
 
@@ -190,12 +217,13 @@ IQ3_XXS의 같은 15K PP probe에서 request-per-lane A는 약 **2.18×**의 PP�
 
 ## 문서 지도
 
-- [`RESULTS.md`](RESULTS.md) — 현재/역사 기준 시스템 실측 결과와 reporting rule
-- [`docs/systems-ablation-20260929.md`](docs/systems-ablation-20260929.md) — scaling, RAM sharing, heterogeneous isolation, expert-admission controlled 결과
-- [`bench/systems-ablation-20260929.csv`](bench/systems-ablation-20260929.csv) — systems ablation의 machine-readable trial 관측값
-- [`docs/strata-0.1.22-promotion-20260929.md`](docs/strata-0.1.22-promotion-20260929.md) — 현재 0.1.22 promotion 기록
-- [`docs/iq3-s-3lane-benchmark-20260929.md`](docs/iq3-s-3lane-benchmark-20260929.md) — 현재 IQ3_S benchmark
-- [`docs/undervolt-v2-20260929.md`](docs/undervolt-v2-20260929.md) — 과거 2차 언더볼팅 lane-local 데이터
+- [`RESULTS.md`](RESULTS.md) — 현재/역사 기준 시스템 결과
+- [`docs/strata-0.1.24-promotion-20260930.md`](docs/strata-0.1.24-promotion-20260930.md) — 현재 0.1.24 승격, per-lane/layer-split, adaptive replacement 결과
+- [`bench/adaptive-swap-20260930.csv`](bench/adaptive-swap-20260930.csv) — adaptive timing/A-B machine-readable 요약
+- [`docs/systems-ablation-20260929.md`](docs/systems-ablation-20260929.md) — scaling, RAM sharing, heterogeneous isolation, free-slot expert-admission controlled 결과
+- [`bench/systems-ablation-20260929.csv`](bench/systems-ablation-20260929.csv) — systems-ablation trial 관측값
+- [`docs/strata-0.1.22-promotion-20260929.md`](docs/strata-0.1.22-promotion-20260929.md) — 역사적 0.1.22 promotion
+- [`docs/iq3-s-3lane-benchmark-20260929.md`](docs/iq3-s-3lane-benchmark-20260929.md) — IQ3_S 상세 벤치 기록
 - [`docs/reference-host-validation-20260929.md`](docs/reference-host-validation-20260929.md) — 262K ×3 장문/서빙 검증
 - [`docs/fork-and-implementation.md`](docs/fork-and-implementation.md) — 포크와 레시피의 역할 분리
 - [`bench/README.md`](bench/README.md) — benchmark/reporting contract
