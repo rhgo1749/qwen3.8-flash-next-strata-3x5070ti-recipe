@@ -92,18 +92,22 @@ resident KV         32768 / 32768 / 32768
 CPU cores           5 / 6 / 5
 pcie-frac           0.55 / 0.25 / 0.55
 shared expert arena ~39.97 GiB
+core V/F plateau    2300 MHz @ >=875 mV
+VRAM offset         +2500
 ```
 
 These are **reference-host values, not universal defaults**.
 
-Measured highlights include:
+The canonical public performance dataset uses the tuning state above. Measured highlights:
 
-- pre-second-undervolt warm aggregate: **216.1 tok/s**, best observed round **221.1 tok/s**;
-- long-context prompt processing: roughly **1.5–1.6k tok/s per lane**;
-- three concurrent long-context requests of roughly **141K–145K tokens each** completed without context overflow, CUDA OOM, or lane death;
-- second-undervolt lane-local warm result: **78.8 / 78.4 / 80.1 tok/s**.
+- warm lane-local TG: **78.8 / 78.4 / 80.1 tok/s**;
+- lane-sum of those engine-reported rates: **237.3 tok/s**;
+- independent no-reuse PP spot checks: **1,529.7 / 1,421.6 / 1,536.9 tok/s**, mean about **1,496 tok/s/lane**;
+- three concurrent full-window requests of roughly **141K–145K tokens each** completed without context overflow, CUDA OOM, or lane death.
 
-See [`RESULTS.md`](RESULTS.md) and [`docs/reference-host-validation-20260929.md`](docs/reference-host-validation-20260929.md) for caveats and full measurements.
+**237.3 tok/s is a lane-sum, not a clean wall-clock aggregate.** Earlier pre-second-undervolt throughput figures are intentionally not promoted in this recipe.
+
+See [`RESULTS.md`](RESULTS.md) and [`docs/undervolt-v2-20260929.md`](docs/undervolt-v2-20260929.md) for caveats and full measurements.
 
 ## How to adapt it to another PC
 
@@ -141,10 +145,10 @@ Those remain architecture challengers rather than assumed upgrades. The implemen
 
 ## Repository map
 
-- [`RESULTS.md`](RESULTS.md) — measured reference-host results
-- [`docs/reference-host-validation-20260929.md`](docs/reference-host-validation-20260929.md) — sanitized host validation record
+- [`RESULTS.md`](RESULTS.md) — canonical reference-host results
+- [`docs/undervolt-v2-20260929.md`](docs/undervolt-v2-20260929.md) — canonical GPU tuning and PP/TG dataset
+- [`docs/reference-host-validation-20260929.md`](docs/reference-host-validation-20260929.md) — sanitized full-window serving validation
 - [`docs/fork-and-implementation.md`](docs/fork-and-implementation.md) — fork/recipe ownership boundary
-- [`docs/undervolt-v2-20260929.md`](docs/undervolt-v2-20260929.md) — second-undervolt dataset
 - [`bench/README.md`](bench/README.md) — benchmark/reporting rules
 - [`recipe/launch-3lane.sh.example`](recipe/launch-3lane.sh.example) — measured launch example
 
