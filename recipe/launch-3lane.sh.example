@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+# Qwen3.8-Flash-Next IQ3_XXS / Strata / 3x RTX 5070 Ti
+#
+# Benchmark implementation pin:
+#   rhgo1749/Strata@844d62064b4327f80eae0f2980ccbd83b04fbe9a
+#
+# This is a host-specific example for the validated GPU enumeration:
+#   GPU0 = PCIe 5.0 x8
+#   GPU1 = PCIe 5.0 x4
+#   GPU2 = PCIe 5.0 x8
+#
+# Verify your own topology before copying the asymmetric pcie-frac values.
+
+STRATA_DIR="${STRATA_DIR:-$HOME/Strata}"
+CONFIG="${CONFIG:-/absolute/path/to/strata-iq3_xxs.json}"
+PUBLIC_PORT="${PUBLIC_PORT:-18086}"
+
+cd "$STRATA_DIR"
+
+exec python serve/multigpu_server.py \
+  --config "$CONFIG" \
+  --gpus 0,1,2 \
+  --lane-contexts 262144,262144,262144 \
+  --kv-budget 786432 \
+  --lane-cpu-cores 5,6,5 \
+  --lane-pcie-fracs 0.55,0.25,0.55 \
+  --lane-kv-residents 32768,32768,32768 \
+  --port "$PUBLIC_PORT"
