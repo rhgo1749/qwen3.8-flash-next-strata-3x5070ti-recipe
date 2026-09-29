@@ -126,6 +126,25 @@ The older IQ3_S ~30K dataset was **1,553.7 / 1,323.9 / 1,545.1 tok/s**. The new 
 
 Full IQ3_S record: [`docs/iq3-s-3lane-benchmark-20260929.md`](docs/iq3-s-3lane-benchmark-20260929.md).
 
+### Controlled systems ablations — IQ3_S
+
+A separate controlled benchmark set tests the architecture itself rather than replacing the warm-throughput headline above.
+
+| Question | Measured result |
+| --- | --- |
+| 1 → 2 → 3 GPU decode scaling | **72.59 → 137.01 → 188.23 tok/s**; 1.887× at 2 GPUs and 2.593× at 3 GPUs |
+| Parallel efficiency | **94.4% at 2 GPUs**, **86.4% at 3 GPUs** |
+| Private → shared host arena | **95.33 → 52.03 GiB** two-engine PSS; **43.30 GiB / 45.4% reduction** |
+| RTX 5070 Ti alone | **70.336 tok/s** |
+| RTX 5070 Ti while RTX 5060 Ti x4 also serves | **70.321 tok/s** (**0.0215% measured decrease**) |
+| Concurrent RTX 5060 Ti x4 lane | **57.246 tok/s** |
+
+The heterogeneous result is the clearest isolation check: within run-to-run noise, the slower RTX 5060 Ti lane did **not** reduce the RTX 5070 Ti lane's decode throughput.
+
+A free-slot expert-admission microbenchmark also measured layer-weighted H2D wall means of about **0.081 ms pinned / 0.117 ms ordinary host memory on the 5070 Ti x8**, and **0.155 / 0.190 ms on the 5060 Ti x4**. This is **not** a full-cache miss penalty: the current hot-expert cache has no eviction, so a full-cache non-resident expert falls back to the CPU path.
+
+Full methodology, caveats, and raw retained observations: [`docs/systems-ablation-20260929.md`](docs/systems-ablation-20260929.md) and [`bench/systems-ablation-20260929.csv`](bench/systems-ablation-20260929.csv).
+
 ### 0.1.21 comparison for IQ3_XXS
 
 The immediately preceding 0.1.21 integration validation measured:
@@ -175,6 +194,8 @@ The measured launch example is in [`recipe/launch-3lane.sh.example`](recipe/laun
 ## Repository map
 
 - [`RESULTS.md`](RESULTS.md) — current and historical reference-host results
+- [`docs/systems-ablation-20260929.md`](docs/systems-ablation-20260929.md) — controlled scaling, RAM-sharing, heterogeneous-isolation and expert-admission results
+- [`bench/systems-ablation-20260929.csv`](bench/systems-ablation-20260929.csv) — retained machine-readable observations for the systems ablations
 - [`docs/strata-0.1.22-promotion-20260929.md`](docs/strata-0.1.22-promotion-20260929.md) — current 0.1.22 promotion record
 - [`docs/iq3-s-3lane-benchmark-20260929.md`](docs/iq3-s-3lane-benchmark-20260929.md) — current IQ3_S benchmark
 - [`docs/undervolt-v2-20260929.md`](docs/undervolt-v2-20260929.md) — historical second-undervolt GPU tuning / lane-local dataset
