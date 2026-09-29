@@ -166,6 +166,58 @@ No retained 0.1.22 IQ3_S long-prompt run had prompt reuse, CUDA OOM, API failure
 
 Full IQ3_S details and measurement caveats are in [`docs/iq3-s-3lane-benchmark-20260929.md`](docs/iq3-s-3lane-benchmark-20260929.md).
 
+## Controlled systems ablations — IQ3_S
+
+A separate 2026-09-29 benchmark set isolates scaling, RAM sharing, and heterogeneous-lane isolation. It uses the same 0.1.22 / `9dda206` IQ3_S software generation but is **not** a replacement for the promoted clean-warm result above.
+
+### 1 → 2 → 3 GPU scaling
+
+Five 512-token steady-state decode repetitions per point, shared expert arena, 262K context per lane, 32K resident KV. The two-GPU point uses the two x8 RTX 5070 Ti cards before adding the x4 middle card.
+
+| Active lanes | Mean wall aggregate | Speedup | Parallel efficiency |
+| ---: | ---: | ---: | ---: |
+| 1 | **72.59 tok/s** | 1.000× | 100.0% |
+| 2 | **137.01 tok/s** | **1.887×** | **94.4%** |
+| 3 | **188.23 tok/s** | **2.593×** | **86.4%** |
+
+### Shared arena RAM ablation
+
+Two otherwise matched 32K-context / 8K-resident-KV lanes were measured after both engines were ready.
+
+| Arena mode | Two-engine PSS |
+| --- | ---: |
+| Private arena per process | **95.33 GiB** |
+| Shared arena | **52.03 GiB** |
+| Reduction | **43.30 GiB / 45.4%** |
+
+### Heterogeneous isolation — RTX 5070 Ti + RTX 5060 Ti
+
+A 5070 Ti x8 lane was measured alone and then while a 5060 Ti x4 lane served its own request concurrently, five 512-token repetitions in each condition.
+
+| Measurement | Mean TG |
+| --- | ---: |
+| RTX 5070 Ti alone | **70.336 tok/s** |
+| RTX 5070 Ti with RTX 5060 Ti active | **70.321 tok/s** |
+| RTX 5060 Ti concurrent lane | **57.246 tok/s** |
+
+The measured 5070 Ti decrease was **0.0215%**; its concurrent/solo ratio was **0.999785**. This is far smaller than run-to-run variance, so on this host the slower 5060 Ti lane did not measurably reduce the faster 5070 Ti lane's decode rate.
+
+This is direct evidence for the intended request-level isolation property: a slower card slows its own request rather than becoming a mandatory token-step pace setter for the faster card. It remains a measured-host result, not a universal no-contention guarantee for every CPU/PCIe topology.
+
+### Expert free-slot admission H2D timing
+
+IQ3_S expert blobs span 1.440–2.539 MiB. A 200-iteration-per-size CUDA-runtime microbenchmark measured layer-distribution-weighted wall means of:
+
+- RTX 5070 Ti x8: **0.081 ms pinned**, **0.117 ms ordinary resident/pageable**;
+- RTX 5060 Ti x4: **0.155 ms pinned**, **0.190 ms ordinary resident/pageable**.
+
+Largest-blob pageable p95 wall time was **0.140 ms** on the 5070 Ti x8 and **0.244 ms** on the 5060 Ti x4.
+
+These are **free-slot admission transfer** measurements, not full-cache miss penalties. The current hot-expert cache has no eviction; once full, a non-resident expert uses the CPU path instead of replacing a resident GPU expert.
+
+Full methodology and caveats: [`docs/systems-ablation-20260929.md`](docs/systems-ablation-20260929.md).  
+Machine-readable retained observations: [`bench/systems-ablation-20260929.csv`](bench/systems-ablation-20260929.csv).
+
 ## Promotion decision
 
 **Accepted:** Strata 0.1.22 / fork commit `9dda206` is the current promoted engine baseline for this recipe, and the 0.1.22 IQ3_S measurements above are the current IQ3_S benchmark generation.
@@ -185,14 +237,20 @@ For this repository:
 - **226.5–227.9 tok/s** is the current promoted IQ3_XXS clean warm **wall aggregate**;
 - **2,492.2 tok/s** is the promoted IQ3_XXS **15,064-token no-reuse single-lane PP spot check**;
 - **183.9–209.7 tok/s**, mean **195.3 tok/s**, is the current IQ3_S clean warm **wall-aggregate range** across four retained warm rounds;
+- **72.59 / 137.01 / 188.23 tok/s** is the separate controlled IQ3_S **1→2→3 GPU scaling** dataset, not a replacement warm headline;
+- **95.33 → 52.03 GiB PSS** is the controlled two-lane **private→shared arena RAM ablation**;
+- **70.336 → 70.321 tok/s** on the RTX 5070 Ti while an RTX 5060 Ti x4 runs at **57.246 tok/s** is the controlled **heterogeneous-isolation** dataset;
 - IQ3_S 15K no-reuse PP is **2,325.6 / 1,806.5 / 2,293.0 tok/s**;
 - IQ3_S 30K no-reuse PP is **2,352.1 / 1,812.9 / 2,348.3 tok/s**;
 - **237.3 tok/s** and **183.4 tok/s** are retained as historical engine-reported **lane-sums**, not wall aggregates;
 - the 141K–145K ×3 run is capacity/stability/client-compatibility evidence;
-- do not infer universal version, undervolt, quantization, or architecture speedups from mismatched prompt lengths, prompt content, or metric classes.
+- expert-admission H2D numbers describe **free-slot transfer**, not current full-cache miss replacement;
+- do not infer universal version, undervolt, quantization, architecture, or heterogeneous-topology speedups from mismatched prompt lengths, prompt content, or metric classes.
 
 ## More detail
 
+- [`docs/systems-ablation-20260929.md`](docs/systems-ablation-20260929.md) — controlled scaling, RAM-sharing, heterogeneous-isolation and expert-admission results
+- [`bench/systems-ablation-20260929.csv`](bench/systems-ablation-20260929.csv) — machine-readable retained observations for those controlled experiments
 - [`docs/strata-0.1.22-promotion-20260929.md`](docs/strata-0.1.22-promotion-20260929.md) — current engine promotion, A/B smoke, and current IQ3_S validation
 - [`docs/iq3-s-3lane-benchmark-20260929.md`](docs/iq3-s-3lane-benchmark-20260929.md) — current IQ3_S three-lane benchmark
 - [`docs/undervolt-v2-20260929.md`](docs/undervolt-v2-20260929.md) — historical second-undervolt GPU tuning and lane-local IQ3_XXS dataset
