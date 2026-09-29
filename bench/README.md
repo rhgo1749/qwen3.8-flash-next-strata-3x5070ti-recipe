@@ -2,7 +2,9 @@
 
 This repository keeps benchmark classes separate so convenient numbers do not become misleading headline claims.
 
-The **canonical public performance state** for the reference host is the current 2300 MHz / 875 mV GPU tuning configuration documented in [`docs/undervolt-v2-20260929.md`](../docs/undervolt-v2-20260929.md). Earlier pre-second-undervolt throughput figures are not promoted results.
+The **current promoted software baseline** is Strata **0.1.22** on fork commit `9dda206`. The current reference-host GPU tuning remains the 2300 MHz / 875 mV state documented in [`docs/undervolt-v2-20260929.md`](../docs/undervolt-v2-20260929.md).
+
+Current promotion details: [`docs/strata-0.1.22-promotion-20260929.md`](../docs/strata-0.1.22-promotion-20260929.md).
 
 ## 1. Real long-context concurrency
 
@@ -27,34 +29,33 @@ Only sum per-lane PP or TG when the relevant intervals actually overlap. A long-
 
 Purpose: stable same-host throughput comparison.
 
-Use a fixed short prompt set, warm the expert/cache state, then send one request to each private lane endpoint concurrently.
+Use a fixed short prompt, warm the expert/cache/prefix state on every lane, then send one request to each lane concurrently.
 
-Use environment-specific endpoints rather than copying ports from another host:
-
-```text
-lane 0 -> <lane-0-endpoint>
-lane 1 -> <lane-1-endpoint>
-lane N -> <lane-N-endpoint>
-```
-
-For low-variance throughput probes, keep sampling and output length fixed, for example:
+The preferred aggregate metric is:
 
 ```text
-temperature = 0
-max_tokens  = 256
+aggregate TG = total completion tokens / common wall interval
 ```
 
-Read TG from each Strata engine summary and record speculative acceptance (`drafts accepted A of B`). Report both wall-derived aggregate throughput and lane-sum only when each is actually valid.
+Current promoted 0.1.22 reference-host rounds:
 
-Canonical reference-host lane-local round:
+```text
+384 completion tokens / 1.685 s = 227.9 tok/s
+384 completion tokens / 1.695 s = 226.5 tok/s
+```
+
+So the current clean warm headline result is **226.5–227.9 tok/s wall aggregate**.
+
+Per-lane engine-reported TG remains useful diagnostic evidence, but a lane-sum is not automatically a wall aggregate.
+
+Historical second-undervolt lane-local round:
 
 ```text
 78.8 / 78.4 / 80.1 tok/s
 lane-sum = 237.3 tok/s
-acceptance = 126/166, 129/157, 141/177
 ```
 
-The **237.3 tok/s value is a lane-sum, not a clean wall aggregate**.
+The **237.3 tok/s value remains valid historical lane-sum evidence, not a clean wall aggregate**.
 
 ## 3. Cold / no-reuse prompt processing
 
@@ -63,14 +64,24 @@ Purpose: memory/context/prefill validation and prompt-processing sanity checks.
 Record:
 
 - exact prompt tokens;
+- prompt content/class when practical;
 - cold/reused status;
 - prompt-processing throughput;
 - following decode throughput;
 - peak VRAM;
 - host available RAM;
-- lane survival.
+- lane survival;
+- Strata commit/version.
 
-Canonical no-reuse PP spot checks:
+Current 0.1.22 promotion spot check:
+
+```text
+15,064 tokens, no reuse -> 2,492.2 tok/s
+```
+
+This is a same-host software-promotion spot check, **not a universal long-prompt PP claim**.
+
+Historical longer-prompt independent observations:
 
 ```text
 GPU0: 45,519 tokens -> 1,529.7 tok/s
@@ -79,9 +90,35 @@ GPU2: 64,972 tokens -> 1,536.9 tok/s
 mean: ~1,496 tok/s/lane
 ```
 
-These observations were independent and not one synchronized three-lane prefill. They must not be summed into an aggregate PP number.
+Do not directly compute a software speedup between mismatched prompt lengths/classes. Use same-shape promotion runs when claiming version deltas.
 
-## 4. GPU tuning A/B
+## 4. Architecture A/B
+
+Purpose: compare request-per-lane serving against more coupled multi-GPU challengers.
+
+Hold constant where possible:
+
+- Strata fork commit;
+- model / quant;
+- max context;
+- prompt and output target;
+- warm/cold state;
+- sampling;
+- host/GPU tuning.
+
+Current 0.1.22 same-fork challenger smoke:
+
+```text
+A: request-per-lane 15,064-token no-reuse PP = 2,492.2 tok/s
+B: 3-GPU layer-split 15,064-token no-reuse PP = 1,142.3 tok/s
+A/B PP ratio ~= 2.18x
+
+B short single-request decode = 80.6 tok/s
+```
+
+A single-request win is not sufficient to promote a challenger for this recipe's concurrent-agent workload. Promotion follows the implementation roadmap's aggregate throughput, context, correctness, stability and fallback gates.
+
+## 5. GPU tuning A/B
 
 Purpose: isolate power/frequency tuning from software architecture.
 
@@ -101,31 +138,19 @@ Hold constant:
 
 Before starting:
 
-1. pause or disable **your own workload dispatcher**;
-2. wait for already in-flight client/tool loops to drain;
-3. verify the serving layer reports zero active requests, if it exposes such a status;
-4. verify the target GPUs are idle;
+1. pause or disable your own workload dispatcher;
+2. wait for in-flight client/tool loops to drain;
+3. verify zero active requests where exposed;
+4. verify target GPUs are idle;
 5. start the benchmark.
-
-Do not copy a host-specific control command or localhost port from another deployment. The benchmark contract is about state, not one operator's process manager.
-
-Useful GPU telemetry:
-
-```bash
-nvidia-smi \
-  --query-gpu=index,power.draw,power.limit,clocks.current.graphics,clocks.current.memory,temperature.gpu,utilization.gpu \
-  --format=csv
-```
-
-Sample telemetry over the same interval for power comparisons; do not compare an instantaneous reading to an interval average.
 
 ## Metric naming
 
 - **PP** = prompt processing throughput, tokens/s.
 - **TG** = token generation/decode throughput, tokens/s.
-- **C1/C2/C3** = one/two/three concurrent requests when used.
-- **aggregate TG** = overlapping multi-lane decode throughput derived from a common wall interval.
+- **aggregate TG** = overlapping multi-lane completion throughput derived from one common wall interval.
 - **lane-sum TG** = sum of lane-local engine-reported TG; not automatically a wall aggregate.
+- **capacity validation** = admission/stability evidence; not automatically a throughput benchmark.
 
 `PP` does not mean pipeline parallelism here.
 
@@ -134,7 +159,7 @@ Sample telemetry over the same interval for power comparisons; do not compare an
 Every promoted result should include at least:
 
 ```text
-repo commit
+repo commit / engine version
 model / quant
 GPU count and link widths
 CPU / RAM
@@ -144,11 +169,12 @@ CPU partition
 pcie-frac
 MTP/spec settings
 GPU tuning state
-warm/cold state
-prompt tokens
+warm/cold/reuse state
+prompt tokens and prompt class
 output tokens
 concurrency
-speculative acceptance
+wall interval when claiming aggregate throughput
+speculative acceptance when relevant
 ```
 
-The goal is not leaderboard precision. It is to make architecture, scheduler and hardware-tuning changes comparable on the same host without mixing measurement generations.
+The goal is not leaderboard precision. It is to make architecture, scheduler, engine-version and hardware-tuning changes comparable without mixing measurement generations.
