@@ -1,0 +1,1 @@
+mode,request_pattern,rep,engine_version,fork_commit,upstream_commit,binary_sha256,quant,gpus,pcie_topology,driver,cuda,context,resident_kv,prompt_id,prompt_sha256,prompt_tokens,completion_tokens,warm_state,requests_in_trial,wall_seconds,workload_completion_s,pp_tok_s,ttft_ms,tg_tok_s,aggregate_tg_tok_s,expert_cache_hit_rate,spec_acceptance,serving_contract,notes

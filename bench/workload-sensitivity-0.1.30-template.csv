@@ -1,0 +1,1 @@
+workload,prompt_bucket,prompt_id,prompt_sha256,rep,measurement,engine_version,fork_commit,upstream_commit,binary_sha256,quant,lane,gpu,pcie_width,context,resident_kv,warm_state,prompt_tokens,reused_tokens,completion_tokens,pp_tok_s,ttft_ms,tg_tok_s,e2e_ms,cache_hit_rate,adaptive_swaps,spec_proposed,spec_accepted,spec_acceptance_rate,finish_reason,notes
