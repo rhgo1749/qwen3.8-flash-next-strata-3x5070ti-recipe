@@ -1,0 +1,30 @@
+check,status,value,notes
+candidate_status,PENDING_PROMOTION,0.1.30 candidate,implementation gates passed; full 0.1.30 headline measurement matrix still required
+fork_head,PASS,7c95b2aa3799f1918f7450bae542d7bbe4f67284,rhgo1749/Strata-Lanes branch sync/upstream-0.1.30
+upstream_0.1.30,PASS,30ec18ec7094550fcc594fd948220d511d80464e,Niko1221/Strata tag v0.1.30
+serve_test_discovery,PASS,125 passed; 5 skipped,python3 -m unittest discover -s serve -p test_*.py on final candidate
+server_multigpu_subset,PASS,96 passed,python3 -m unittest serve.test_multigpu_server serve.test_server on final candidate
+cuda_13_4_sm120_build,PASS,full Release CUDA build,CUDA 13.4.92; CMAKE_CUDA_ARCHITECTURES=120; STRATA_BUILD_TESTS=ON
+ctest_available,PASS,38 runnable tests passed,41 registered; three external-fixture-dependent tests unavailable
+ctest_ple_parity,UNAVAILABLE,missing external Q2_0 PLE/model artifact,not counted as a pass
+ctest_expert_parity,UNAVAILABLE,missing pack/full/experts.bin,not counted as a pass
+ctest_pool_test,UNAVAILABLE,missing pack/full/experts.bin,not counted as a pass
+upstream_native_shared_arena,PASS,src/core/pinned.cu blob b64eb52a70cc8a58b1a59682b9d9c7b875247c10,exactly matches upstream v0.1.30; old fork pinned_upstream_impl.cu removed
+shared_arena_header,PASS,STRATA-ARENA-V1,0.1.30 smoke backing size 50294992896 B = 4096 B header + 50294988800 B arena allocation
+binary_sha256,PASS,cc4236096662b1786a7730316002cbd38850f7451b517102fe4fec89eadf0147,build-sync-0130-cuda/strata; C++ sources unchanged by later Python-only lease-trace commit
+shared_arena_2lane_smoke,PASS,same inode 13 on GPU0+GPU2,IQ3_S 32768 context and 8192 resident KV per lane
+shared_mapping_accounting,PASS,Shared_Dirty 49116200 kB; Private_Dirty 0; PSS 24558100 kB each,two-lane smoke mapping under /dev/shm
+generation_2lane_smoke,PASS,both lanes completed 16-token capped requests,transport/engine smoke only; no headline performance claim
+port_preflight,PASS,occupied fixed port rejected before model load,prevents stale /health listener from satisfying new-lane readiness
+exact_lane_admission_trace,PASS,JSONL + response-header unit/integration test,records queue entry/admission/release; lane; admission rank; exact scheduler queue wait; service time
+conversation_parking_primary_contract,PASS,forced disabled in lane configs,supervisor pins --conversation-cache-mib 0 until scheduler models parked locality
+driver_cuda,PASS,NVIDIA 615.71.09; CUDA 13.4,reference-host candidate validation
+pcie_topology,PASS,GPU0 5070Ti x8; GPU1 5070Ti x4; GPU2 5070Ti x8; GPU3 5060Ti x4,max PCIe generation 5; current generation may downclock at idle
+headline_0_1_30_results,PENDING,not measured,do not reuse 0.1.29 or 0.1.27 cells in 0.1.30 tables
+scaling_1_2_3,PENDING,not measured,re-run all lane counts on final candidate 7c95b2a
+private_shared_pss,PENDING,not measured,0.1.29 intermediate PSS is diagnostic only; re-run with 0.1.30 native shared arena
+heterogeneous_isolation,PENDING,not measured,re-run 5070 Ti solo vs 5070 Ti + 5060 Ti concurrent on final candidate
+workload_sensitivity,PENDING,not measured,re-run PP/TTFT and warm TG matrix on final candidate
+mixed_3lane,PENDING,not measured,rotate workloads across GPU0/GPU2/GPU1
+oversubscription_3_4_6_9,READY_NOT_RUN,lease trace available,run fixed three-lane 3/4/6/9 batches with benchmark request headers and retained JSONL
+matched_layer_split_ab,PENDING,not measured,must use 0.1.30 IQ3_S and identical workload contract

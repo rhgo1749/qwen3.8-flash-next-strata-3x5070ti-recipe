@@ -1,0 +1,63 @@
+#!/usr/bin/env bash
+# Qwen3.8-Flash-Next / Strata-Lanes / 3-lane 0.1.30 measurement candidate
+#
+# Candidate fork pin:
+#   rhgo1749/Strata-Lanes@7c95b2aa3799f1918f7450bae542d7bbe4f67284
+# Upstream v0.1.30:
+#   Niko1221/Strata@30ec18ec7094550fcc594fd948220d511d80464e
+#
+# Reference lane order:
+#   lane 0 -> GPU0 RTX 5070 Ti, PCIe x8
+#   lane 1 -> GPU2 RTX 5070 Ti, PCIe x8
+#   lane 2 -> GPU1 RTX 5070 Ti, PCIe x4
+#
+# Primary paper runs keep upstream conversation parking disabled. The base config
+# must therefore not enable --conversation-cache-mib. Stateful parking is a
+# separate experiment, not part of the matched headline contract.
+
+set -euo pipefail
+
+STRATA_DIR="${STRATA_DIR:-$HOME/Strata-Lanes}"
+CONFIG="${CONFIG:-/absolute/path/to/strata-iq3_s-0.1.30.json}"
+PUBLIC_PORT="${PUBLIC_PORT:-18086}"
+BASE_PORT="${BASE_PORT:-19086}"
+ARENA_FILE="${ARENA_FILE:-/dev/shm/strata/bench/iq3_s-0.1.30.shared}"
+STATE_DIR="${STATE_DIR:-$HOME/.local/state/strata/bench-0.1.30-3lane}"
+BENCH_TRACE_JSONL="${BENCH_TRACE_JSONL:-$STATE_DIR/lane-leases.jsonl}"
+
+EXPECTED_HEAD="7c95b2aa3799f1918f7450bae542d7bbe4f67284"
+EXPECTED_UPSTREAM="30ec18ec7094550fcc594fd948220d511d80464e"
+
+cd "$STRATA_DIR"
+
+ACTUAL_HEAD="$(git rev-parse HEAD)"
+if [[ "$ACTUAL_HEAD" != "$EXPECTED_HEAD" ]]; then
+  echo "refusing 0.1.30 campaign: expected fork $EXPECTED_HEAD, found $ACTUAL_HEAD" >&2
+  exit 2
+fi
+ACTUAL_UPSTREAM="$(git rev-parse v0.1.30 2>/dev/null || true)"
+if [[ "$ACTUAL_UPSTREAM" != "$EXPECTED_UPSTREAM" ]]; then
+  echo "refusing 0.1.30 campaign: expected v0.1.30 $EXPECTED_UPSTREAM, found ${ACTUAL_UPSTREAM:-missing}" >&2
+  exit 2
+fi
+if grep -Eq -- '"--conversation-cache-mib"[[:space:]]*,[[:space:]]*"[1-9][0-9]*"|--conversation-cache-mib[[:space:]]+[1-9][0-9]*' "$CONFIG"; then
+  echo "refusing primary campaign: conversation parking is enabled in $CONFIG" >&2
+  exit 2
+fi
+
+mkdir -p "$(dirname "$ARENA_FILE")" "$STATE_DIR"
+rm -f "$BENCH_TRACE_JSONL"
+
+exec python3 serve/multigpu_server.py \
+  --config "$CONFIG" \
+  --gpus 0,2,1 \
+  --lane-contexts 262144,262144,262144 \
+  --kv-budget 786432 \
+  --lane-cpu-cores 5,5,6 \
+  --lane-pcie-fracs 0.55,0.55,0.25 \
+  --lane-kv-residents 32768,32768,32768 \
+  --arena-file "$ARENA_FILE" \
+  --state-dir "$STATE_DIR" \
+  --bench-trace-jsonl "$BENCH_TRACE_JSONL" \
+  --base-port "$BASE_PORT" \
+  --port "$PUBLIC_PORT"

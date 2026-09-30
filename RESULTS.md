@@ -14,6 +14,16 @@ binary sha256    b40c2cee92b4681d861548c7140219f4cc62ca47d28a6835020055e78266dee
 
 The 0.1.27 sync preserves the production architecture: one independent engine/request lane per GPU, one shared host expert arena, lane-local CUDA/KV/cache/speculation state, and no mandatory token-step cross-GPU synchronization.
 
+## 0.1.30 measurement candidate
+
+The current implementation candidate is frozen at `rhgo1749/Strata-Lanes@7c95b2aa3799f1918f7450bae542d7bbe4f67284`, based on upstream Strata `30ec18ec7094550fcc594fd948220d511d80464e` (v0.1.30). The unpromoted 0.1.29 candidate was superseded before its full headline matrix was completed, so its intermediate measurements remain diagnostic only.
+
+The 0.1.30 candidate adopts upstream's native shared-expert-arena primitive contributed through PR #129, removes the fork's duplicate pinned-arena implementation, adds stale-port preflight, and exposes opt-in exact lane-admission telemetry for the overload campaign. Its source/test/build and real two-lane shared-arena smoke gates have passed, but **none of the 0.1.27 headline numbers below are relabeled as 0.1.30 results**.
+
+Promotion requires a fresh same-generation campaign covering 1→2→3 lane scaling, private↔shared PSS, heterogeneous isolation, workload sensitivity, mixed three-lane serving, PP/TTFT/TG and complete provenance. The extension campaign additionally covers three-lane oversubscription at 3/4/6/9 requests and a matched 0.1.30 independent-lanes↔three-GPU layer-split A/B. See [`bench/strata-0.1.30-campaign.md`](bench/strata-0.1.30-campaign.md) and [`bench/strata-0.1.30-candidate-20261001.csv`](bench/strata-0.1.30-candidate-20261001.csv).
+
+Until that campaign is complete, **0.1.27 remains the promoted evidence generation**.
+
 ## Reference host
 
 - CPU: AMD Ryzen 9 9950X3D, 16C/32T

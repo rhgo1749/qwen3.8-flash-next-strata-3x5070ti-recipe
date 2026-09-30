@@ -1,0 +1,60 @@
+#!/usr/bin/env bash
+# Read-only provenance snapshot for the Strata 0.1.30 campaign.
+# Usage:
+#   STRATA_DIR=/path/to/Strata-Lanes BINARY=/path/to/strata \
+#     ARENA_FILE=/dev/shm/... bash recipe/capture-0.1.30-provenance.sh.example > provenance.txt
+
+set -euo pipefail
+
+STRATA_DIR="${STRATA_DIR:-$HOME/Strata-Lanes}"
+BINARY="${BINARY:-$STRATA_DIR/build/strata}"
+CUDA_HOME="${CUDA_HOME:-/usr/local/cuda-13.4}"
+EXPECTED_HEAD="7c95b2aa3799f1918f7450bae542d7bbe4f67284"
+EXPECTED_UPSTREAM="30ec18ec7094550fcc594fd948220d511d80464e"
+
+printf 'timestamp_utc='; date -u +%Y-%m-%dT%H:%M:%SZ
+printf 'kernel='; uname -srmo
+printf 'fork_head='; git -C "$STRATA_DIR" rev-parse HEAD
+printf 'expected_fork_head=%s\n' "$EXPECTED_HEAD"
+printf 'upstream_v0_1_30='; git -C "$STRATA_DIR" rev-parse v0.1.30 2>/dev/null || printf 'unavailable\n'
+printf 'expected_upstream_v0_1_30=%s\n' "$EXPECTED_UPSTREAM"
+printf 'binary='; realpath "$BINARY"
+printf 'binary_sha256='; sha256sum "$BINARY" | awk '{print $1}'
+printf 'nvcc='; "$CUDA_HOME/bin/nvcc" --version | tail -1
+
+printf '\n[gpus]\n'
+nvidia-smi --query-gpu=index,name,pci.bus_id,driver_version,pstate,pcie.link.gen.current,pcie.link.gen.max,pcie.link.width.current,pcie.link.width.max,clocks.current.graphics,clocks.current.memory,power.draw,power.limit,temperature.gpu --format=csv,noheader
+printf '\n[gpu_processes]\n'
+nvidia-smi --query-compute-apps=gpu_bus_id,pid,process_name,used_memory --format=csv,noheader 2>/dev/null || true
+
+printf '\n[cpu]\n'
+lscpu | grep -E '^(Model name|CPU\(s\)|Core\(s\) per socket|Thread\(s\) per core|Socket\(s\)):' || true
+
+printf '\n[memory]\n'
+free -b
+printf '\n[tmpfs]\n'
+df -B1 /dev/shm
+
+if [[ -n "${ARENA_FILE:-}" && -e "$ARENA_FILE" ]]; then
+  printf '\n[shared_arena]\n'
+  printf 'arena_file=%s\n' "$(realpath "$ARENA_FILE")"
+  stat -c 'arena_size_bytes=%s arena_inode=%i' "$ARENA_FILE"
+  printf 'arena_magic='
+  od -An -N16 -tc "$ARENA_FILE" | tr -d ' \n'
+  printf '\n'
+fi
+
+if [[ -n "${PROMPT_FILE:-}" ]]; then
+  printf '\n[prompt]\n'
+  printf 'prompt_file=%s\n' "$(realpath "$PROMPT_FILE")"
+  printf 'prompt_sha256='; sha256sum "$PROMPT_FILE" | awk '{print $1}'
+  printf 'prompt_bytes='; wc -c < "$PROMPT_FILE"
+fi
+
+if [[ -n "${MODEL_FILES:-}" ]]; then
+  printf '\n[model_artifacts]\n'
+  for f in $MODEL_FILES; do
+    printf '%s  ' "$f"
+    sha256sum "$f" | awk '{print $1}'
+  done
+fi
