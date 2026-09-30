@@ -1,0 +1,71 @@
+workload,prompt_bucket,prompt_id,rep,measurement,lane,gpu,pcie_width,prompt_tokens,reused_tokens,completion_tokens,pp_tok_s,ttft_s,tg_tok_s,e2e_s,cache_hit_rate,adaptive_swaps,spec_proposed,spec_accepted,spec_acceptance_rate,finish_reason,notes
+coding,medium,fixed-coding-medium,1,cold,0,0,8,15012,0,16,2524.170632,6.004234,49.300000,6.309587,0.699000,0,12,11,0.916667,length,cold/no-reuse PP
+coding,medium,fixed-coding-medium,2,cold,0,0,8,15012,0,16,2546.737692,5.947305,60.700000,6.193741,0.756000,0,12,11,0.916667,length,cold/no-reuse PP
+coding,medium,fixed-coding-medium,3,cold,0,0,8,15012,0,16,2546.824104,5.945973,52.100000,6.237694,0.858000,0,13,8,0.615385,length,cold/no-reuse PP
+coding,medium,fixed-coding-medium,4,cold,0,0,8,15012,0,16,2546.694488,5.945293,52.400000,6.236102,0.898000,0,15,8,0.533333,length,cold/no-reuse PP
+coding,medium,fixed-coding-medium,5,cold,0,0,8,15012,0,16,2546.910522,5.943736,77.300000,6.136474,0.935000,0,13,9,0.692308,length,cold/no-reuse PP
+coding,medium,9424608c0c6a91d9,1,warm,0,0,8,14992,14985,256,127.272727,,79.200000,3.324856,0.864000,0,223,167,0.748879,length,warm steady-state TG
+coding,medium,9424608c0c6a91d9,2,warm,0,0,8,14992,14985,256,120.898100,,80.100000,3.289253,0.862000,0,220,167,0.759091,length,warm steady-state TG
+coding,medium,9424608c0c6a91d9,3,warm,0,0,8,14992,14985,256,74.706510,,79.600000,3.346075,0.861000,0,221,167,0.755656,length,warm steady-state TG
+coding,medium,9424608c0c6a91d9,4,warm,0,0,8,14992,14985,256,121.739130,,78.000000,3.374809,0.861000,0,225,168,0.746667,length,warm steady-state TG
+coding,medium,9424608c0c6a91d9,5,warm,0,0,8,14992,14985,256,121.739130,,80.200000,3.287073,0.863000,0,223,168,0.753363,length,warm steady-state TG
+coding,short,fixed-coding-short,1,cold,0,0,8,1446,0,16,897.133639,1.638663,76.300000,1.827201,0.847000,0,12,12,1.000000,length,cold/no-reuse PP
+coding,short,fixed-coding-short,2,cold,0,0,8,1446,0,16,899.813317,1.629195,64.100000,1.862194,0.909000,0,15,12,0.800000,length,cold/no-reuse PP
+coding,short,fixed-coding-short,3,cold,0,0,8,1446,0,16,869.983755,1.683560,79.600000,1.869216,0.924000,0,15,12,0.800000,length,cold/no-reuse PP
+coding,short,fixed-coding-short,4,cold,0,0,8,1446,0,16,906.071809,1.615261,91.800000,1.775431,0.943000,0,12,12,1.000000,length,cold/no-reuse PP
+coding,short,fixed-coding-short,5,cold,0,0,8,1446,0,16,906.639915,1.614185,53.600000,1.899099,0.791000,0,13,11,0.846154,length,cold/no-reuse PP
+coding,short,0e32f5deb91894d8,1,warm,0,0,8,1540,1533,256,131.826742,,80.000000,3.257686,0.880000,0,213,160,0.751174,length,warm steady-state TG
+coding,short,0e32f5deb91894d8,2,warm,0,0,8,1540,1533,256,114.566285,,81.200000,3.219994,0.863000,0,221,168,0.760181,length,warm steady-state TG
+coding,short,0e32f5deb91894d8,3,warm,0,0,8,1540,1533,256,122.164049,,78.300000,3.333448,0.863000,0,234,167,0.713675,length,warm steady-state TG
+coding,short,0e32f5deb91894d8,4,warm,0,0,8,1540,1533,256,117.845118,,81.300000,3.212679,0.866000,0,204,161,0.789216,length,warm steady-state TG
+coding,short,0e32f5deb91894d8,5,warm,0,0,8,1540,1533,256,110.236220,,75.700000,3.450322,0.876000,0,223,151,0.677130,length,warm steady-state TG
+fiction,medium,fixed-fiction-medium,1,cold,0,0,8,14957,0,16,2550.735018,5.924564,54.100000,6.196035,0.873000,0,17,6,0.352941,length,cold/no-reuse PP
+fiction,medium,fixed-fiction-medium,2,cold,0,0,8,14957,0,16,2545.872340,5.930585,51.600000,6.221090,0.909000,0,12,6,0.500000,length,cold/no-reuse PP
+fiction,medium,fixed-fiction-medium,3,cold,0,0,8,14957,0,16,2550.952535,5.915840,65.900000,6.141384,0.943000,0,12,5,0.416667,length,cold/no-reuse PP
+fiction,medium,fixed-fiction-medium,4,cold,0,0,8,14957,0,16,2563.544434,5.885703,60.700000,6.133663,0.936000,0,18,6,0.333333,length,cold/no-reuse PP
+fiction,medium,fixed-fiction-medium,5,cold,0,0,8,14957,0,16,2555.790985,5.902803,69.100000,6.119441,0.956000,0,12,6,0.500000,length,cold/no-reuse PP
+fiction,medium,8db0817c96488039,1,warm,0,0,8,15033,15026,256,108.024691,,70.500000,3.730946,0.899000,0,211,127,0.601896,length,warm steady-state TG
+fiction,medium,8db0817c96488039,2,warm,0,0,8,15033,15026,256,90.206186,,66.100000,3.984962,0.897000,0,223,120,0.538117,length,warm steady-state TG
+fiction,medium,8db0817c96488039,3,warm,0,0,8,15033,15026,256,96.952909,,72.800000,3.625147,0.888000,0,188,126,0.670213,length,warm steady-state TG
+fiction,medium,8db0817c96488039,4,warm,0,0,8,15033,15026,256,93.333333,,66.700000,3.950788,0.896000,0,231,122,0.528139,length,warm steady-state TG
+fiction,medium,8db0817c96488039,5,warm,0,0,8,15033,15026,256,92.961487,,63.800000,4.123217,0.891000,0,229,114,0.497817,length,warm steady-state TG
+fiction,short,fixed-fiction-short,1,cold,0,0,8,1517,0,16,853.109886,1.808803,51.100000,2.096987,0.850000,0,19,6,0.315789,length,cold/no-reuse PP
+fiction,short,fixed-fiction-short,2,cold,0,0,8,1517,0,16,892.773070,1.724762,58.300000,1.978974,0.909000,0,18,6,0.333333,length,cold/no-reuse PP
+fiction,short,fixed-fiction-short,3,cold,0,0,8,1517,0,16,895.513577,1.716808,60.600000,1.963138,0.928000,0,18,6,0.333333,length,cold/no-reuse PP
+fiction,short,fixed-fiction-short,4,cold,0,0,8,1517,0,16,899.069519,1.708404,62.700000,1.948049,0.946000,0,19,6,0.315789,length,cold/no-reuse PP
+fiction,short,fixed-fiction-short,5,cold,0,0,8,1517,0,16,898.909694,1.707929,66.700000,1.932778,0.960000,0,18,6,0.333333,length,cold/no-reuse PP
+fiction,short,397e82d7a8724826,1,warm,0,0,8,1497,1490,256,95.890411,,63.900000,4.082346,0.909000,0,259,108,0.416988,length,warm steady-state TG
+fiction,short,397e82d7a8724826,2,warm,0,0,8,1497,1490,256,74.786325,,72.200000,3.646879,0.913000,0,237,127,0.535865,length,warm steady-state TG
+fiction,short,397e82d7a8724826,3,warm,0,0,8,1497,1490,256,95.238095,,67.700000,3.859066,0.901000,0,225,117,0.520000,length,warm steady-state TG
+fiction,short,397e82d7a8724826,4,warm,0,0,8,1497,1490,256,93.959732,,71.900000,3.642193,0.905000,0,228,126,0.552632,length,warm steady-state TG
+fiction,short,397e82d7a8724826,5,warm,0,0,8,1497,1490,256,94.339623,,67.500000,3.874498,0.900000,0,225,118,0.524444,length,warm steady-state TG
+long_review,long,fixed-long_review-long,1,cold,0,0,8,109958,0,16,2550.549157,43.384362,42.600000,43.743735,0.761000,0,11,8,0.727273,length,cold/no-reuse PP
+long_review,long,fixed-long_review-long,2,cold,0,0,8,109958,0,16,2554.400474,43.316060,55.000000,43.590998,0.851000,0,11,8,0.727273,length,cold/no-reuse PP
+long_review,long,fixed-long_review-long,3,cold,0,0,8,109958,0,16,2559.567594,43.227964,50.600000,43.528133,0.904000,0,12,8,0.666667,length,cold/no-reuse PP
+long_review,long,fixed-long_review-long,4,cold,0,0,8,109958,0,16,2550.200151,43.383801,64.400000,43.616572,0.932000,0,11,8,0.727273,length,cold/no-reuse PP
+long_review,long,fixed-long_review-long,5,cold,0,0,8,109958,0,16,2555.742273,43.289894,68.500000,43.508208,0.950000,0,11,8,0.727273,length,cold/no-reuse PP
+long_review,long,82b1498afd1c79e9,1,warm,0,0,8,110031,110024,256,113.452188,,62.700000,4.395802,0.856000,0,198,134,0.676768,length,warm steady-state TG
+long_review,long,82b1498afd1c79e9,2,warm,0,0,8,110031,110024,256,101.744186,,63.900000,4.326907,0.831000,0,194,140,0.721649,length,warm steady-state TG
+long_review,long,82b1498afd1c79e9,3,warm,0,0,8,110031,110024,256,99.857347,,62.800000,4.399648,0.845000,0,197,134,0.680203,length,warm steady-state TG
+long_review,long,82b1498afd1c79e9,4,warm,0,0,8,110031,110024,256,99.009901,,63.100000,4.379264,0.829000,0,192,137,0.713542,length,warm steady-state TG
+long_review,long,82b1498afd1c79e9,5,warm,0,0,8,110031,110024,256,99.150142,,62.400000,4.426603,0.846000,0,204,132,0.647059,length,warm steady-state TG
+reasoning,medium,fixed-reasoning-medium,1,cold,0,0,8,15026,0,16,2547.125034,5.963467,49.700000,6.259094,0.755000,0,15,8,0.533333,length,cold/no-reuse PP
+reasoning,medium,fixed-reasoning-medium,2,cold,0,0,8,15026,0,16,2543.158892,5.966194,56.600000,6.228007,0.855000,0,15,8,0.533333,length,cold/no-reuse PP
+reasoning,medium,fixed-reasoning-medium,3,cold,0,0,8,15026,0,16,2565.915301,5.911666,60.200000,6.160295,0.888000,0,15,8,0.533333,length,cold/no-reuse PP
+reasoning,medium,fixed-reasoning-medium,4,cold,0,0,8,15026,0,16,2556.398653,5.932627,62.000000,6.174572,0.918000,0,17,8,0.470588,length,cold/no-reuse PP
+reasoning,medium,fixed-reasoning-medium,5,cold,0,0,8,15026,0,16,2555.963802,5.930837,65.500000,6.159915,0.934000,0,17,8,0.470588,length,cold/no-reuse PP
+reasoning,medium,fa7fec27f52e9bcc,1,warm,0,0,8,15005,14998,256,114.566285,,67.500000,3.889361,0.869000,0,210,137,0.652381,length,warm steady-state TG
+reasoning,medium,fa7fec27f52e9bcc,2,warm,0,0,8,15005,14998,256,95.497954,,67.300000,3.929064,0.864000,0,223,138,0.618834,length,warm steady-state TG
+reasoning,medium,fa7fec27f52e9bcc,3,warm,0,0,8,15005,14998,256,92.838196,,69.600000,3.790098,0.863000,0,215,142,0.660465,length,warm steady-state TG
+reasoning,medium,fa7fec27f52e9bcc,4,warm,0,0,8,15005,14998,256,94.339623,,66.100000,3.981607,0.865000,0,231,139,0.601732,length,warm steady-state TG
+reasoning,medium,fa7fec27f52e9bcc,5,warm,0,0,8,15005,14998,256,94.722598,,69.800000,3.777545,0.864000,0,219,143,0.652968,length,warm steady-state TG
+reasoning,short,fixed-reasoning-short,1,cold,0,0,8,1490,0,16,930.842756,1.629442,51.200000,1.918689,0.795000,0,17,8,0.470588,length,cold/no-reuse PP
+reasoning,short,fixed-reasoning-short,2,cold,0,0,8,1490,0,16,937.283764,1.615055,60.600000,1.859418,0.880000,0,15,8,0.533333,length,cold/no-reuse PP
+reasoning,short,fixed-reasoning-short,3,cold,0,0,8,1490,0,16,941.072444,1.605208,65.400000,1.833737,0.912000,0,15,8,0.533333,length,cold/no-reuse PP
+reasoning,short,fixed-reasoning-short,4,cold,0,0,8,1490,0,16,939.292694,1.606804,70.900000,1.817503,0.939000,0,15,8,0.533333,length,cold/no-reuse PP
+reasoning,short,fixed-reasoning-short,5,cold,0,0,8,1490,0,16,946.993771,1.593976,70.100000,1.807979,0.946000,0,17,8,0.470588,length,cold/no-reuse PP
+reasoning,short,429fe691f25560a1,1,warm,0,0,8,1469,1462,256,113.821138,,78.200000,3.341473,0.879000,0,196,149,0.760204,length,warm steady-state TG
+reasoning,short,429fe691f25560a1,2,warm,0,0,8,1469,1462,256,89.858793,,77.200000,3.400019,0.877000,0,211,151,0.715640,length,warm steady-state TG
+reasoning,short,429fe691f25560a1,3,warm,0,0,8,1469,1462,256,103.092784,,76.900000,3.401037,0.878000,0,216,153,0.708333,length,warm steady-state TG
+reasoning,short,429fe691f25560a1,4,warm,0,0,8,1469,1462,256,101.892285,,75.500000,3.466836,0.878000,0,210,149,0.709524,length,warm steady-state TG
+reasoning,short,429fe691f25560a1,5,warm,0,0,8,1469,1462,256,102.189781,,77.100000,3.393243,0.877000,0,208,149,0.716346,length,warm steady-state TG
