@@ -7,7 +7,7 @@
 ## 現在の状態
 
 - 実装 fork: [`rhgo1749/Strata`](https://github.com/rhgo1749/Strata)
-- **現在の運用 Strata pin:** [`ae74f43`](https://github.com/rhgo1749/Strata/commit/ae74f431259e03749f598b137dea92e155d867ae)
+- **現在の運用 Strata pin:** [`614b2ae`](https://github.com/rhgo1749/Strata/commit/614b2ae904bbe949144c694388b985fc6a0d20d8)
 - エンジン基準: Strata **0.1.27**（upstream `a790805`）
 - 参照ホストの現行 production quant: **Qwen3.8-Flash-Next GSQ-RCO IQ3_S**
 - 凍結済み paper-v1 recipe snapshot: [`f54597a`](https://github.com/rhgo1749/qwen3.8-flash-next-strata-gpu-per-lane-recipe/commit/f54597a071e56bb0412685c46c4d604d50e26e45), branch `paper-v1`
@@ -64,12 +64,19 @@ GPU lanes           RTX 5070 Ti 16 GB ×3
 PCIe                x8 / x4 / x8
 contexts            262144 / 262144 / 262144
 resident KV         32768 / 32768 / 32768
+VRAM reserve MiB    1200 / 1200 / 1200
 physical CPU cores  5 / 6 / 5
 production vision   選択した1 lane
 current quant       IQ3_S
 ```
 
 これらは**参照ホストでの実測値であり、汎用デフォルトではありません。**
+
+### mixed vision/text lane の VRAM reserve 注意点
+
+vision を有効にした base config から text-only lane を派生させる場合、`--vision` と encoder 設定を外すのは正しい一方、VRAM の安全余裕まで一緒に失わないようにする必要があります。参照環境の RTX 5070 Ti 16 GB / IQ3_S / 262K context / resident-KV 32768 では、non-vision lane が 700 MiB reserve に戻るとロード後の空き VRAM が約 **93 MiB**しか残らず、実際に `verify: instantiate: out of memory` が発生しました。
+
+現在の production は `--lane-vram-reserve-mibs 1200,1200,1200` を明示します。再測定では GPU0/GPU1/GPU2 の空き VRAM がそれぞれ **593 / 592 / 593 MiB**となり、3 lane の同時 public request はすべて HTTP 200 で完了し、新しい startup 以降の OOM / illegal-memory / engine-stop は 0 件でした。1200 MiB はあくまで**参照ホストの安全値**であり、すべての GPU に対する汎用デフォルトではありません。この問題は vision encoder が text-only GPU の VRAM を消費したためではなく、mixed-capability lane を派生する際に text-only lane から reserve が外れたことで顕在化したものです。
 
 host RAM は概ね次のように見積もれます。
 

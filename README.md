@@ -7,7 +7,7 @@ A practical recipe for running **one independent Strata generation lane per GPU*
 ## Current state
 
 - Implementation fork: [`rhgo1749/Strata`](https://github.com/rhgo1749/Strata)
-- **Current operational Strata pin:** [`ae74f43`](https://github.com/rhgo1749/Strata/commit/ae74f431259e03749f598b137dea92e155d867ae)
+- **Current operational Strata pin:** [`614b2ae`](https://github.com/rhgo1749/Strata/commit/614b2ae904bbe949144c694388b985fc6a0d20d8)
 - Engine baseline: Strata **0.1.27** (`a790805` upstream)
 - Current production quant on the reference host: **Qwen3.8-Flash-Next GSQ-RCO IQ3_S**
 - Frozen paper-v1 recipe snapshot: [`f54597a`](https://github.com/rhgo1749/qwen3.8-flash-next-strata-gpu-per-lane-recipe/commit/f54597a071e56bb0412685c46c4d604d50e26e45), branch `paper-v1`
@@ -64,12 +64,19 @@ GPU lanes           RTX 5070 Ti 16 GB ×3
 PCIe                x8 / x4 / x8
 contexts            262144 / 262144 / 262144
 resident KV         32768 / 32768 / 32768
+VRAM reserve MiB    1200 / 1200 / 1200
 physical CPU cores  5 / 6 / 5
 production vision   one selected lane
 current quant       IQ3_S
 ```
 
 These are **reference-host values, not universal defaults**.
+
+### VRAM reserve caution for mixed vision/text lanes
+
+When deriving text-only lanes from a vision-enabled base config, it is correct to remove `--vision` and the encoder configuration, but the VRAM safety margin must not disappear with them. On the reference RTX 5070 Ti 16 GB / IQ3_S / 262K-context / 32768 resident-KV setup, falling back to a 700 MiB reserve left only about **93 MiB** free after load and produced a real `verify: instantiate: out of memory` failure.
+
+Production now sets `--lane-vram-reserve-mibs 1200,1200,1200`. A fresh remeasurement left **593 / 592 / 593 MiB** free on GPU0/GPU1/GPU2; three simultaneous public requests all returned HTTP 200, with no new OOM, illegal-memory, or engine-stop event after the new startup. The 1200 MiB value is a **reference-host safety value**, not a universal GPU default. The failure was exposed by mixed-capability lane derivation; it was not caused by the vision encoder consuming VRAM on the text-only GPUs.
 
 A useful host-RAM rule is:
 

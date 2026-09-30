@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 # Qwen3.8-Flash-Next / Strata / 3x RTX 5070 Ti
 #
-# Current promoted implementation pin (Strata 0.1.27):
+# Current operational implementation pin (Strata 0.1.27):
+#   rhgo1749/Strata@614b2ae904bbe949144c694388b985fc6a0d20d8
+# Frozen paper-v1 implementation pin:
 #   rhgo1749/Strata@6cf101d5b98523cbaefc34a199faa5657c5c2719
 # Upstream 0.1.27:
 #   Niko1221/Strata@a79080535d1b2a71a3419a0d97d8e7dca194b0f1
@@ -27,4 +29,5 @@ exec python serve/multigpu_server.py \
   --lane-cpu-cores 5,6,5 \
   --lane-pcie-fracs 0.55,0.25,0.55 \
   --lane-kv-residents 32768,32768,32768 \
+  --lane-vram-reserve-mibs 1200,1200,1200 \
   --port "$PUBLIC_PORT"

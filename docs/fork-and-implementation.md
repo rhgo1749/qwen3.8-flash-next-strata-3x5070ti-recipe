@@ -52,13 +52,13 @@ The frozen `paper-v1` snapshot must not move or be rewritten.
 The moving Strata `main` currently follows post-paper serving work. At the time of this document update:
 
 ```text
-Strata operational main  ae74f431259e03749f598b137dea92e155d867ae
+Strata operational main  614b2ae904bbe949144c694388b985fc6a0d20d8
 engine baseline           Strata 0.1.27
 paper-v1 Strata pin       6cf101d5b98523cbaefc34a199faa5657c5c2719
 paper-v1 recipe snapshot  f54597a071e56bb0412685c46c4d604d50e26e45
 ```
 
-`ae74f43` includes capability-aware vision routing and session-aware scheduler hardening, including lane reservation for remembered continuations and compatible FIFO ordering for queued new sessions. These changes are **post-paper operational work** and do not retroactively change paper-v1 measurements.
+`614b2ae` includes capability-aware vision routing, session-aware scheduler hardening, per-lane VRAM reserve controls, and child-engine-aware lane health. A live Python lane wrapper is no longer sufficient for scheduling: the supervisor verifies that the lane still exposes its model through `/v1/models`, so an OOM-killed child engine is excluded from routing. These changes are **post-paper operational work** and do not retroactively change paper-v1 measurements.
 
 ## Production architecture principle
 

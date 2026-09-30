@@ -7,7 +7,7 @@
 ## 현재 상태
 
 - 구현 포크: [`rhgo1749/Strata`](https://github.com/rhgo1749/Strata)
-- **현재 운용 Strata pin:** [`ae74f43`](https://github.com/rhgo1749/Strata/commit/ae74f431259e03749f598b137dea92e155d867ae)
+- **현재 운용 Strata pin:** [`614b2ae`](https://github.com/rhgo1749/Strata/commit/614b2ae904bbe949144c694388b985fc6a0d20d8)
 - 엔진 기준: Strata **0.1.27** (upstream `a790805`)
 - 기준 서버 현재 production quant: **Qwen3.8-Flash-Next GSQ-RCO IQ3_S**
 - 동결된 paper-v1 recipe snapshot: [`f54597a`](https://github.com/rhgo1749/qwen3.8-flash-next-strata-gpu-per-lane-recipe/commit/f54597a071e56bb0412685c46c4d604d50e26e45), branch `paper-v1`
@@ -64,12 +64,19 @@ GPU lanes           RTX 5070 Ti 16 GB ×3
 PCIe                x8 / x4 / x8
 contexts            262144 / 262144 / 262144
 resident KV         32768 / 32768 / 32768
+VRAM reserve MiB    1200 / 1200 / 1200
 physical CPU cores  5 / 6 / 5
 production vision   선택된 lane 1개
 current quant       IQ3_S
 ```
 
 이 값들은 **다른 PC의 기본값이 아니라 기준 시스템의 실측값**이다.
+
+### mixed vision/text lane의 VRAM reserve 주의
+
+vision 설정이 들어 있는 base config에서 text-only lane을 파생할 때 `--vision`과 encoder 설정은 제거해도 되지만, VRAM 안전 여유까지 함께 사라지게 두면 안 된다. 기준 RTX 5070 Ti 16GB / IQ3_S / 262K context / resident-KV 32768 환경에서 non-vision lane이 700 MiB reserve로 돌아가자 최종 free VRAM이 약 **93 MiB**만 남았고 실제 `verify: instantiate: out of memory`가 발생했다.
+
+현재 production은 `--lane-vram-reserve-mibs 1200,1200,1200`을 명시한다. 재측정에서 GPU0/GPU1/GPU2의 최종 free VRAM은 각각 **593 / 592 / 593 MiB**였고, 새 startup 이후 세 lane 동시 public 요청이 모두 HTTP 200으로 끝났으며 OOM/illegal-memory/engine-stop은 0건이었다. 이 1200 MiB 값도 **기준 호스트의 안전값**이지 모든 GPU의 보편 기본값은 아니다. 이 문제는 vision encoder가 text-only GPU의 VRAM을 사용해서 생긴 것이 아니라, mixed-capability lane을 만들면서 base config의 reserve가 text-only lane에서 빠진 데서 드러났다.
 
 host RAM은 대략 다음처럼 잡는다.
 
