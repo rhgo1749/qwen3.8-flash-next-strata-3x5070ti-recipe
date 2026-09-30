@@ -1,0 +1,198 @@
+\documentclass[10pt]{article}
+
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{microtype}
+\usepackage{xcolor}
+
+\title{Memory-Efficient Independent Multi-GPU Serving for Partially Offloaded MoE Models\\\large Shared-Host Expert Arenas on Commodity PCIe GPUs}
+\author{Anonymous working draft\\Independent Researcher}
+\date{Draft -- September 2026}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+Large mixture-of-experts (MoE) language models can exceed the VRAM capacity of commodity GPUs even when only a small subset of experts is active per token. Partially offloaded inference addresses this by keeping the expert population in system memory while caching a working set on each GPU. Naively replicating an inference engine across GPUs, however, also replicates the large host-resident expert arena. We evaluate an alternative serving architecture in which each GPU runs an independent autoregressive request lane while all lane processes share one physical host expert arena. CUDA state, GPU expert caches, KV state, speculative-decoding state, sessions, and failures remain lane-local, and normal decode requires no token-by-token cross-GPU synchronization.
+
+On Strata 0.1.27 with Qwen3.8-Flash-Next IQ3\_S and three RTX 5070 Ti 16 GB GPUs connected through PCIe Gen5 x8/x4/x8, aggregate generation throughput scales from 71.45 tok/s on one GPU to 137.57 tok/s on two and 191.75 tok/s on three, corresponding to 1.926$\times$ and 2.684$\times$ speedup and 96.3\% and 89.5\% parallel efficiency. Sharing the expert arena reduces two-engine proportional set size from 95.298 GiB to 52.083 GiB, saving 43.215 GiB (45.35\%). In a heterogeneous experiment, an RTX 5060 Ti concurrently serves at 59.14 tok/s while the active RTX 5070 Ti changes from 73.01 to 72.36 tok/s, a difference smaller than run-to-run variance. Workload measurements further show that matched-length prompt processing is comparatively stable across fiction, coding, and reasoning while decode throughput varies substantially with workload and speculative acceptance.
+\end{abstract}
+
+\section{Introduction}
+Sparse MoE inference creates a memory hierarchy in which the complete expert population can reside in host memory while only a working set is resident on the GPU. This makes large models practical on commodity accelerators, but creates a second problem when several independent serving replicas are launched: the dominant host allocation may be replicated once per process.
+
+For a host expert arena of size $M_E$ and $N$ replicas, naive private allocation requires approximately
+\begin{equation}
+M_{\mathrm{host,private}} \approx N M_E + \sum_{i=1}^{N} M_{\mathrm{lane},i}.
+\end{equation}
+If the expert arena is immutable after initialization and physically shared instead, the requirement becomes
+\begin{equation}
+M_{\mathrm{host,shared}} \approx M_E + \sum_{i=1}^{N} M_{\mathrm{lane},i}.
+\end{equation}
+
+We study this ownership split on commodity PCIe GPUs: one complete generation request is assigned to one GPU lane; multiple lanes serve concurrently; the large host expert arena is shared; and mutable execution state remains lane-local. The design targets aggregate concurrent throughput rather than single-request acceleration.
+
+\paragraph{Contributions.}
+This work provides: (1) an implementation of shared-host expert backing for independent Strata engines; (2) controlled 1$\rightarrow$2$\rightarrow$3 GPU scaling measurements on commodity hardware; (3) direct PSS evidence for physical host-memory sharing and a mixed-GPU isolation experiment; and (4) workload sensitivity measurements spanning fiction, coding, reasoning, and long-context review.
+
+We do not claim to invent data parallelism, shared memory mapping, distributed weight sharing, or independent replicas as general concepts. The contribution is the measured systems operating point: partially host-offloaded autoregressive MoE inference on heterogeneous consumer GPUs without NVLink or mandatory per-token GPU synchronization.
+
+\section{Design}
+\subsection{Execution model}
+Each lane is an ordinary single-GPU Strata engine process. A request dispatcher leases one whole request/session to one lane. There is no distributed autoregressive loop in the normal serving path.
+
+\subsection{State ownership}
+The host expert arena is shared. CUDA contexts, streams, GPU hot-expert caches, adaptive-residency state, resident and host KV, speculative/MTP state, request/session state, and failure state remain private to each lane.
+
+\subsection{Heterogeneous lanes}
+If lane $i$ sustains rate $r_i$, aggregate serving throughput ideally approaches
+\begin{equation}
+R_{\mathrm{aggregate}} \approx \sum_i r_i,
+\end{equation}
+subject to contention for host memory bandwidth, CPU resources, and the PCIe hierarchy. A slower card therefore contributes less capacity but is not algorithmically required to pace faster lanes token by token.
+
+\begin{figure}[t]
+\centering
+\fbox{\parbox{0.90\linewidth}{\centering
+TODO: architecture figure.\\[2mm]
+Clients $\rightarrow$ request router $\rightarrow$ independent GPU lanes\\
+All lanes map one shared host expert arena; mutable state remains private.}}
+\caption{Independent request lanes sharing one host-resident expert arena.}
+\label{fig:architecture}
+\end{figure}
+
+\section{Implementation}
+The evaluated implementation is based on Strata 0.1.27. The paper-validation fork commit is \texttt{6cf101d5b98523cbaefc34a199faa5657c5c2719}; upstream is \texttt{a79080535d1b2a71a3419a0d97d8e7dca194b0f1}. The validated binary SHA-256 is \texttt{b40c2cee92b4681d861548c7140219f4cc62ca47d28a6835020055e78266dee0}.
+
+The compatibility layer intercepts only the exact shared-arena allocation when the opt-in environment contract is present. The retained upstream pinned implementation is byte-identical to the upstream 0.1.27 source. Generated lane configs also remove inherited \texttt{gpu} and \texttt{layer\_split} settings so an independent lane cannot accidentally expand into layer-split execution.
+
+\section{Experimental Setup}
+\begin{table}[t]
+\centering
+\caption{Reference host.}
+\label{tab:host}
+\begin{tabular}{ll}
+\toprule
+CPU & Ryzen 9 9950X3D, 16C/32T \\
+RAM & 128 GB DDR5 \\
+GPU0 & RTX 5070 Ti 16 GB, PCIe x8 \\
+GPU1 & RTX 5070 Ti 16 GB, PCIe x4 \\
+GPU2 & RTX 5070 Ti 16 GB, PCIe x8 \\
+GPU3 & RTX 5060 Ti 16 GB, PCIe x4 \\
+Driver / CUDA & 615.71.09 / 13.4 \\
+Model & Qwen3.8-Flash-Next GSQ-RCO IQ3\_S \\
+Lane context & 262,144 tokens \\
+Resident KV & 32,768 tokens/lane \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The promoted candidate passed 77 serve tests with three skipped, 53 server/multi-GPU tests, the upstream file expert-source test, lane-config sanitation checks, and pinned-source parity validation.
+
+\section{Evaluation}
+\subsection{RQ1: 1$\rightarrow$2$\rightarrow$3 GPU scaling}
+A fixed warm workload generates 512 completion tokens per active lane. Aggregate TG is computed over one common wall interval rather than by summing lane-local reported rates. Five repetitions are retained per point.
+
+\begin{table}[t]
+\centering
+\caption{Controlled request-per-GPU scaling.}
+\label{tab:scaling}
+\begin{tabular}{rrrrr}
+\toprule
+Lanes & Mean TG & SD & Speedup & Efficiency \\
+\midrule
+1 & 71.45 & 1.12 & 1.000$\times$ & 100.0\% \\
+2 & 137.57 & 2.19 & 1.926$\times$ & 96.3\% \\
+3 & 191.75 & 7.24 & 2.684$\times$ & 89.5\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The retained three-lane range is 182.63--199.20 tok/s. No legitimate slow run was discarded.
+
+\subsection{RQ2: shared arena memory ablation}
+The private and shared arms use two engines, 32,768 context tokens per lane, and 8,192 resident-KV tokens per lane.
+
+\begin{table}[t]
+\centering
+\caption{Two-engine physical-memory ablation.}
+\label{tab:memory}
+\begin{tabular}{lr}
+\toprule
+Arena mode & Engine PSS \\
+\midrule
+Private per process & 95.298 GiB \\
+Shared file-backed & 52.083 GiB \\
+Reduction & 43.215 GiB (45.35\%) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The shared expert mapping appears as the same read/write shared mapping in both processes with 49,116,200 KiB \texttt{Shared\_Dirty} and zero \texttt{Private\_Dirty}, providing direct physical-sharing evidence rather than relying on RSS.
+
+\subsection{RQ3: heterogeneous isolation}
+Eight solo and eight concurrent measurements are interleaved. The fast lane is an RTX 5070 Ti x8 and the slower lane is an RTX 5060 Ti x4.
+
+\begin{table}[t]
+\centering
+\caption{Heterogeneous-lane decode throughput.}
+\label{tab:hetero}
+\begin{tabular}{lrr}
+\toprule
+Condition & Mean TG & SD \\
+\midrule
+5070 Ti x8 solo & 73.01 & 1.41 \\
+5070 Ti x8 + active 5060 Ti & 72.36 & 2.26 \\
+5060 Ti x4 concurrent & 59.14 & 1.24 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The nominal fast-lane difference is 0.89\%, smaller than observed run-to-run dispersion. We therefore report no measurable degradation within run-to-run variance rather than treating 0.89\% as a universal slowdown constant.
+
+\subsection{RQ4: workload sensitivity}
+\begin{table*}[t]
+\centering
+\caption{Warm steady-state workload sensitivity, five retained repetitions per class/bucket.}
+\label{tab:workloads}
+\begin{tabular}{lrrr}
+\toprule
+Workload & TG (tok/s) & Cache hit & Spec. acceptance \\
+\midrule
+Fiction short & 68.64 & 90.56\% & 50.77\% \\
+Fiction medium & 67.98 & 89.42\% & 56.28\% \\
+Coding short & 79.30 & 86.96\% & 73.70\% \\
+Coding medium & 79.42 & 86.22\% & 75.27\% \\
+Reasoning short & 76.98 & 87.78\% & 72.14\% \\
+Reasoning medium & 68.06 & 86.50\% & 63.66\% \\
+Long review ($\sim$110K) & 62.98 & 84.14\% & 68.73\% \\
+\bottomrule
+\end{tabular}
+\end{table*}
+
+At matched approximately 15K-token no-reuse prompts, fiction/coding/reasoning PP is approximately 2.54--2.55K tok/s. The 109,958-token review reaches 2554.09 tok/s PP with 43.32 s TTFT. Decode behavior differs much more strongly by workload: fiction has higher expert-cache hit rates than coding while coding is faster, so cache-hit rate alone cannot explain TG ordering. Speculative acceptance also differs materially. The dataset is observational and does not claim a causal decomposition.
+
+All retained workload windows contain zero adaptive-swap publications, so this matrix does not establish workload-specific adaptive-replacement benefit.
+
+\subsection{Mixed real-serving support run}
+Fiction, coding, and reasoning are rotated across the x8/x8/x4 5070 Ti lanes. Nine common-wall runs produce 187.15 $\pm$ 5.63 tok/s, range 176.85--196.18 tok/s. We treat this as supporting real-serving evidence rather than the controlled scaling headline.
+
+\section{Related Work}
+TODO: complete a citation-level prior-art matrix before public preprint. The final section should distinguish this operating point from (i) distributed GPU weight pools such as DWDP/SiDP, (ii) mmap/page-cache based layerwise offload systems, and (iii) consumer-GPU MoE offload runtimes. Avoid broad novelty claims such as ``first multi-GPU inference'' or ``first shared mmap weights.''
+
+\section{Limitations}
+The primary experiments use one physical workstation, three primary serving lanes, one model family, and a Strata-specific integration. The current shared backing is Linux-specific. The final 0.1.27 campaign did not retain a dedicated benchmark-start clock/undervolt snapshot, so the paper does not attribute the results to a specific tuning profile. A larger campaign would also be required for detailed tail-latency characterization.
+
+\section{Reproducibility}
+The companion repository retains exact implementation/upstream commits, binary hash, driver/CUDA versions, topology, repetition-level CSVs, methodology documents, anomaly notes, and historical generations without overwriting them. The canonical measurement sources are the repository's \texttt{RESULTS.md}, \texttt{docs/}, and \texttt{bench/} files rather than numbers copied into this manuscript.
+
+\section{Conclusion}
+Independent GPU request lanes backed by one shared host expert arena provide a practical serving point for partially offloaded MoE inference on commodity PCIe hardware. On the measured host, three lanes reach 2.684$\times$ one-lane aggregate throughput at 89.5\% parallel efficiency, while shared backing removes 43.215 GiB of two-engine PSS. A slower concurrent GPU does not measurably pace a faster lane beyond run-to-run variance, and real workload measurements show that decode throughput depends on more than expert-cache locality alone. The design complements rather than replaces coupled model-parallel execution: coupled execution scales one request, while shared-host independent lanes scale concurrent requests.
+
+\bibliographystyle{plain}
+\bibliography{references}
+
+\end{document}
