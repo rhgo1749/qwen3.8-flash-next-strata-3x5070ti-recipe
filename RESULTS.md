@@ -1,192 +1,170 @@
 # Results
 
-This repository owns the reference-host measurements for the GPU-per-lane Strata recipe. The implementation fork intentionally keeps only generic runtime and roadmap contracts.
+This repository owns the reference-host measurements for the GPU-per-lane Strata recipe. Generic runtime contracts stay in the implementation fork; machine-specific performance evidence lives here.
 
 ## Current promoted implementation
 
 ```text
 repository       rhgo1749/Strata
-promoted commit  3824f04003b79609a7cc6861ea5b4652a47d2ddb
-0.1.24 merge     82a51614517392f2c5b83af7c39ffbb7abbc783e
-upstream         3ce2523c2823687de5372be3af58534f56cbf286
-engine           Strata 0.1.24
+promoted commit  6cf101d5b98523cbaefc34a199faa5657c5c2719
+upstream 0.1.27  a79080535d1b2a71a3419a0d97d8e7dca194b0f1
+engine           Strata 0.1.27
+binary sha256    b40c2cee92b4681d861548c7140219f4cc62ca47d28a6835020055e78266dee0
 ```
 
-The 0.1.24 sync preserves the independent request-per-GPU lane architecture and shared host expert arena while absorbing upstream 0.1.23/0.1.24 serving and QSA long-prompt changes.
+The 0.1.27 sync preserves the production architecture: one independent engine/request lane per GPU, one shared host expert arena, lane-local CUDA/KV/cache/speculation state, and no mandatory token-step cross-GPU synchronization.
 
 ## Reference host
 
 - CPU: AMD Ryzen 9 9950X3D, 16C/32T
 - RAM: 128 GB DDR5
-- GPU: 3 × RTX 5070 Ti 16 GB
-- PCIe: Gen5 x8 / x4 / x8
-- performance reference model: Qwen3.8-Flash-Next Strata IQ3_XXS
-- current quality-oriented deployment: Qwen3.8-Flash-Next GSQ-RCO IQ3_S
+- GPU0: RTX 5070 Ti 16 GB, PCIe x8
+- GPU1: RTX 5070 Ti 16 GB, PCIe x4
+- GPU2: RTX 5070 Ti 16 GB, PCIe x8
+- GPU3: RTX 5060 Ti 16 GB, PCIe x4
+- driver: NVIDIA 615.71.09
+- CUDA toolchain: 13.4
+- paper-validation model: Qwen3.8-Flash-Next GSQ-RCO IQ3_S
 
-## Reference three-lane policy
+Reference three-lane order is GPU0/GPU2/GPU1 = x8/x8/x4.
 
-```text
-lane contexts       262144 / 262144 / 262144
-host-KV guard       786432 tokens
-resident KV         32768 / 32768 / 32768
-physical CPU cores  5 / 6 / 5
-pcie-frac           0.55 / 0.25 / 0.55
-```
+## 0.1.27 validation gate
 
-IQ3_S uses a **46.84 GiB** shared expert arena and about **4524 slots / 8.63 GiB** of hot-expert VRAM per lane in the reference configuration.
+- `pytest serve -q`: **77 passed, 3 skipped, 47 subtests passed**.
+- server + multi-GPU subset: **53 passed, 39 subtests passed**.
+- `file_expert_source_test`: **PASS**.
+- `pinned_upstream_impl.cu` is byte-identical to upstream 0.1.27 `pinned.cu` (Git blob `0e3e6b4a...`).
+- lane configs strip inherited `gpu` and `layer_split`.
+- shared-arena interception is exact-size/environment gated; the ordinary upstream `mmap` path remains unchanged when those variables are absent.
 
-## Strata 0.1.24 promotion matrix
+Machine-readable gate: [`bench/strata-0.1.27-promotion-20260930.csv`](bench/strata-0.1.27-promotion-20260930.csv).
 
-The candidate passed 52 server/multi-GPU tests, the production CUDA build, both quantization matrices, and a concurrent ~140K-token no-reuse IQ3_S long-prompt validation.
-
-### IQ3_XXS
-
-| Mode | Decode / wall aggregate | 15K no-reuse PP |
-| --- | ---: | ---: |
-| 3 independent lanes | **218.4–233.7 tok/s**, mean **225.5** | **2453.5 / 2046.0 / 2450.8 tok/s** x8/x4/x8 |
-| 3-GPU layer-split | **93.5–99.9 tok/s** single request | **1144.4 tok/s** |
-
-### IQ3_S
-
-| Mode | Decode / wall aggregate | 15K no-reuse PP |
-| --- | ---: | ---: |
-| 3 independent lanes | **176.8–199.4 tok/s**, mean **187.1** | **2381.8 / 1852.2 / 2371.8 tok/s** x8/x4/x8 |
-| 3-GPU layer-split | **74.2–81.7 tok/s** single request | **938.0 tok/s** |
-
-A fresh ~140K-token no-reuse request also completed concurrently on all three IQ3_S lanes without CUDA OOM or lane death.
-
-For the target concurrent-agent workload, independent request lanes remain the promoted architecture. Layer-split remains the same-engine challenger for single-request-oriented workloads.
-
-## Adaptive hot-expert replacement
-
-Strata 0.1.24 defaults to adaptive replacement (`adapt_every=4`, `adapt_swaps=96`). A controlled IQ3_S single-lane A/B used the same configuration except the static control added `--adapt-swaps 0`.
-
-| Mode | Retained 512-token mean TG | Expert-cache hit rate |
-| --- | ---: | ---: |
-| Adaptive | **69.43 tok/s** | **86.5–87%** |
-| Static (`--adapt-swaps 0`) | **54.14 tok/s** | about **61%** |
-
-Measured same-host improvement: **+28.3%**.
-
-This is a workload-specific controlled result, not a universal speedup claim.
-
-### Adaptive trace
-
-`STRATA_ADAPT_TRACE` records the first miss timestamp internally, replacement selection, residency publication after async H2D completion, and the first later GPU-resident hit.
-
-Retained trace counts:
-
-```text
-select               22,996
-resident publication 22,900
-first later GPU hit   6,937
-```
-
-| Interval | min | median | p95 | mean | max |
-| --- | ---: | ---: | ---: | ---: | ---: |
-| selected swap copy/event wall -> residency | 12.948 ms | **33.876 ms** | 49.751 ms | 33.044 ms | 83.533 ms |
-| first miss -> residency | 20.205 ms | **10.716 s** | 26.602 s | 11.842 s | 29.920 s |
-| residency -> first later GPU hit | **0.306 ms** | **154.249 ms** | 1.228 s | 325.423 ms | 6.742 s |
-| first miss -> first later GPU hit | 57.284 ms | **3.430 s** | 18.126 s | 5.761 s | 28.650 s |
-
-`first miss -> residency` includes adaptive-policy dwell time: the missing expert must accumulate enough decayed usage to justify replacing a current resident. It is **not raw PCIe latency**. The copy/event interval is likewise a runtime batch/event wall measurement, not the older standalone memcpy microbenchmark.
-
-Full record: [`docs/strata-0.1.24-promotion-20260930.md`](docs/strata-0.1.24-promotion-20260930.md).  
-Machine-readable summary: [`bench/adaptive-swap-20260930.csv`](bench/adaptive-swap-20260930.csv).
-
-## Controlled systems ablations — retained architecture evidence
-
-A separate 2026-09-29 benchmark set isolates scaling, RAM sharing, and heterogeneous-lane isolation.
+## Fresh 0.1.27 systems evidence
 
 ### 1 -> 2 -> 3 GPU scaling
 
-| Active lanes | Mean wall aggregate | Speedup | Parallel efficiency |
-| ---: | ---: | ---: | ---: |
-| 1 | **72.59 tok/s** | 1.000× | 100.0% |
-| 2 | **137.01 tok/s** | **1.887×** | **94.4%** |
-| 3 | **188.23 tok/s** | **2.593×** | **86.4%** |
+Fixed prompt, 512 completion tokens/lane, 262144 context/lane, 32768 resident KV/lane, five retained repetitions per point. Aggregate TG uses a **single common wall interval**.
+
+| Active lanes | Mean aggregate TG | SD | Speedup | Parallel efficiency |
+| ---: | ---: | ---: | ---: | ---: |
+| 1 | **71.45 tok/s** | 1.12 | 1.000× | 100.0% |
+| 2 | **137.57 tok/s** | 2.19 | **1.926×** | **96.3%** |
+| 3 | **191.75 tok/s** | 7.24 | **2.684×** | **89.5%** |
+
+Ranges are 69.59–72.54, 133.83–139.08, and 182.63–199.20 tok/s. No retained slow run was discarded.
 
 ### Shared arena RAM ablation
 
 | Arena mode | Two-engine PSS |
 | --- | ---: |
-| Private arena per process | **95.33 GiB** |
-| Shared arena | **52.03 GiB** |
-| Reduction | **43.30 GiB / 45.4%** |
+| Private arena per process | **95.298 GiB** |
+| Shared arena | **52.083 GiB** |
+| Reduction | **43.215 GiB / 45.35%** |
+
+The shared arena appears as the same `rw-s` `/dev/shm` mapping in both engines, with the 49,116,200 KiB mapping split by PSS and recorded as shared dirty rather than private dirty. This is physical-memory sharing evidence, not RSS inference.
 
 ### Heterogeneous isolation
 
-| Measurement | Mean TG |
-| --- | ---: |
-| RTX 5070 Ti x8 alone | **70.336 tok/s** |
-| RTX 5070 Ti x8 while RTX 5060 Ti x4 is active | **70.321 tok/s** |
-| Concurrent RTX 5060 Ti x4 lane | **57.246 tok/s** |
+Interleaved RTX 5070 Ti x8 solo vs RTX 5070 Ti x8 + RTX 5060 Ti x4 concurrent trials, 8 retained runs per condition:
 
-The measured RTX 5070 Ti decrease was **0.0215%**, far below ordinary run-to-run variance on this host. The slower card did not measurably become the faster card's token-step pace setter.
+| Measurement | Mean TG | SD |
+| --- | ---: | ---: |
+| RTX 5070 Ti x8 solo | **73.01** | 1.41 |
+| RTX 5070 Ti x8 concurrent | **72.36** | 2.26 |
+| RTX 5060 Ti x4 concurrent | **59.14** | 1.24 |
 
-### Historical free-slot expert admission
+Nominal fast-lane difference: **0.89%**. Because this is smaller than ordinary run-to-run dispersion, the paper-safe conclusion is **no measurable degradation within run-to-run variance**, not a universal 0.89% slowdown claim.
 
-The earlier standalone CUDA-runtime microbenchmark measured layer-weighted H2D means of:
+### Mixed real-serving support run
 
-- RTX 5070 Ti x8: **0.081 ms pinned / 0.117 ms ordinary host memory**;
-- RTX 5060 Ti x4: **0.155 / 0.190 ms**.
+Fiction/coding/reasoning were rotated across the three 5070 Ti lanes. Nine common-wall runs produced **187.15 ± 5.63 tok/s** aggregate, range **176.85–196.18 tok/s**. This is supporting evidence, not the controlled scaling headline.
 
-These remain valid **free-slot transfer** measurements. The old conclusion that a full cache cannot evict is now historical: 0.1.24 adds adaptive victim replacement.
+Full systems methodology: [`docs/systems-ablation-0.1.27-20260930.md`](docs/systems-ablation-0.1.27-20260930.md).  
+Raw retained observations: [`bench/systems-ablation-0.1.27-20260930.csv`](bench/systems-ablation-0.1.27-20260930.csv).
 
-Full methodology: [`docs/systems-ablation-20260929.md`](docs/systems-ablation-20260929.md).  
-Machine-readable observations: [`bench/systems-ablation-20260929.csv`](bench/systems-ablation-20260929.csv).
+## 0.1.27 workload sensitivity
 
-## Historical 0.1.22 promoted baseline
+Five repetitions were retained per workload/bucket/state. No-reuse PP and warm steady-state TG are kept as separate measurement classes.
 
-The prior promoted generation remains useful for version history:
+### No-reuse PP / TTFT
 
-- IQ3_XXS warm three-request wall aggregate: **226.5–227.9 tok/s**;
-- IQ3_XXS 15,064-token no-reuse single-lane PP: **2492.2 tok/s**;
-- IQ3_S warm aggregate: **183.9–209.7 tok/s**, mean **195.3 tok/s**;
-- IQ3_S 15K no-reuse PP: **2325.6 / 1806.5 / 2293.0 tok/s**;
-- IQ3_S 30K no-reuse PP: **2352.1 / 1812.9 / 2348.3 tok/s**;
-- IQ3_XXS layer-split: **80.6 tok/s** short decode and **1142.3 tok/s** 15K PP.
+| Workload | Prompt size | Mean PP | Mean TTFT |
+| --- | ---: | ---: | ---: |
+| Fiction short | 1,517 | **887.88 tok/s** | 1.73 s |
+| Coding short | 1,446 | **895.93 tok/s** | 1.64 s |
+| Reasoning short | 1,490 | **939.10 tok/s** | 1.61 s |
+| Fiction medium | 14,957 | **2553.38 tok/s** | 5.91 s |
+| Coding medium | 15,012 | **2542.27 tok/s** | 5.96 s |
+| Reasoning medium | 15,026 | **2553.71 tok/s** | 5.94 s |
+| Long review | 109,958 | **2554.09 tok/s** | 43.32 s |
 
-Do not treat mismatched prompt generations as strict software-version A/Bs.
+At matched ~15K lengths, content-class PP means are within about 0.5%; prompt-length regime is the larger effect in this matrix.
 
-## Long-context validation
+### Warm decode / locality / speculation
 
-- 0.1.22: three concurrent real software-review prompts of **141,578 / 144,875 / 144,777 input tokens** all completed without context overflow, OOM, API failure, or lane death.
-- 0.1.24: a fresh **~140K no-reuse request on all three IQ3_S lanes concurrently** completed without OOM or lane death.
+| Workload | Mean TG | Cache hit | Spec acceptance |
+| --- | ---: | ---: | ---: |
+| Fiction short | **68.64** | 90.56% | 50.77% |
+| Fiction medium | **67.98** | 89.42% | 56.28% |
+| Coding short | **79.30** | 86.96% | 73.70% |
+| Coding medium | **79.42** | 86.22% | 75.27% |
+| Reasoning short | **76.98** | 87.78% | 72.14% |
+| Reasoning medium | **68.06** | 86.50% | 63.66% |
+| Long review | **62.98** | 84.14% | 68.73% |
 
-These runs are capacity/stability/client-compatibility evidence, not throughput headlines.
+Fiction has higher cache-hit rates than coding while coding is faster, so expert-cache hit rate alone does not explain TG ordering. Speculative acceptance also differs materially by workload. The dataset is observational and does not claim causation.
 
-## Promotion decision
+All retained workload windows report **zero adaptive swap publications**, so workload-specific adaptive-replacement benefit is **not** established by this matrix.
 
-**Accepted:** Strata 0.1.24 / promoted fork commit `3824f04` is the current engine baseline for this recipe and for the reference IQ3_S server.
+Full analysis: [`docs/workload-sensitivity-0.1.27-20260930.md`](docs/workload-sensitivity-0.1.27-20260930.md).  
+Raw repetitions: [`bench/workload-sensitivity-0.1.27-20260930.csv`](bench/workload-sensitivity-0.1.27-20260930.csv).
 
-The architecture decision remains:
+## Historical evidence
 
-- baseline: independent request/session lanes sharing one host expert arena;
-- challenger: upstream layer-split in the same fork;
-- production hot-expert policy: adaptive replacement enabled by default;
-- promotion criterion: representative concurrent workload, required context capacity, correctness, stability and fallback behavior—not a single-request win alone.
+Historical files are intentionally retained rather than overwritten.
 
-## Reporting rule
+### 0.1.24
 
-For current 0.1.24 results:
+The previous promoted engine generation recorded IQ3_S three-lane clean-warm aggregate **176.8–199.4 tok/s, mean 187.1**, plus the controlled adaptive-on/off result **69.43 vs 54.14 tok/s (+28.3%)**. See [`docs/strata-0.1.24-promotion-20260930.md`](docs/strata-0.1.24-promotion-20260930.md).
 
-- **225.5 tok/s mean** is the current IQ3_XXS clean-warm three-request wall aggregate, range 218.4–233.7;
-- IQ3_XXS 15K PP is **2453.5 / 2046.0 / 2450.8 tok/s**;
-- IQ3_XXS layer-split is **93.5–99.9 tok/s** decode and **1144.4 tok/s** PP;
-- **187.1 tok/s mean** is the current IQ3_S clean-warm aggregate, range 176.8–199.4;
-- IQ3_S 15K PP is **2381.8 / 1852.2 / 2371.8 tok/s**;
-- IQ3_S layer-split is **74.2–81.7 tok/s** decode and **938.0 tok/s** PP;
-- adaptive IQ3_S A/B is **69.43 vs 54.14 tok/s (+28.3%)**, with hit rate roughly **86.5–87% vs 61%**;
-- systems-ablation values remain a separate controlled dataset and must not be substituted for the promoted clean-warm metrics;
-- adaptive trace times must not be described as pure PCIe transfer latency.
+### Earlier architecture ablation / 0.1.22 generation
 
-## More detail
+The historical controlled systems set reported:
 
-- [`docs/strata-0.1.24-promotion-20260930.md`](docs/strata-0.1.24-promotion-20260930.md) — current promotion and adaptive replacement
-- [`bench/adaptive-swap-20260930.csv`](bench/adaptive-swap-20260930.csv) — adaptive trace summary
-- [`docs/systems-ablation-20260929.md`](docs/systems-ablation-20260929.md) — scaling, RAM sharing, heterogeneous isolation, free-slot admission
-- [`bench/systems-ablation-20260929.csv`](bench/systems-ablation-20260929.csv) — controlled systems observations
-- [`docs/strata-0.1.22-promotion-20260929.md`](docs/strata-0.1.22-promotion-20260929.md) — historical 0.1.22 promotion
-- [`docs/iq3-s-3lane-benchmark-20260929.md`](docs/iq3-s-3lane-benchmark-20260929.md) — historical IQ3_S 0.1.22 benchmark detail
-- [`docs/reference-host-validation-20260929.md`](docs/reference-host-validation-20260929.md) — 262K ×3 validation
+- scaling: **72.59 -> 137.01 -> 188.23 tok/s**;
+- private/shared PSS: **95.33 -> 52.03 GiB**;
+- heterogeneous: **70.336 solo / 70.321 concurrent / 57.246 slow lane**.
+
+The fresh 0.1.27 results reproduce the same qualitative architecture conclusions. Do not treat unmatched prompt/engine generations as a strict software speed comparison.
+
+See [`docs/systems-ablation-20260929.md`](docs/systems-ablation-20260929.md) and [`bench/systems-ablation-20260929.csv`](bench/systems-ablation-20260929.csv).
+
+## Paper-safe claims
+
+For this reference host and the retained 0.1.27 IQ3_S configuration, the fresh data supports:
+
+- request-per-GPU lanes scale strongly through three GPUs;
+- shared host expert backing materially reduces physical host-memory use;
+- a slower independent lane does not measurably pace the faster lane within observed variance;
+- real workload class affects decode behavior, expert locality, and speculative acceptance;
+- ~110K no-reuse review input remains stable with ~2.55k tok/s PP and ~43.3 s TTFT on the measured x8 lane.
+
+## Claims not justified
+
+- universal scaling/slowdown constants across other hosts or GPUs;
+- causal attribution of workload TG differences to cache hit rate or speculation without controlled A/Bs;
+- workload-specific adaptive replacement benefit from this measurement generation;
+- PCIe-width PP effects from the single-lane workload matrix;
+- strict version speedups from unmatched historical runs.
+
+## Reproducibility caveat
+
+The recovered 0.1.27 benchmark bundle did not include a dedicated benchmark-start snapshot of GPU clock/undervolt state. The repository's reference tuning profile remains documented separately, but this run does not claim that tuning metadata as independently verified provenance.
+
+## Current artifacts
+
+- [`docs/systems-ablation-0.1.27-20260930.md`](docs/systems-ablation-0.1.27-20260930.md)
+- [`docs/workload-sensitivity-0.1.27-20260930.md`](docs/workload-sensitivity-0.1.27-20260930.md)
+- [`bench/systems-ablation-0.1.27-20260930.csv`](bench/systems-ablation-0.1.27-20260930.csv)
+- [`bench/workload-sensitivity-0.1.27-20260930.csv`](bench/workload-sensitivity-0.1.27-20260930.csv)
+- [`bench/strata-0.1.27-promotion-20260930.csv`](bench/strata-0.1.27-promotion-20260930.csv)
