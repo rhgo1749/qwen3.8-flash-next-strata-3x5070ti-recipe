@@ -1,0 +1,12 @@
+check,status,value,notes
+fork_head,PASS,6cf101d5b98523cbaefc34a199faa5657c5c2719,origin/main Sync upstream Strata 0.1.27
+upstream_0.1.27,PASS,a79080535d1b2a71a3419a0d97d8e7dca194b0f1,tag v0.1.27
+serve_tests,PASS,77 passed; 3 skipped; 47 subtests passed,pytest serve -q
+server_multigpu_tests,PASS,53 passed; 39 subtests passed,pytest serve/test_server.py serve/test_multigpu_server.py -q
+file_expert_source_test,PASS,PASS,build-production-027/file_expert_source_test
+pinned_upstream_byte_parity,PASS,git blob 0e3e6b4a057bb292c44c44e7eaf45ba668497ba5,fork pinned_upstream_impl.cu == v0.1.27 src/core/pinned.cu
+lane_config_stripping,PASS,gpu and layer_split removed,serve/multigpu_server.py + passing test_lane_config_cannot_reexpand_into_layer_split
+shared_arena_opt_in,PASS,env-gated exact-size mmap wrapper,ordinary path passes mmap unchanged when STRATA_SHARED_ARENA_FILE/BYTES absent
+binary_sha256,PASS,b40c2cee92b4681d861548c7140219f4cc62ca47d28a6835020055e78266dee0,build-production-027/strata
+driver_cuda,PASS,NVIDIA 615.71.09; CUDA 13.4,
+pcie_widths,PASS,GPU0 x8; GPU1 x4; GPU2 x8; GPU3 x4,sysfs current_link_width
