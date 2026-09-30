@@ -1,25 +1,111 @@
-% Bibliography for the working preprint.
-% Keep citation metadata conservative until the final related-work pass is complete.
+% Bibliography metadata mirror for preprint v1.
+% main.tex currently carries a manual references list so the PDF remains self-contained.
+
+@inproceedings{flexgen,
+  title={FlexGen: High-Throughput Generative Inference of Large Language Models with a Single GPU},
+  author={Sheng, Ying and Zheng, Lianmin and Yuan, Binhang and Li, Zhuohan and Ryabinin, Max and Chen, Beidi and Liang, Percy and Re, Christopher and Stoica, Ion and Zhang, Ce},
+  booktitle={ICML},
+  year={2023}
+}
+
+@inproceedings{deepspeedmoe,
+  title={DeepSpeed-MoE: Advancing Mixture-of-Experts Inference and Training to Power Next-Generation AI Scale},
+  author={Rajbhandari, Samyam and Li, Conglong and Yao, Zhewei and Zhang, Minjia and Yazdani Aminabadi, Reza and Awan, Ammar Ahmad and Rasley, Jeff and He, Yuxiong},
+  booktitle={ICML},
+  year={2022}
+}
+
+@article{dwdp,
+  title={DWDP: Distributed Weight Data Parallelism for High-Performance LLM Inference on NVL72},
+  author={Li, Wanqian and Peng, Jintao and Jing, Zongfei and Zhang, Tianyu and Long, Ze and Qiao, Xianjie and Chen, Xiaoming and Yang, Dongxu and Duan, Kefeng and Yang, June},
+  journal={arXiv preprint arXiv:2604.01621},
+  year={2026}
+}
+
+@article{sidp,
+  title={SiDP: Memory-Efficient Data Parallelism for Offline LLM Inference},
+  author={Zhao, Alan and He, Cyril Y.},
+  journal={arXiv preprint arXiv:2605.28095},
+  year={2026}
+}
+
+@misc{vllmomni,
+  title={Distributed Layerwise Offload: Scaling Toward 200B+ DiT Models Efficiently in vLLM-Omni},
+  author={{vLLM-Omni Diffusion Team}},
+  year={2026},
+  month={August},
+  howpublished={vLLM Blog}
+}
+
+@inproceedings{vllm,
+  title={Efficient Memory Management for Large Language Model Serving with PagedAttention},
+  author={Kwon, Woosuk and others},
+  booktitle={SOSP},
+  pages={611--626},
+  year={2023}
+}
+
+@article{hexgen,
+  title={HexGen: Generative Inference of Large Language Model over Heterogeneous Environment},
+  author={Jiang, Youhe and Yan, Ran and Yao, Xiaozhe and Zhou, Yang and Chen, Beidi and Yuan, Binhang},
+  journal={arXiv preprint arXiv:2311.11514},
+  year={2023}
+}
+
+@article{helix,
+  title={Helix: Distributed Serving of Large Language Models via Max-Flow on Heterogeneous GPUs},
+  author={Mei, Yixuan and Zhuang, Yonghao and Miao, Xupeng and Yang, Juncheng and Jia, Zhihao and Vinayak, Rashmi},
+  journal={arXiv preprint arXiv:2406.01566},
+  year={2024}
+}
+
+@article{melange,
+  title={Melange: Cost Efficient Large Language Model Serving by Exploiting GPU Heterogeneity},
+  author={Griggs, Tyler and Liu, Xiaoxuan and Yu, Jiaxiang and Kim, Doyoung and Chiang, Wei-Lin and Cheung, Alvin and Stoica, Ion},
+  journal={arXiv preprint arXiv:2404.14527},
+  year={2024}
+}
+
+@article{fiddler,
+  title={Fiddler: CPU-GPU Orchestration for Fast Inference of Mixture-of-Experts Models},
+  author={Kamahori, Keisuke and Gu, Yile and Zhu, Kan and Kasikci, Baris},
+  journal={arXiv preprint arXiv:2402.07033},
+  year={2024}
+}
+
+@inproceedings{ktransformers,
+  title={KTransformers: Unleashing the Full Potential of CPU/GPU Hybrid Inference for MoE Models},
+  author={Chen, Hongtao and others},
+  booktitle={SOSP},
+  pages={1014--1029},
+  year={2025},
+  doi={10.1145/3731569.3764843}
+}
+
+@article{moelightning,
+  title={MoE-Lightning: High-Throughput MoE Inference on Memory-constrained GPUs},
+  author={Cao, Shiyi and Liu, Shu and Griggs, Tyler and Schafhalter, Peter and Liu, Xiaoxuan and Sheng, Ying and Gonzalez, Joseph E. and Zaharia, Matei and Stoica, Ion},
+  journal={arXiv preprint arXiv:2411.11217},
+  year={2024}
+}
+
+@misc{freetoken,
+  title={FreeToken: MoE Offloading Inference Runtime},
+  author={{FlashML-org}},
+  year={2026},
+  howpublished={GitHub repository}
+}
 
 @misc{strata,
-  title        = {Strata},
-  author       = {{Niko1221}},
-  year         = {2026},
-  howpublished = {GitHub repository},
-  note         = {Inference runtime; exact upstream commit is pinned in the manuscript and companion repository}
+  title={Strata},
+  author={{Niko1221}},
+  year={2026},
+  howpublished={GitHub repository}
 }
 
-@misc{recipe,
-  title        = {Qwen3.8-Flash-Next / Strata GPU-per-Lane Parallel Serving Recipe},
-  author       = {{rhgo1749}},
-  year         = {2026},
-  howpublished = {GitHub repository},
-  note         = {Companion artifact containing methodology and repetition-level benchmark data}
+@misc{artifact,
+  title={Qwen3.8-Flash-Next / Strata GPU-per-Lane Parallel Serving Recipe},
+  author={Daehun},
+  year={2026},
+  howpublished={GitHub reproducibility artifact}
 }
-
-% TODO before public preprint:
-% - verify complete BibTeX metadata for DWDP
-% - verify complete BibTeX metadata for SiDP
-% - verify citation form for vLLM-Omni Distributed Layerwise Offload
-% - add relevant FreeToken / llama.cpp / other consumer-GPU MoE offload work
-% - check for any new closely related work immediately before submission
