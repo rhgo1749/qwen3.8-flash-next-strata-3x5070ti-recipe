@@ -8,8 +8,8 @@
 
 ## 현재 상태
 
-- 구현 포크: [`rhgo1749/Strata`](https://github.com/rhgo1749/Strata)
-- **현재 운용 Strata pin:** [`614b2ae`](https://github.com/rhgo1749/Strata/commit/614b2ae904bbe949144c694388b985fc6a0d20d8)
+- 구현 포크: [`rhgo1749/Strata-Lanes`](https://github.com/rhgo1749/Strata-Lanes)
+- **현재 운용 Strata pin:** [`614b2ae`](https://github.com/rhgo1749/Strata-Lanes/commit/614b2ae904bbe949144c694388b985fc6a0d20d8)
 - 엔진 기준: Strata **0.1.27** (upstream `a790805`)
 - 기준 서버 현재 production quant: **Qwen3.8-Flash-Next GSQ-RCO IQ3_S**
 - 동결된 paper-v1 recipe snapshot: [`f54597a`](https://github.com/rhgo1749/qwen3.8-flash-next-strata-gpu-per-lane-recipe/commit/f54597a071e56bb0412685c46c4d604d50e26e45), branch `paper-v1`
@@ -109,7 +109,7 @@ host RAM은 대략 다음처럼 잡는다.
 ## 관련 프로젝트
 
 - Upstream Strata: [`Niko1221/Strata`](https://github.com/Niko1221/Strata)
-- Multi-lane 구현 포크: [`rhgo1749/Strata`](https://github.com/rhgo1749/Strata)
+- Multi-lane 구현 포크: [`rhgo1749/Strata-Lanes`](https://github.com/rhgo1749/Strata-Lanes)
 - ExLlamaV3 companion recipe: [`rhgo1749/qwen3.8-flash-next-exllamav3-3x5070ti-recipe`](https://github.com/rhgo1749/qwen3.8-flash-next-exllamav3-3x5070ti-recipe)
 
 ## 라이선스

@@ -2,7 +2,7 @@
 # Qwen3.8-Flash-Next / Strata / 3x RTX 5070 Ti
 #
 # Current operational implementation pin (Strata 0.1.27):
-#   rhgo1749/Strata@614b2ae904bbe949144c694388b985fc6a0d20d8
+#   rhgo1749/Strata-Lanes@614b2ae904bbe949144c694388b985fc6a0d20d8
 # Frozen paper-v1 implementation pin:
 #   rhgo1749/Strata@6cf101d5b98523cbaefc34a199faa5657c5c2719
 # Upstream 0.1.27:

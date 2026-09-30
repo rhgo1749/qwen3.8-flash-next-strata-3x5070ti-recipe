@@ -8,8 +8,8 @@ A practical recipe for running **one independent Strata generation lane per GPU*
 
 ## Current state
 
-- Implementation fork: [`rhgo1749/Strata`](https://github.com/rhgo1749/Strata)
-- **Current operational Strata pin:** [`614b2ae`](https://github.com/rhgo1749/Strata/commit/614b2ae904bbe949144c694388b985fc6a0d20d8)
+- Implementation fork: [`rhgo1749/Strata-Lanes`](https://github.com/rhgo1749/Strata-Lanes)
+- **Current operational Strata pin:** [`614b2ae`](https://github.com/rhgo1749/Strata-Lanes/commit/614b2ae904bbe949144c694388b985fc6a0d20d8)
 - Engine baseline: Strata **0.1.27** (`a790805` upstream)
 - Current production quant on the reference host: **Qwen3.8-Flash-Next GSQ-RCO IQ3_S**
 - Frozen paper-v1 recipe snapshot: [`f54597a`](https://github.com/rhgo1749/qwen3.8-flash-next-strata-gpu-per-lane-recipe/commit/f54597a071e56bb0412685c46c4d604d50e26e45), branch `paper-v1`
@@ -109,7 +109,7 @@ See:
 ## Related projects
 
 - Upstream Strata: [`Niko1221/Strata`](https://github.com/Niko1221/Strata)
-- Multi-lane implementation fork: [`rhgo1749/Strata`](https://github.com/rhgo1749/Strata)
+- Multi-lane implementation fork: [`rhgo1749/Strata-Lanes`](https://github.com/rhgo1749/Strata-Lanes)
 - ExLlamaV3 companion recipe: [`rhgo1749/qwen3.8-flash-next-exllamav3-3x5070ti-recipe`](https://github.com/rhgo1749/qwen3.8-flash-next-exllamav3-3x5070ti-recipe)
 
 ## License

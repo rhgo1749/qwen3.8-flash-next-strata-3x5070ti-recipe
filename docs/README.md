@@ -2,7 +2,7 @@
 
 This directory keeps human-readable experiment and implementation records for the GPU-per-lane Strata recipe.
 
-Machine-readable benchmark repetitions live under [`../bench/`](../bench/). The current promoted summary is [`../RESULTS.md`](../RESULTS.md). Generic runtime contracts and source code belong in [`rhgo1749/Strata`](https://github.com/rhgo1749/Strata).
+Machine-readable benchmark repetitions live under [`../bench/`](../bench/). The current promoted summary is [`../RESULTS.md`](../RESULTS.md). Generic runtime contracts and source code belong in [`rhgo1749/Strata-Lanes`](https://github.com/rhgo1749/Strata-Lanes).
 
 ## Current paper-validation evidence — Strata 0.1.27
 

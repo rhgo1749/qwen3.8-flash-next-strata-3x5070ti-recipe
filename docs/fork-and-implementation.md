@@ -9,7 +9,7 @@ Niko1221/Strata
   upstream engine / normal single-GPU path / native layer-split
           |
           v
-rhgo1749/Strata
+rhgo1749/Strata-Lanes
   implementation fork
   - upstream engine syncs
   - shared expert arena
@@ -114,11 +114,11 @@ The trade-off is that one request normally uses only one GPU lane. Upstream laye
 
 ## Roadmap authority
 
-The **GitHub Issue tree in `rhgo1749/Strata` is the canonical moving roadmap**:
+The **GitHub Issue tree in `rhgo1749/Strata-Lanes` is the canonical moving roadmap**:
 
-- [`#1 Roadmap: multi-GPU runtime evolution and promotion gates`](https://github.com/rhgo1749/Strata/issues/1)
-- [`#2 Phase 1: benchmark and observability contract`](https://github.com/rhgo1749/Strata/issues/2)
-- [`#3 Phase 2: session-, queue-, health-, and cache-aware scheduling`](https://github.com/rhgo1749/Strata/issues/3)
+- [`#1 Roadmap: multi-GPU runtime evolution and promotion gates`](https://github.com/rhgo1749/Strata-Lanes/issues/1)
+- [`#2 Phase 1: benchmark and observability contract`](https://github.com/rhgo1749/Strata-Lanes/issues/2)
+- [`#3 Phase 2: session-, queue-, health-, and cache-aware scheduling`](https://github.com/rhgo1749/Strata-Lanes/issues/3)
 
 Other phase/challenger issues are linked from #1. Supporting prose docs may describe architecture or summarize decisions, but roadmap priority, research direction, and acceptance status should be updated in the Issue tree first.
 
