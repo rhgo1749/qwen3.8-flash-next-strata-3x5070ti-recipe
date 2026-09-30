@@ -1,214 +1,93 @@
 # Benchmark and reporting contract
 
-This repository keeps benchmark classes separate so convenient numbers do not become misleading headline claims.
-
 The **current promoted software baseline** is Strata **0.1.27** on fork commit `6cf101d5b98523cbaefc34a199faa5657c5c2719`, upstream `a79080535d1b2a71a3419a0d97d8e7dca194b0f1`.
 
 Current paper-facing evidence:
 
-- [`strata-0.1.27-promotion-20260930.csv`](strata-0.1.27-promotion-20260930.csv) — validation and provenance;
-- [`systems-ablation-0.1.27-20260930.csv`](systems-ablation-0.1.27-20260930.csv) — scaling, physical-memory sharing, heterogeneous isolation, mixed three-lane serving;
-- [`workload-sensitivity-0.1.27-20260930.csv`](workload-sensitivity-0.1.27-20260930.csv) — fiction/coding/reasoning/long-review repetitions.
+- `strata-0.1.27-promotion-20260930.csv` — validation/provenance;
+- `systems-ablation-0.1.27-20260930.csv` — scaling, RAM sharing, heterogeneous pair, mixed three-lane runs;
+- `workload-sensitivity-0.1.27-20260930.csv` — workload repetitions.
 
-Interpretation lives in [`../docs/systems-ablation-0.1.27-20260930.md`](../docs/systems-ablation-0.1.27-20260930.md) and [`../docs/workload-sensitivity-0.1.27-20260930.md`](../docs/workload-sensitivity-0.1.27-20260930.md).
+Historical 0.1.22/0.1.24 files remain historical and must not be treated as matched software A/Bs unless their measurement contracts also match.
 
-Historical 0.1.22/0.1.24 files remain in place and must stay labeled historical.
+## Metric contract
 
-## 1. Controlled multi-lane scaling
+### Common-wall aggregate TG
 
-Purpose: measure request-level parallel scaling while keeping the workload fixed.
-
-Hold constant:
-
-- Strata fork commit;
-- model / quant;
-- prompt content/hash;
-- output target;
-- sampling;
-- context and resident KV per lane;
-- shared-arena mode;
-- MTP/spec settings;
-- warm/cold/reuse state.
-
-Warm up first, then retain at least five repetitions. Do not discard legitimate slow runs.
-
-The primary aggregate metric is:
+For concurrent fixed-length requests:
 
 ```text
-aggregate TG = total concurrent completion tokens / common wall interval
+aggregate TG = total concurrent completion tokens / one common client wall interval
 ```
 
-**Do not substitute lane-sum TG for common-wall aggregate TG.**
+This is a makespan-based metric and is therefore gated by the last request to finish. It is the primary scaling metric. **Do not substitute lane-sum engine TG for common-wall aggregate TG.**
 
-Current 0.1.27 IQ3_S reference:
+Current controlled scaling, five completed repetitions per point:
 
 ```text
-1 lane  71.45 ± 1.12 tok/s
-2 lanes 137.57 ± 2.19 tok/s  -> 1.926x / 96.3% efficiency
-3 lanes 191.75 ± 7.24 tok/s  -> 2.684x / 89.5% efficiency
+1 lane   71.45 ± 1.12 tok/s
+2 lanes 137.57 ± 2.19 tok/s  -> 1.926x / 96.3%
+3 lanes 191.75 ± 7.24 tok/s  -> 2.684x / 89.5%
 ```
 
-## 2. Shared-arena physical-memory ablation
+The harness uses one fixed prompt, `temperature=0`, and seed `1234` for every scaling repetition. Because cache/speculative statistics still evolve across the warm sequence, those repetitions are **not strictly IID**. Mean/SD and the reported t-based intervals are descriptive summaries of that stateful sequence, not population-level IID inference.
 
-Purpose: prove physical host-memory sharing, not merely similar RSS.
+### Lane-local TG
 
-Use an otherwise matched private-arena and shared-arena pair. After both engines are fully ready, record `/proc/<pid>/smaps_rollup` and the arena mapping itself.
+`tg_tok_s` in the systems CSV is an engine-reported lane-local decode rate. It is useful for isolation/interference analysis but is not directly additive under a fixed-length makespan metric.
 
-Required fields include:
-
-- RSS;
-- PSS;
-- `Private_Dirty`;
-- `Shared_Dirty`;
-- `Pss_Anon` / `Pss_Shmem` where available;
-- mapping size/path/type;
-- MemAvailable and swap.
-
-Current 0.1.27 reference:
+For the retained RTX 5070 Ti x8 + RTX 5060 Ti x4 concurrent runs:
 
 ```text
-private two-engine PSS  95.298 GiB
-shared two-engine PSS   52.083 GiB
-saved                   43.215 GiB / 45.35%
+5070 Ti solo lane-local TG        73.01 ± 1.41 tok/s
+5070 Ti concurrent lane-local TG  72.36 ± 2.26 tok/s
+5060 Ti concurrent lane-local TG  59.14 ± 1.24 tok/s
+common-wall concurrent aggregate  116.96 ± 2.42 tok/s
 ```
 
-## 3. Heterogeneous isolation
+The unadjusted fast-lane difference is -0.65 tok/s (-0.9%) and is inconclusive by Welch analysis. Per-run TG is strongly associated with speculative acceptance; an exploratory OLS/ANCOVA sensitivity model (`TG ~ concurrent + spec_acceptance`) estimates a concurrent coefficient of about **-1.00 tok/s (-1.4%)**, 95% CI **[-1.71, -0.30]**, `p=0.009`. Because speculative acceptance is observed during execution and may itself respond to concurrency, this adjusted coefficient is **not a causal effect estimate**. Paper-safe interpretation: this one measured pair shows a small shared-resource cost rather than zero interference; do not generalize a numerical bound to other GPU mixes or lane counts.
 
-Purpose: determine whether a slower independent lane measurably drags down a faster lane.
+## Shared-arena memory accounting
 
-Use an interleaved protocol rather than running all solo trials before all concurrent trials. Report the fast-lane solo/concurrent mean and variance plus the slow-lane throughput.
-
-Current 0.1.27 reference:
+The two-engine structural snapshot records:
 
 ```text
-5070 Ti x8 solo        73.01 ± 1.41 tok/s
-5070 Ti x8 concurrent  72.36 ± 2.26 tok/s
-5060 Ti x4 concurrent  59.14 ± 1.24 tok/s
+private PSS  95.298 GiB
+shared PSS   52.083 GiB
+PSS saved    43.215 GiB / 45.35%
 ```
 
-The nominal 0.89% fast-lane difference is below normal run-to-run dispersion. Report this as **no measurable degradation within run-to-run variance**, not as a universal slowdown constant.
+The shared arena is the same 49,116,200 KiB `rw-s` `/dev/shm` mapping in both engines, with `Shared_Dirty` rather than `Private_Dirty`, which is direct physical-sharing evidence.
 
-## 4. Workload sensitivity
+### Important: `swap_gib` is host-global
 
-Purpose: observe how PP, TG, expert locality, and speculative acceptance vary by request class.
+The `swap_gib` column in `systems-ablation-0.1.27-20260930.csv` is **not per-process or per-engine swap**. It was derived from host-wide `/proc/meminfo` as:
 
-Keep this separate from the fixed scaling benchmark.
+```text
+(SwapTotal - SwapFree) / GiB
+```
 
-Use fixed/reproducible prompts for:
+The retained private/shared snapshots report 9.443 GiB and 5.704 GiB of host-global used swap respectively. Adding these host-global counters to process PSS happens to yield a difference close to the 46.84-GiB arena size, but that near-match must not be causally attributed to the arena because the swap counter covers the whole host.
 
-- fiction/prose;
-- coding;
-- reasoning/technical analysis;
-- long-context review.
+## Heterogeneous and mixed-content reporting
 
-Separate measurement classes:
+The hetero protocol is interleaved (`ABBAABBAABBAABBA`) and uses the same fixed prompt/seed/temperature policy. Report both lane-local rates and common-wall aggregate throughput.
 
-- no-reuse PP/TTFT;
-- warm steady-state decode;
-- prompt reuse.
+The mixed three-lane experiment rotates fiction/coding/reasoning across GPU0 x8 / GPU2 x8 / GPU1 x4. Nine common-wall runs average **187.15 ± 5.63 tok/s**. Averaged lane-local TG is approximately 66.27 / 67.03 / 66.99 tok/s for x8/x8/x4 respectively; this matrix does not isolate PCIe width. Historical 0.1.22 IQ3_S 15K no-reuse PP did show the x4 lane about 21.8% below the x8-lane mean, but that earlier software generation is qualitative context only.
 
-Never pool them into one distribution.
+## Workload sensitivity
 
-The current 0.1.27 workload CSV retains five repetitions per class/bucket/state. Workload-specific adaptive replacement is **not** established by this generation because measured adaptive swap publications were zero.
+Keep no-reuse PP/TTFT and warm steady-state decode as separate measurement classes. Cache-hit rate and speculative acceptance are observational correlates; do not infer causality without a controlled A/B. The retained 0.1.27 workload windows publish zero adaptive expert swaps, so they do not establish workload-specific adaptive-replacement benefit.
 
-## 5. Real long-context concurrency
+## Statistical/data hygiene
 
-Purpose: capacity, client compatibility, and production realism.
-
-Record per request:
-
-- input tokens;
-- output tokens;
-- client/API latency;
-- server-side PP when relevant;
-- server-side TG when relevant;
-- finish reason;
-- lane survival;
-- context-overflow / OOM / API errors.
-
-A long-context admission run can be retained purely as capacity/stability evidence without promoting its throughput numbers.
-
-## 6. Architecture challenger A/B
-
-Request-per-lane and upstream layer-split answer different questions. When comparing them, hold constant where practical:
-
-- commit;
-- model / quant;
-- max context;
-- prompt/output target;
-- warm/cold state;
-- sampling;
-- host/GPU tuning.
-
-A single-request win is not sufficient to promote a challenger for this recipe's concurrent-agent workload. Promotion follows aggregate throughput, context, correctness, stability, and fallback behavior.
-
-## 7. GPU tuning A/B
-
-Power/frequency tuning must not be silently mixed into architecture or engine comparisons.
-
-Hold constant:
-
-- Strata commit;
-- model / quant;
-- lane contexts;
-- resident KV;
-- CPU partition;
-- `pcie-frac`;
-- MTP/spec settings;
-- request set;
-- warm/cold state;
-- concurrency;
-- sampling/output target.
-
-Snapshot the actual clock/voltage/power-limit state before the benchmark. If that snapshot is missing, say so rather than reconstructing it from a separate reference profile.
-
-## Metric naming
-
-- **PP** = prompt processing throughput, tokens/s.
-- **TG** = token generation/decode throughput, tokens/s.
-- **aggregate TG** = overlapping multi-lane completion throughput derived from one common wall interval.
-- **lane-sum TG** = sum of lane-local engine-reported TG; not automatically a wall aggregate.
-- **capacity validation** = admission/stability evidence; not automatically a throughput benchmark.
-
-`PP` does not mean pipeline parallelism here.
-
-## Statistical hygiene
-
-For primary claims retain and report at least:
-
-- n;
-- mean;
-- median;
-- standard deviation;
-- min/max.
-
-Use p95 or confidence intervals where useful and sample size permits. Keep outliers unless there is a concrete external contamination/failure reason. Record the exclusion reason for any removed run.
+- retain completed runs unless an external contamination/failure criterion is documented;
+- the hetero raw JSONL contains one malformed trailing fragment after the valid completed records; it is not a completed observation;
+- report `n`, mean, SD, min/max, and metric definition;
+- state when repetitions are stateful/non-IID;
+- keep historical measurement-contract differences explicit;
+- snapshot GPU tuning state in future campaigns rather than reconstructing it later.
 
 ## Reproducibility metadata
 
-Every promoted result should identify as much of the following as is available:
-
-```text
-fork commit / upstream engine version
-binary hash
-model / quant
-GPU models and negotiated PCIe widths
-CPU / RAM
-driver / CUDA
-lane contexts
-resident KV
-CPU partition
-pcie-frac
-adaptive-cache settings
-MTP/spec settings
-sampling
-GPU tuning state
-warm/cold/reuse state
-prompt class/hash and token count
-output tokens
-repetition count
-common wall interval when claiming aggregate throughput
-speculative acceptance when relevant
-```
-
-The goal is not leaderboard precision. It is to make architecture, scheduler, engine-version, workload, and hardware-tuning changes comparable without mixing measurement generations.
+Promoted results should identify, where available: fork/upstream commit, binary hash, model/quant, GPU models and negotiated PCIe widths, CPU/RAM, driver/CUDA, lane context/KV, CPU partition, PCIe tuning, MTP/spec settings, sampling/seed, GPU tuning state, warm/cold/reuse state, prompt hash/tokens, output tokens, repetition count, common wall interval, and speculative acceptance when relevant.
