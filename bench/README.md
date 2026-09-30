@@ -2,125 +2,149 @@
 
 This repository keeps benchmark classes separate so convenient numbers do not become misleading headline claims.
 
-The **current promoted software baseline** is Strata **0.1.22** on fork commit `9dda206`. The current reference-host GPU tuning remains the 2300 MHz / 875 mV state documented in [`docs/undervolt-v2-20260929.md`](../docs/undervolt-v2-20260929.md).
+The **current promoted software baseline** is Strata **0.1.27** on fork commit `6cf101d5b98523cbaefc34a199faa5657c5c2719`, upstream `a79080535d1b2a71a3419a0d97d8e7dca194b0f1`.
 
-Current promotion details: [`docs/strata-0.1.22-promotion-20260929.md`](../docs/strata-0.1.22-promotion-20260929.md).
+Current paper-facing evidence:
 
-## 1. Real long-context concurrency
+- [`strata-0.1.27-promotion-20260930.csv`](strata-0.1.27-promotion-20260930.csv) — validation and provenance;
+- [`systems-ablation-0.1.27-20260930.csv`](systems-ablation-0.1.27-20260930.csv) — scaling, physical-memory sharing, heterogeneous isolation, mixed three-lane serving;
+- [`workload-sensitivity-0.1.27-20260930.csv`](workload-sensitivity-0.1.27-20260930.csv) — fiction/coding/reasoning/long-review repetitions.
+
+Interpretation lives in [`../docs/systems-ablation-0.1.27-20260930.md`](../docs/systems-ablation-0.1.27-20260930.md) and [`../docs/workload-sensitivity-0.1.27-20260930.md`](../docs/workload-sensitivity-0.1.27-20260930.md).
+
+Historical 0.1.22/0.1.24 files remain in place and must stay labeled historical.
+
+## 1. Controlled multi-lane scaling
+
+Purpose: measure request-level parallel scaling while keeping the workload fixed.
+
+Hold constant:
+
+- Strata fork commit;
+- model / quant;
+- prompt content/hash;
+- output target;
+- sampling;
+- context and resident KV per lane;
+- shared-arena mode;
+- MTP/spec settings;
+- warm/cold/reuse state.
+
+Warm up first, then retain at least five repetitions. Do not discard legitimate slow runs.
+
+The primary aggregate metric is:
+
+```text
+aggregate TG = total concurrent completion tokens / common wall interval
+```
+
+**Do not substitute lane-sum TG for common-wall aggregate TG.**
+
+Current 0.1.27 IQ3_S reference:
+
+```text
+1 lane  71.45 ± 1.12 tok/s
+2 lanes 137.57 ± 2.19 tok/s  -> 1.926x / 96.3% efficiency
+3 lanes 191.75 ± 7.24 tok/s  -> 2.684x / 89.5% efficiency
+```
+
+## 2. Shared-arena physical-memory ablation
+
+Purpose: prove physical host-memory sharing, not merely similar RSS.
+
+Use an otherwise matched private-arena and shared-arena pair. After both engines are fully ready, record `/proc/<pid>/smaps_rollup` and the arena mapping itself.
+
+Required fields include:
+
+- RSS;
+- PSS;
+- `Private_Dirty`;
+- `Shared_Dirty`;
+- `Pss_Anon` / `Pss_Shmem` where available;
+- mapping size/path/type;
+- MemAvailable and swap.
+
+Current 0.1.27 reference:
+
+```text
+private two-engine PSS  95.298 GiB
+shared two-engine PSS   52.083 GiB
+saved                   43.215 GiB / 45.35%
+```
+
+## 3. Heterogeneous isolation
+
+Purpose: determine whether a slower independent lane measurably drags down a faster lane.
+
+Use an interleaved protocol rather than running all solo trials before all concurrent trials. Report the fast-lane solo/concurrent mean and variance plus the slow-lane throughput.
+
+Current 0.1.27 reference:
+
+```text
+5070 Ti x8 solo        73.01 ± 1.41 tok/s
+5070 Ti x8 concurrent  72.36 ± 2.26 tok/s
+5060 Ti x4 concurrent  59.14 ± 1.24 tok/s
+```
+
+The nominal 0.89% fast-lane difference is below normal run-to-run dispersion. Report this as **no measurable degradation within run-to-run variance**, not as a universal slowdown constant.
+
+## 4. Workload sensitivity
+
+Purpose: observe how PP, TG, expert locality, and speculative acceptance vary by request class.
+
+Keep this separate from the fixed scaling benchmark.
+
+Use fixed/reproducible prompts for:
+
+- fiction/prose;
+- coding;
+- reasoning/technical analysis;
+- long-context review.
+
+Separate measurement classes:
+
+- no-reuse PP/TTFT;
+- warm steady-state decode;
+- prompt reuse.
+
+Never pool them into one distribution.
+
+The current 0.1.27 workload CSV retains five repetitions per class/bucket/state. Workload-specific adaptive replacement is **not** established by this generation because measured adaptive swap publications were zero.
+
+## 5. Real long-context concurrency
 
 Purpose: capacity, client compatibility, and production realism.
-
-Use multiple independent client sessions with representative repository/code/document context and start them close together.
 
 Record per request:
 
 - input tokens;
 - output tokens;
 - client/API latency;
-- server-side prompt-processing time when the run is intended as a throughput measurement;
-- server-side decode throughput when the run is intended as a throughput measurement;
+- server-side PP when relevant;
+- server-side TG when relevant;
 - finish reason;
 - lane survival;
 - context-overflow / OOM / API errors.
 
-Only sum per-lane PP or TG when the relevant intervals actually overlap. A long-context admission run can be retained purely as a capacity/stability result without promoting its throughput numbers.
+A long-context admission run can be retained purely as capacity/stability evidence without promoting its throughput numbers.
 
-## 2. Short warm multi-lane decode
+## 6. Architecture challenger A/B
 
-Purpose: stable same-host throughput comparison.
+Request-per-lane and upstream layer-split answer different questions. When comparing them, hold constant where practical:
 
-Use a fixed short prompt, warm the expert/cache/prefix state on every lane, then send one request to each lane concurrently.
-
-The preferred aggregate metric is:
-
-```text
-aggregate TG = total completion tokens / common wall interval
-```
-
-Current promoted 0.1.22 reference-host rounds:
-
-```text
-384 completion tokens / 1.685 s = 227.9 tok/s
-384 completion tokens / 1.695 s = 226.5 tok/s
-```
-
-So the current clean warm headline result is **226.5–227.9 tok/s wall aggregate**.
-
-Per-lane engine-reported TG remains useful diagnostic evidence, but a lane-sum is not automatically a wall aggregate.
-
-Historical second-undervolt lane-local round:
-
-```text
-78.8 / 78.4 / 80.1 tok/s
-lane-sum = 237.3 tok/s
-```
-
-The **237.3 tok/s value remains valid historical lane-sum evidence, not a clean wall aggregate**.
-
-## 3. Cold / no-reuse prompt processing
-
-Purpose: memory/context/prefill validation and prompt-processing sanity checks.
-
-Record:
-
-- exact prompt tokens;
-- prompt content/class when practical;
-- cold/reused status;
-- prompt-processing throughput;
-- following decode throughput;
-- peak VRAM;
-- host available RAM;
-- lane survival;
-- Strata commit/version.
-
-Current 0.1.22 promotion spot check:
-
-```text
-15,064 tokens, no reuse -> 2,492.2 tok/s
-```
-
-This is a same-host software-promotion spot check, **not a universal long-prompt PP claim**.
-
-Historical longer-prompt independent observations:
-
-```text
-GPU0: 45,519 tokens -> 1,529.7 tok/s
-GPU1: 45,812 tokens -> 1,421.6 tok/s
-GPU2: 64,972 tokens -> 1,536.9 tok/s
-mean: ~1,496 tok/s/lane
-```
-
-Do not directly compute a software speedup between mismatched prompt lengths/classes. Use same-shape promotion runs when claiming version deltas.
-
-## 4. Architecture A/B
-
-Purpose: compare request-per-lane serving against more coupled multi-GPU challengers.
-
-Hold constant where possible:
-
-- Strata fork commit;
+- commit;
 - model / quant;
 - max context;
-- prompt and output target;
+- prompt/output target;
 - warm/cold state;
 - sampling;
 - host/GPU tuning.
 
-Current 0.1.22 same-fork challenger smoke:
+A single-request win is not sufficient to promote a challenger for this recipe's concurrent-agent workload. Promotion follows aggregate throughput, context, correctness, stability, and fallback behavior.
 
-```text
-A: request-per-lane 15,064-token no-reuse PP = 2,492.2 tok/s
-B: 3-GPU layer-split 15,064-token no-reuse PP = 1,142.3 tok/s
-A/B PP ratio ~= 2.18x
+## 7. GPU tuning A/B
 
-B short single-request decode = 80.6 tok/s
-```
-
-A single-request win is not sufficient to promote a challenger for this recipe's concurrent-agent workload. Promotion follows the implementation roadmap's aggregate throughput, context, correctness, stability and fallback gates.
-
-## 5. GPU tuning A/B
-
-Purpose: isolate power/frequency tuning from software architecture.
+Power/frequency tuning must not be silently mixed into architecture or engine comparisons.
 
 Hold constant:
 
@@ -136,13 +160,7 @@ Hold constant:
 - concurrency;
 - sampling/output target.
 
-Before starting:
-
-1. pause or disable your own workload dispatcher;
-2. wait for in-flight client/tool loops to drain;
-3. verify zero active requests where exposed;
-4. verify target GPUs are idle;
-5. start the benchmark.
+Snapshot the actual clock/voltage/power-limit state before the benchmark. If that snapshot is missing, say so rather than reconstructing it from a separate reference profile.
 
 ## Metric naming
 
@@ -154,27 +172,43 @@ Before starting:
 
 `PP` does not mean pipeline parallelism here.
 
+## Statistical hygiene
+
+For primary claims retain and report at least:
+
+- n;
+- mean;
+- median;
+- standard deviation;
+- min/max.
+
+Use p95 or confidence intervals where useful and sample size permits. Keep outliers unless there is a concrete external contamination/failure reason. Record the exclusion reason for any removed run.
+
 ## Reproducibility metadata
 
-Every promoted result should include at least:
+Every promoted result should identify as much of the following as is available:
 
 ```text
-repo commit / engine version
+fork commit / upstream engine version
+binary hash
 model / quant
-GPU count and link widths
+GPU models and negotiated PCIe widths
 CPU / RAM
+driver / CUDA
 lane contexts
 resident KV
 CPU partition
 pcie-frac
+adaptive-cache settings
 MTP/spec settings
+sampling
 GPU tuning state
 warm/cold/reuse state
-prompt tokens and prompt class
+prompt class/hash and token count
 output tokens
-concurrency
-wall interval when claiming aggregate throughput
+repetition count
+common wall interval when claiming aggregate throughput
 speculative acceptance when relevant
 ```
 
-The goal is not leaderboard precision. It is to make architecture, scheduler, engine-version and hardware-tuning changes comparable without mixing measurement generations.
+The goal is not leaderboard precision. It is to make architecture, scheduler, engine-version, workload, and hardware-tuning changes comparable without mixing measurement generations.
