@@ -4,6 +4,8 @@
 
 이 저장소는 **GPU 한 장당 독립 Strata generation lane 하나**를 두고, lane 프로세스들이 큰 host-RAM expert arena는 **물리적으로 한 벌만 공유**하는 서빙 구조를 정리한다.
 
+**Upstream:** Strata는 [Niko1221](https://github.com/Niko1221)가 만들고 유지하는 inference engine이며, upstream은 [`Niko1221/Strata`](https://github.com/Niko1221/Strata)이다. 이 저장소는 그 엔진 위에 추가한 multi-lane serving과 shared-arena 확장을 정리한다.
+
 ## 현재 상태
 
 - 구현 포크: [`rhgo1749/Strata`](https://github.com/rhgo1749/Strata)

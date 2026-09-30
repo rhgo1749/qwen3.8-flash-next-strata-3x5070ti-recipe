@@ -4,6 +4,8 @@
 
 A practical recipe for running **one independent Strata generation lane per GPU** while physically sharing one large host-RAM expert arena across lane processes.
 
+**Upstream:** Strata is the inference engine created and maintained by [Niko1221](https://github.com/Niko1221) at [`Niko1221/Strata`](https://github.com/Niko1221/Strata). This repository documents the multi-lane serving and shared-arena extensions built on top of that engine.
+
 ## Current state
 
 - Implementation fork: [`rhgo1749/Strata`](https://github.com/rhgo1749/Strata)

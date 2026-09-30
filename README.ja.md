@@ -4,6 +4,8 @@
 
 このリポジトリは、**GPU 1枚につき独立した Strata generation lane を1つ**動かし、複数 lane プロセスが大きな host-RAM expert arena を**物理的に1組だけ共有**する実用的なサービング構成をまとめたものです。
 
+**Upstream:** Strata は [Niko1221](https://github.com/Niko1221) が作成・保守する inference engine で、upstream は [`Niko1221/Strata`](https://github.com/Niko1221/Strata) です。このリポジトリは、その上に追加した multi-lane serving と shared-arena 拡張を記録します。
+
 ## 現在の状態
 
 - 実装 fork: [`rhgo1749/Strata`](https://github.com/rhgo1749/Strata)

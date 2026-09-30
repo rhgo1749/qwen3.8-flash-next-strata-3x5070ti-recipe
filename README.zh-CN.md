@@ -4,6 +4,8 @@
 
 本仓库记录一种实用的多 GPU 服务结构：**每张 GPU 运行一个独立 Strata generation lane**，多个 lane 进程只在主机内存中**物理共享一份大型 expert arena**。
 
+**Upstream：** Strata 是由 [Niko1221](https://github.com/Niko1221) 创建并维护的推理引擎，上游仓库为 [`Niko1221/Strata`](https://github.com/Niko1221/Strata)。本仓库记录构建在该引擎之上的 multi-lane serving 与 shared-arena 扩展。
+
 ## 当前状态
 
 - 实现 fork：[`rhgo1749/Strata`](https://github.com/rhgo1749/Strata)
