@@ -1,134 +1,106 @@
-# Qwen3.8-Flash-Next / Strata GPU-per-Lane 并行服务配方
+# Qwen3.8-Flash-Next / Strata GPU-per-Lane 并行服务方案
 
 [English](README.md) | [한국어](README.ko.md) | **简体中文** | [日本語](README.ja.md)
 
-这个仓库记录一种 Strata 多 GPU 服务方式：**每张 GPU 运行一个独立 generation lane**，同时多个 lane 共享系统内存中的大型 expert arena。
+本仓库记录一种实用的多 GPU 服务结构：**每张 GPU 运行一个独立 Strata generation lane**，多个 lane 进程只在主机内存中**物理共享一份大型 expert arena**。
 
-实测参考配置为 **RTX 5070 Ti 16 GB ×3**。IQ3_XXS 保留为 performance-oriented 对照配置，而当前参考主机实际部署的是 **Qwen3.8-Flash-Next GSQ-RCO IQ3_S**。
+## 当前状态
 
-实现仓库：[`rhgo1749/Strata`](https://github.com/rhgo1749/Strata)  
-**当前 promoted implementation pin：** [`9dda206`](https://github.com/rhgo1749/Strata/commit/9dda206874387b20cac20837a1452f115a8f9f93)  
-**当前 promoted engine：** Strata **0.1.22**
+- 实现 fork：[`rhgo1749/Strata`](https://github.com/rhgo1749/Strata)
+- **当前运行用 Strata pin：** [`05ec7bf`](https://github.com/rhgo1749/Strata/commit/05ec7bfd329ee2205b05519b3907745b181a7793)
+- 引擎基线：Strata **0.1.27**（upstream `a790805`）
+- 参考主机当前 production quant：**Qwen3.8-Flash-Next GSQ-RCO IQ3_S**
+- 冻结的 paper-v1 recipe snapshot：[`f54597a`](https://github.com/rhgo1749/qwen3.8-flash-next-strata-gpu-per-lane-recipe/commit/f54597a071e56bb0412685c46c4d604d50e26e45)，branch `paper-v1`
+- 冻结的 paper-v1 Strata 实现 pin：[`6cf101d`](https://github.com/rhgo1749/Strata/commit/6cf101d5b98523cbaefc34a199faa5657c5c2719)
+
+`main` 是论文提交后的滚动运行/开发分支。即使 `main` 继续前进，**paper-v1 的证据和复现 pin 也不会被追溯修改。** 复现论文 v1 时应使用上面的冻结 snapshot 和实现 pin。
+
+详细保留结果见 [`RESULTS.md`](RESULTS.md)。论文之后的 x4 vision-lane 实验见 [`recipe/vision-x4-lane.md`](recipe/vision-x4-lane.md)。
 
 ## 核心结构
 
-- 一个请求由一个 GPU lane 处理。
-- 多个请求可由不同 GPU lane 并发执行。
-- 大型 host expert arena 只保留一份物理 RAM 副本。
-- CUDA state、hot-expert cache、KV 和 session state 保持 lane-local。
-- 正常 decode 路径不要求 GPU 之间逐 token 同步。
+**一个活动请求由一个 GPU lane 处理；多个请求可在不同 GPU 上并行运行。大型 expert 权重在系统 RAM 中物理共享，而不是每个进程各复制一份。**
 
-因此较慢的 GPU 只影响分配给它的请求，不会成为所有 GPU 的逐 token 同步瓶颈。代价是单个请求通常只使用一个 GPU lane。
+```mermaid
+flowchart TB
+    C[Clients / agents / OpenAI-compatible API] --> D[Session-aware dispatcher]
+    D -->|session/request A| G0[GPU lane A]
+    D -->|session/request B| G1[GPU lane B]
+    D -->|session/request C| G2[GPU lane C]
+    E[Shared host expert arena] --> G0
+    E --> G1
+    E --> G2
+```
+
+CUDA 状态、GPU hot-expert cache、GPU-resident KV、host-KV/session 状态、speculative/MTP 状态以及 generation loop 都保持 lane-local。正常 production 路径不需要强制 token-by-token 跨 GPU 同步，也不依赖 NVLink。
+
+## 论文之后的 session-aware 调度器
+
+最初的 multi-lane supervisor 使用 request-level free-lane/round-robin。对独立吞吐测试这没问题，但 KV/prompt cache 是 lane-local 的，因此长对话后续轮次如果被送到另一张 GPU，就可能重新支付完整或大规模 prompt prefill。
+
+当前 `main` 使用 **session affinity + live-state-aware placement**，优先级明确如下：
+
+1. 先只保留健康、且满足硬能力条件（例如 vision）的 lane。
+2. 如果请求属于已知 session，则使用该 session 记住的 lane。若该 lane busy，**等待该 lane，而不是 spill 到其他 GPU。**
+3. 完全新的 session 不会插入 busy lane。若所有候选 lane 都 busy，则等到某个 request/stream 完全结束并 release lane。
+4. 在 idle lane 中，优先选择没有 live conversation state 的 lane。
+5. 若所有 idle 候选都有 live state，则选择 **当前 live request state 最小的 lane**，尽量减少被覆盖的 prompt-cache locality 成本。
+6. 若成本相同，则优先 **最久未使用的 live state（LRU）**；最后用 rotating cursor 解决公平性平局。
+
+此策略**不硬编码 GPU 编号、GPU 型号或 PCIe 宽度**。`busy` 的生命周期是 request/stream 级，affinity 的生命周期是 session 级。同一个 engine 可以记住多个 session key，因此即使中间有别的请求使用该 engine，旧 session 仍可回到同一 engine，并重新利用 Strata 的 per-engine prompt-cache checkpoint。
+
+production smoke 已验证 A → B → C → D → A：A/B/C 分别占用空 lane，D 选择 live state 最小的 lane，最后 A 仍回到原来的 lane。由此覆盖了“短请求覆盖长对话 lane ownership，导致长对话下一轮逃到其他 GPU”的回归路径。
+
+该调度器属于**当前 lane-local KV 架构的 serving hardening**，并不宣称是最终最优方案。cache-aware global scheduling、migration/transfer cost、overload queueing 以及更完整的 cost model 仍属于 roadmap 工作。
 
 ## 参考主机
 
 ```text
 CPU                 Ryzen 9 9950X3D, 16C/32T
 RAM                 128 GB DDR5
-GPUs                RTX 5070 Ti 16 GB ×3
-PCIe                Gen5 x8 / x4 / x8
+GPU lanes           RTX 5070 Ti 16 GB ×3
+PCIe                x8 / x4 / x8
 contexts            262144 / 262144 / 262144
-host-KV guard       786432
 resident KV         32768 / 32768 / 32768
-CPU cores           5 / 6 / 5
-pcie-frac           0.55 / 0.25 / 0.55
-GPU V/F plateau     2300 MHz @ >=875 mV
-VRAM offset         +2500
+physical CPU cores  5 / 6 / 5
+production vision   1 个选定 lane
+current quant       IQ3_S
 ```
 
-这些数值属于参考主机，不是其他机器的默认值。
+这些是**参考主机的实测值，不是通用默认值**。
 
-基本 sizing 原则：
-
-> 每一张被选中的 GPU 都应先能独立运行一个可用的 single-GPU Strata lane；主机再提供足够的 RAM、CPU 和 PCIe 资源让所有 lane 同时工作。
-
-host RAM 可粗略理解为：
+主机内存可用下面的近似规则估算：
 
 ```text
-所需 host RAM ≈
-    1 份 shared expert arena
-  + 所有 lane 的 host-KV
-  + OS / server / filesystem-cache 余量
+required host RAM ≈ one shared expert arena + every lane's host-KV + OS/runtime headroom
 ```
 
-不要把 expert arena 按 GPU 数量相乘；本 fork 的关键之一就是让这部分在物理 RAM 中共享。
+## 论文证据边界
 
-## 当前 promoted performance — Strata 0.1.22
+已提交的 paper-v1 证据固定在 recipe snapshot `f54597a` 和 Strata `6cf101d`。其中包含 1→2→3 lane scaling、shared-vs-private arena PSS、heterogeneous isolation、workload sensitivity 与 mixed-serving 结果。论文之后进入 `main` 的 vision/scheduler 修改**不会追溯写回 paper-v1 结果**。
 
-当前 recipe baseline 为 fork commit `9dda206`、engine 0.1.22。原有 3-lane 启动方式保持兼容，不需要新的 migration flag。
+参见：
 
-### IQ3_XXS performance reference
+- [`RESULTS.md`](RESULTS.md) — 保留的 benchmark evidence
+- [`docs/fork-and-implementation.md`](docs/fork-and-implementation.md) — 实现/recipe 所有权与复现边界
+- [`docs/paper-v1-reproducibility.md`](docs/paper-v1-reproducibility.md) — 冻结的 v1 复现链接
+- [`recipe/vision-x4-lane.md`](recipe/vision-x4-lane.md) — post-v1 vision-lane 实验
 
-- clean warm 三请求 wall aggregate：**226.5–227.9 tok/s**
-- midpoint：约 **227.2 tok/s**
-- 15,064-token no-reuse single-lane PP spot check：**2,492.2 tok/s**
+## 在其他机器上应用
 
-旧 **237.3 tok/s** 仍是有效的历史 engine-reported lane-sum，但不是 clean wall-clock aggregate。
-
-### IQ3_S current deployment benchmark
-
-Strata 0.1.22 下，IQ3_S 使用 **46.84 GiB** shared expert arena，以及每 lane **4524 slots / 8.63 GiB** hot-expert cache。
-
-两个 backend session 中保留的四个 warm round 为：
-
-```text
-183.9 / 190.8 / 196.8 / 209.7 tok/s wall aggregate
-```
-
-因此 **当前 IQ3_S warm 范围为 183.9–209.7 tok/s，四轮平均 195.3 tok/s**。
-
-Concurrent no-reuse prompt processing：
-
-| Measurement | GPU0 x8 | GPU1 x4 | GPU2 x8 |
-| --- | ---: | ---: | ---: |
-| 15,048-token PP | **2,325.6** | **1,806.5** | **2,293.0 tok/s** |
-| 30,024-token PP | **2,352.1** | **1,812.9** | **2,348.3 tok/s** |
-
-30K run 中，两条 x8 lane 平均 **2,350.2 tok/s**，中间 x4 lane 约慢 **22.9%**。保留的长 prompt 请求均为 **0 reused**，且没有 CUDA OOM、API failure 或 lane death。
-
-旧 IQ3_S ~30K dataset 为 **1,553.7 / 1,323.9 / 1,545.1 tok/s**。当前 0.1.22 数值相对该历史 benchmark generation 约高 **+51.4% / +36.9% / +52.0%**，但 prompt content 与 runtime generation 并非完全相同，因此这不是 strict same-prompt A/B。
-
-详细记录：[`docs/iq3-s-3lane-benchmark-20260929.md`](docs/iq3-s-3lane-benchmark-20260929.md)
-
-## Layer-split challenger
-
-同一个 `9dda206` binary 也保留 upstream Strata 的 3-GPU layer-split 路径，并可在 262K 启动。
-
-- short single-request decode：**80.6 tok/s**
-- 15,064-token no-reuse PP：**1,142.3 tok/s**
-
-在 IQ3_XXS 的同一 15K PP probe 中，request-per-lane path 的 PP 约为 layer-split 的 **2.18×**；layer-split 仍保持 single-request decode 优势。
-
-因此架构结论不变：**面向并发 agent serving 的 production baseline 是 independent request lanes**；layer-split 保留为 single-request-oriented workload 的 challenger。
-
-## Full-window validation
-
-三个真实 software-review prompt 在所有 lane 均配置 262K context 的情况下并发完成：
-
-- 141,578 input / 992 output tokens
-- 144,875 input / 1,295 output tokens
-- 144,777 input / 871 output tokens
-
-三者均无 context overflow、CUDA OOM、API failure 或 lane death。该结果作为 **262K ×3 capacity / client compatibility** 证据保留，不作为 throughput headline。
-
-## 迁移到其他机器
-
-先在准备使用的每张 GPU 上分别确认 single-GPU Strata 正常工作，再根据各卡 VRAM、实际 PCIe link 和 CPU/RAM 资源决定 lane 数量。CPU core、context、resident KV 和 PCIe 参数应在目标主机上重新测量，而不是直接复制参考值。
-
-## 详细文档
-
-- [`RESULTS.md`](RESULTS.md) — current / historical reference-host results
-- [`docs/strata-0.1.22-promotion-20260929.md`](docs/strata-0.1.22-promotion-20260929.md) — current 0.1.22 promotion
-- [`docs/iq3-s-3lane-benchmark-20260929.md`](docs/iq3-s-3lane-benchmark-20260929.md) — current IQ3_S benchmark
-- [`docs/reference-host-validation-20260929.md`](docs/reference-host-validation-20260929.md) — 262K ×3 full-window validation
-- [`docs/fork-and-implementation.md`](docs/fork-and-implementation.md) — implementation / recipe ownership boundary
+1. 先让每张目标 GPU 都能独立运行正常的 single-GPU Strata。
+2. 检查 VRAM、实际协商的 PCIe link、RAM 余量和 CPU topology。
+3. 划分 physical CPU core，避免不同 lane 的 worker pool 重叠。
+4. 从保守的 context/resident-KV 值开始，先逐 lane 验证。
+5. 验证多 lane 并发、cold/no-reuse 长 prompt、streaming/cancellation、lane recovery，以及 **multi-turn session affinity**。
+6. 将参考主机的 tuning 值视为测量结果，而不是可直接复制的默认值。
 
 ## 相关项目
 
 - Upstream Strata: [`Niko1221/Strata`](https://github.com/Niko1221/Strata)
-- Multi-lane implementation fork: [`rhgo1749/Strata`](https://github.com/rhgo1749/Strata)
+- Multi-lane 实现 fork: [`rhgo1749/Strata`](https://github.com/rhgo1749/Strata)
 - ExLlamaV3 companion recipe: [`rhgo1749/qwen3.8-flash-next-exllamav3-3x5070ti-recipe`](https://github.com/rhgo1749/qwen3.8-flash-next-exllamav3-3x5070ti-recipe)
 
 ## License
 
-本仓库中的 recipe 文档和 helper material 使用 MIT License。Strata 和模型文件保留各自许可。
+本仓库的 recipe 文档和辅助材料采用 MIT License。Strata 与模型文件继续遵循各自原有许可证。

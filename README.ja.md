@@ -1,134 +1,106 @@
-# Qwen3.8-Flash-Next / Strata GPU-per-Lane 並列サービング・レシピ
+# Qwen3.8-Flash-Next / Strata GPU-per-Lane 並列サービングレシピ
 
 [English](README.md) | [한국어](README.ko.md) | [简体中文](README.zh-CN.md) | **日本語**
 
-このリポジトリは、**GPU 1枚につき独立した Strata generation lane を1つ**動かし、大きな host-RAM expert arena は lane 間で物理的に1コピーだけ共有するサービング方式をまとめたものです。
+このリポジトリは、**GPU 1枚につき独立した Strata generation lane を1つ**動かし、複数 lane プロセスが大きな host-RAM expert arena を**物理的に1組だけ共有**する実用的なサービング構成をまとめたものです。
 
-実測リファレンスは **RTX 5070 Ti 16 GB ×3** です。IQ3_XXS は performance-oriented な比較基準として維持し、現在のリファレンス・ホストの実運用モデルは **Qwen3.8-Flash-Next GSQ-RCO IQ3_S** です。
+## 現在の状態
 
-実装: [`rhgo1749/Strata`](https://github.com/rhgo1749/Strata)  
-**現在の promoted implementation pin:** [`9dda206`](https://github.com/rhgo1749/Strata/commit/9dda206874387b20cac20837a1452f115a8f9f93)  
-**現在の promoted engine:** Strata **0.1.22**
+- 実装 fork: [`rhgo1749/Strata`](https://github.com/rhgo1749/Strata)
+- **現在の運用 Strata pin:** [`05ec7bf`](https://github.com/rhgo1749/Strata/commit/05ec7bfd329ee2205b05519b3907745b181a7793)
+- エンジン基準: Strata **0.1.27**（upstream `a790805`）
+- 参照ホストの現行 production quant: **Qwen3.8-Flash-Next GSQ-RCO IQ3_S**
+- 凍結済み paper-v1 recipe snapshot: [`f54597a`](https://github.com/rhgo1749/qwen3.8-flash-next-strata-gpu-per-lane-recipe/commit/f54597a071e56bb0412685c46c4d604d50e26e45), branch `paper-v1`
+- 凍結済み paper-v1 Strata 実装 pin: [`6cf101d`](https://github.com/rhgo1749/Strata/commit/6cf101d5b98523cbaefc34a199faa5657c5c2719)
 
-## 基本アイデア
+`main` は論文提出後も更新される運用/開発ブランチです。`main` が進んでも、**paper-v1 の証拠と再現 pin は遡及的に変更しません。** 論文 v1 を再現する場合は、上記の凍結 snapshot と実装 pin を使用します。
 
-- 1つのリクエストは1つの GPU lane が処理する。
-- 複数リクエストは別々の GPU lane で同時に処理できる。
-- 大きな host expert arena は物理 RAM 上で1コピーだけ共有する。
-- CUDA state、hot-expert cache、KV、session state は lane-local のままにする。
-- 通常の decode path では GPU 間の token-by-token 同期を必須にしない。
+保持している詳細な測定結果は [`RESULTS.md`](RESULTS.md) にあります。論文後の x4 vision-lane 実験は [`recipe/vision-x4-lane.md`](recipe/vision-x4-lane.md) に分離しています。
 
-そのため、遅い GPU は割り当てられたリクエストだけを遅くし、他の lane の token rate を直接引き下げません。反対に、リクエストが1つしかない場合は他の GPU lane が idle になることがあります。
+## 基本アーキテクチャ
 
-## リファレンス・ホスト
+**アクティブな1リクエストは1つの GPU lane が処理し、複数リクエストは別々の GPU で同時実行します。大きな expert weight は各プロセスに複製せず、system RAM 上で物理共有します。**
+
+```mermaid
+flowchart TB
+    C[Clients / agents / OpenAI-compatible API] --> D[Session-aware dispatcher]
+    D -->|session/request A| G0[GPU lane A]
+    D -->|session/request B| G1[GPU lane B]
+    D -->|session/request C| G2[GPU lane C]
+    E[Shared host expert arena] --> G0
+    E --> G1
+    E --> G2
+```
+
+CUDA state、GPU hot-expert cache、GPU-resident KV、host-KV/session state、speculative/MTP state、generation loop は lane-local です。通常の production path には必須の token-by-token cross-GPU 同期がなく、NVLink も必須ではありません。
+
+## 論文後の session-aware scheduler
+
+初期 multi-lane supervisor は request-level の free-lane/round-robin でした。独立リクエストの throughput 試験には十分ですが、KV/prompt cache は lane-local なので、長い会話の次ターンが別 GPU に移ると full または大規模な prompt re-prefill が発生し得ます。
+
+現在の `main` は **session affinity + live-state-aware placement** を使い、優先順位を明示しています。
+
+1. まず、healthy で hard capability 条件（例: vision）を満たす lane だけを候補にします。
+2. 既知 session の場合は、その session が記憶している lane を使います。その lane が busy なら、**別 GPU へ spill せず、その lane の後ろで待ちます。**
+3. 完全に新しい session は busy lane に割り込みません。すべての候補が busy なら、request/stream が完全に終了して lane が release されるまで待ちます。
+4. idle 候補の中では live conversation state がない lane を最優先します。
+5. すべての idle 候補に live state がある場合は、**現在の live request state が最も小さい lane**を選び、上書きする prompt-cache locality のコストを抑えます。
+6. コストが同じなら **最も長く使われていない live state（LRU）** を優先し、最後の同率は rotating cursor で公平に処理します。
+
+この方針は **GPU 番号、GPU モデル、PCIe 幅をハードコードしません。** `busy` の寿命は request/stream 単位、affinity の寿命は session 単位です。1つの engine に複数 session key を記憶できるため、途中で別リクエストがその engine を使っても、古い session は同じ engine に戻り、Strata の per-engine prompt-cache checkpoint を再利用できます。
+
+production smoke では A → B → C → D → A を検証しました。A/B/C が空き lane を埋め、D は live state が最小の lane を選択し、最後の A は元の lane に戻りました。短い別リクエストが長い会話の lane ownership を消し、次ターンを別 GPU へ送ってしまう回帰経路は、テストと実サービングの両方でカバーしています。
+
+この scheduler は **現行の lane-local KV アーキテクチャを安全に運用するための serving hardening** であり、最終的な最適 scheduler と主張するものではありません。cache-aware global scheduling、migration/transfer cost、overload queueing、より明示的な cost model は roadmap 項目です。
+
+## 参照ホスト
 
 ```text
 CPU                 Ryzen 9 9950X3D, 16C/32T
 RAM                 128 GB DDR5
-GPUs                RTX 5070 Ti 16 GB ×3
-PCIe                Gen5 x8 / x4 / x8
+GPU lanes           RTX 5070 Ti 16 GB ×3
+PCIe                x8 / x4 / x8
 contexts            262144 / 262144 / 262144
-host-KV guard       786432
 resident KV         32768 / 32768 / 32768
-CPU cores           5 / 6 / 5
-pcie-frac           0.55 / 0.25 / 0.55
-GPU V/F plateau     2300 MHz @ >=875 mV
-VRAM offset         +2500
+physical CPU cores  5 / 6 / 5
+production vision   選択した1 lane
+current quant       IQ3_S
 ```
 
-これらはリファレンス・ホスト固有の実測値であり、別マシンの既定値ではありません。
+これらは**参照ホストでの実測値であり、汎用デフォルトではありません。**
 
-基本的な sizing ルールは次の通りです。
-
-> 使用する各 GPU がまず single-GPU Strata lane を単独で正常に動かせること。そのうえで、全 lane を同時に動かすための RAM / CPU / PCIe 余裕をホスト側に確保すること。
-
-host RAM は概ね次のように見積もります。
+host RAM は概ね次のように見積もれます。
 
 ```text
-必要 host RAM ≈
-    shared expert arena 1つ
-  + 全 lane の host-KV
-  + OS / server / filesystem-cache の余裕
+required host RAM ≈ one shared expert arena + every lane's host-KV + OS/runtime headroom
 ```
 
-expert arena を GPU 枚数分掛ける必要はありません。この fork の重要な点の1つが、その大きな arena を物理 RAM 上で共有することです。
+## 論文証拠の境界
 
-## 現在の promoted performance — Strata 0.1.22
+提出済み paper-v1 の証拠は recipe snapshot `f54597a` と Strata `6cf101d` に固定されています。1→2→3 lane scaling、shared-vs-private arena PSS、heterogeneous isolation、workload sensitivity、mixed-serving の結果を含みます。論文後に `main` へ入った vision/scheduler の変更は、**paper-v1 の結果へ遡及して組み込みません。**
 
-現在の recipe baseline は fork commit `9dda206`、engine 0.1.22 です。既存の3-lane起動契約はそのまま互換で、migration flag は不要でした。
+参照:
 
-### IQ3_XXS performance reference
+- [`RESULTS.md`](RESULTS.md) — 保持された benchmark evidence
+- [`docs/fork-and-implementation.md`](docs/fork-and-implementation.md) — 実装/recipe の所有範囲と再現境界
+- [`docs/paper-v1-reproducibility.md`](docs/paper-v1-reproducibility.md) — 凍結済み v1 再現リンク
+- [`recipe/vision-x4-lane.md`](recipe/vision-x4-lane.md) — post-v1 vision-lane 実験
 
-- clean warm 3-request wall aggregate: **226.5–227.9 tok/s**
-- midpoint: 約 **227.2 tok/s**
-- 15,064-token no-reuse single-lane PP spot check: **2,492.2 tok/s**
+## 別の PC へ適用する場合
 
-旧 **237.3 tok/s** は engine-reported lane-sum として有効な履歴値ですが、clean wall-clock aggregate ではありません。
-
-### IQ3_S current deployment benchmark
-
-Strata 0.1.22 の IQ3_S runtime は **46.84 GiB** の shared expert arena と、lane ごとに **4524 slots / 8.63 GiB** の hot-expert cache を使用します。
-
-2つの backend session で保持した4つの warm round は:
-
-```text
-183.9 / 190.8 / 196.8 / 209.7 tok/s wall aggregate
-```
-
-したがって **現在の IQ3_S warm range は 183.9–209.7 tok/s、4 round 平均は 195.3 tok/s** です。
-
-Concurrent no-reuse prompt processing:
-
-| Measurement | GPU0 x8 | GPU1 x4 | GPU2 x8 |
-| --- | ---: | ---: | ---: |
-| 15,048-token PP | **2,325.6** | **1,806.5** | **2,293.0 tok/s** |
-| 30,024-token PP | **2,352.1** | **1,812.9** | **2,348.3 tok/s** |
-
-30K run の x8 lane 平均は **2,350.2 tok/s**、中央の x4 lane は約 **22.9%** 遅くなりました。保持した long-prompt request はすべて **0 reused** で、CUDA OOM、API failure、lane death はありませんでした。
-
-旧 IQ3_S ~30K dataset は **1,553.7 / 1,323.9 / 1,545.1 tok/s** でした。今回の 0.1.22 はその履歴 benchmark generation より約 **+51.4% / +36.9% / +52.0%** 高い値ですが、prompt content と runtime generation が完全に同一の strict A/B ではありません。
-
-詳細: [`docs/iq3-s-3lane-benchmark-20260929.md`](docs/iq3-s-3lane-benchmark-20260929.md)
-
-## Layer-split challenger
-
-同じ `9dda206` binary で upstream Strata の 3-GPU layer-split も 262K で動作します。
-
-- short single-request decode: **80.6 tok/s**
-- 15,064-token no-reuse PP: **1,142.3 tok/s**
-
-IQ3_XXS の同じ 15K PP probe では request-per-lane path が約 **2.18×** の PP を示し、layer-split は single-request decode で優位でした。
-
-したがって architecture decision は変わりません。**concurrent-agent serving の production baseline は independent request lanes**、layer-split は single-request-oriented workload 向け challenger として残します。
-
-## Full-window validation
-
-3本の実ソフトウェアレビュー prompt を、全 lane 262K context で同時実行しました。
-
-- 141,578 input / 992 output tokens
-- 144,875 input / 1,295 output tokens
-- 144,777 input / 871 output tokens
-
-3本とも context overflow、CUDA OOM、API failure、lane death なしで完了しました。これは **262K ×3 capacity / client compatibility** の証拠であり、throughput headline とは分けて扱います。
-
-## 別の PC に適用する場合
-
-使用予定の各 GPU でまず single-GPU Strata を安定動作させ、その後 GPU ごとの VRAM、実際の PCIe link、CPU/RAM 資源に合わせて lane 数を決めます。CPU core、context、resident KV、PCIe 関連値はリファレンス値をコピーせず、対象ホスト上で再測定してください。
-
-## 詳細ドキュメント
-
-- [`RESULTS.md`](RESULTS.md) — current / historical reference-host results
-- [`docs/strata-0.1.22-promotion-20260929.md`](docs/strata-0.1.22-promotion-20260929.md) — current 0.1.22 promotion
-- [`docs/iq3-s-3lane-benchmark-20260929.md`](docs/iq3-s-3lane-benchmark-20260929.md) — current IQ3_S benchmark
-- [`docs/reference-host-validation-20260929.md`](docs/reference-host-validation-20260929.md) — 262K ×3 full-window validation
-- [`docs/fork-and-implementation.md`](docs/fork-and-implementation.md) — implementation / recipe ownership boundary
+1. まず各 GPU で single-GPU Strata を正常動作させます。
+2. VRAM、negotiated PCIe link、RAM headroom、CPU topology を確認します。
+3. lane worker pool が重ならないよう physical CPU core を分割します。
+4. 保守的な context/resident-KV から始め、各 lane を単独検証します。
+5. multi-lane concurrency、cold/no-reuse 長文、streaming/cancellation、lane recovery、**multi-turn session affinity** を検証します。
+6. 参照ホストの tuning 値は portable default ではなく測定値として扱います。
 
 ## 関連プロジェクト
 
 - Upstream Strata: [`Niko1221/Strata`](https://github.com/Niko1221/Strata)
-- Multi-lane implementation fork: [`rhgo1749/Strata`](https://github.com/rhgo1749/Strata)
+- Multi-lane 実装 fork: [`rhgo1749/Strata`](https://github.com/rhgo1749/Strata)
 - ExLlamaV3 companion recipe: [`rhgo1749/qwen3.8-flash-next-exllamav3-3x5070ti-recipe`](https://github.com/rhgo1749/qwen3.8-flash-next-exllamav3-3x5070ti-recipe)
 
 ## License
 
-このリポジトリの recipe 文書と helper material は MIT License です。Strata とモデルファイルにはそれぞれ元のライセンスが適用されます。
+このリポジトリの recipe 文書と helper material は MIT License です。Strata とモデルファイルはそれぞれ元のライセンスに従います。
