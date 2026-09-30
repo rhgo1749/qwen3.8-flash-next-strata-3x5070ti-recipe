@@ -1,0 +1,46 @@
+where $T_{\mathrm{coord}}$ captures communication and synchronization overhead. This is a motivation model rather than a measured baseline for our workstation: tensor, pipeline, layer, and expert parallelism differ substantially, and heterogeneity-aware partitioning can mitigate imbalance~\cite{hexgen,helix}.
+
+Independent request lanes change the ownership and objective. Let $r_i$ be the sustained request-generation rate of lane $i$. Aggregate serving capacity can be written conceptually as
+\begin{equation}
+R_{\mathrm{lanes}} \approx \sum_i r_i - \Delta_{\mathrm{shared}},
+\label{eq:aggregate}
+\end{equation}
+where $\Delta_{\mathrm{shared}}$ represents contention for host memory bandwidth, CPU resources, and PCIe/root-complex resources. A slower device contributes less capacity, but lane progress is not joined by a mandatory token-step barrier. This does not imply zero interference: the shared-resource term is precisely what our measurements probe.
+
+\begin{figure*}[t]
+\centering
+\begin{tikzpicture}[font=\small,>=Latex,node distance=5mm and 8mm,
+box/.style={draw,rounded corners,minimum width=20mm,minimum height=7mm,align=center},
+smallbox/.style={draw,rounded corners,minimum width=17mm,minimum height=7mm,align=center},
+shared/.style={draw,rounded corners,minimum width=57mm,minimum height=9mm,align=center,fill=gray!10}]
+
+\node[font=\bfseries] (lt) at (-5.0,2.15) {Coupled multi-GPU request};
+\node[smallbox] (reqL) at (-7.2,0.9) {Request A};
+\node[smallbox] (g0L) at (-4.9,0.9) {GPU 0\\fast};
+\node[smallbox,dashed] (g1L) at (-2.6,0.9) {GPU 1\\slow};
+\draw[->] (reqL) -- (g0L);
+\draw[<->] (g0L) -- node[above,font=\scriptsize]{step sync} (g1L);
+\node[align=center,font=\scriptsize] at (-4.8,-0.05) {$T_{step}$ can be gated by the slower participant};
+
+\draw[densely dashed] (0,2.4) -- (0,-0.8);
+
+\node[font=\bfseries] (rt) at (5.0,2.15) {Independent request lanes};
+\node[smallbox] (req0) at (1.7,1.2) {Request A};
+\node[smallbox] (req1) at (1.7,0.15) {Request B};
+\node[smallbox] (req2) at (1.7,-0.9) {Request C};
+\node[smallbox] (g0) at (4.1,1.2) {GPU 0\\x8 lane};
+\node[smallbox] (g1) at (4.1,0.15) {GPU 1\\x4 lane};
+\node[smallbox] (g2) at (4.1,-0.9) {GPU 2\\x8 lane};
+\draw[->] (req0) -- (g0);
+\draw[->] (req1) -- (g1);
+\draw[->] (req2) -- (g2);
+\node[shared] (arena) at (7.55,0.15) {One physical host expert arena\\shared by all lane processes};
+\draw[->] (arena.west) -- (g0.east);
+\draw[->] (arena.west) -- (g1.east);
+\draw[->] (arena.west) -- (g2.east);
+\end{tikzpicture}
+\caption{The target operating point. Some coupled strategies place multiple devices on one request's progress path (left). Lane mode instead assigns complete requests to independent engines (right); only the host expert backing is physically shared. The figure motivates the ownership split and is not a measured comparison against coupled execution.}
+\label{fig:architecture}
+\end{figure*}
+
+\subsection{The replica-memory problem}
