@@ -7,7 +7,7 @@
 ## 当前状态
 
 - 实现 fork：[`rhgo1749/Strata`](https://github.com/rhgo1749/Strata)
-- **当前运行用 Strata pin：** [`05ec7bf`](https://github.com/rhgo1749/Strata/commit/05ec7bfd329ee2205b05519b3907745b181a7793)
+- **当前运行用 Strata pin：** [`ae74f43`](https://github.com/rhgo1749/Strata/commit/ae74f431259e03749f598b137dea92e155d867ae)
 - 引擎基线：Strata **0.1.27**（upstream `a790805`）
 - 参考主机当前 production quant：**Qwen3.8-Flash-Next GSQ-RCO IQ3_S**
 - 冻结的 paper-v1 recipe snapshot：[`f54597a`](https://github.com/rhgo1749/qwen3.8-flash-next-strata-gpu-per-lane-recipe/commit/f54597a071e56bb0412685c46c4d604d50e26e45)，branch `paper-v1`
@@ -47,9 +47,11 @@ CUDA 状态、GPU hot-expert cache、GPU-resident KV、host-KV/session 状态、
 5. 若所有 idle 候选都有 live state，则选择 **当前 live request state 最小的 lane**，尽量减少被覆盖的 prompt-cache locality 成本。
 6. 若成本相同，则优先 **最久未使用的 live state（LRU）**；最后用 rotating cursor 解决公平性平局。
 
+排队的新 session 使用 **compatible FIFO ticket**：更早等待且可使用该 lane 的请求优先获得刚释放的 lane，而 vision 之类有 capability 约束的请求不会阻塞自己不能使用的其他 lane。已知 session 的 continuation 在等待自己的 lane 时会对该 lane 做 reservation，因此 `notify_all()` 的唤醒竞争不会让新 session 抢走 cache-rich lane。真正的空 live state 由 `live_request_bytes == 0` 判断，而不是看是否存在 affinity key。
+
 此策略**不硬编码 GPU 编号、GPU 型号或 PCIe 宽度**。`busy` 的生命周期是 request/stream 级，affinity 的生命周期是 session 级。同一个 engine 可以记住多个 session key，因此即使中间有别的请求使用该 engine，旧 session 仍可回到同一 engine，并重新利用 Strata 的 per-engine prompt-cache checkpoint。
 
-production smoke 已验证 A → B → C → D → A：A/B/C 分别占用空 lane，D 选择 live state 最小的 lane，最后 A 仍回到原来的 lane。由此覆盖了“短请求覆盖长对话 lane ownership，导致长对话下一轮逃到其他 GPU”的回归路径。
+production smoke 已验证 A → B → C → D → A：A/B/C 分别占用空 lane，D 选择 live state 最小的 lane，最后 A 仍回到原来的 lane。另一次 overload smoke 在 3 个 lane 都忙时再加入 4 个请求，观测到 `peak_queue_depth=4`；7 个请求全部成功后恢复到 `queue_depth=0`，所有 lane 均 idle。
 
 该调度器属于**当前 lane-local KV 架构的 serving hardening**，并不宣称是最终最优方案。cache-aware global scheduling、migration/transfer cost、overload queueing 以及更完整的 cost model 仍属于 roadmap 工作。
 

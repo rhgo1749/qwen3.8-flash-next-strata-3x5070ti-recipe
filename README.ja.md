@@ -7,7 +7,7 @@
 ## 現在の状態
 
 - 実装 fork: [`rhgo1749/Strata`](https://github.com/rhgo1749/Strata)
-- **現在の運用 Strata pin:** [`05ec7bf`](https://github.com/rhgo1749/Strata/commit/05ec7bfd329ee2205b05519b3907745b181a7793)
+- **現在の運用 Strata pin:** [`ae74f43`](https://github.com/rhgo1749/Strata/commit/ae74f431259e03749f598b137dea92e155d867ae)
 - エンジン基準: Strata **0.1.27**（upstream `a790805`）
 - 参照ホストの現行 production quant: **Qwen3.8-Flash-Next GSQ-RCO IQ3_S**
 - 凍結済み paper-v1 recipe snapshot: [`f54597a`](https://github.com/rhgo1749/qwen3.8-flash-next-strata-gpu-per-lane-recipe/commit/f54597a071e56bb0412685c46c4d604d50e26e45), branch `paper-v1`
@@ -47,9 +47,11 @@ CUDA state、GPU hot-expert cache、GPU-resident KV、host-KV/session state、sp
 5. すべての idle 候補に live state がある場合は、**現在の live request state が最も小さい lane**を選び、上書きする prompt-cache locality のコストを抑えます。
 6. コストが同じなら **最も長く使われていない live state（LRU）** を優先し、最後の同率は rotating cursor で公平に処理します。
 
+待機中の新しい session は **compatible FIFO ticket** で並びます。先に待っていてその lane を利用できる request が、新しく解放された lane を優先して取得します。一方、vision のように capability 制約のある request は、自分が利用できない別 lane まで塞ぎません。既知 session の continuation が自分の lane を待っている間はその lane を予約するため、`notify_all()` の wake-up race で新しい session が cache-rich lane を横取りできません。実際の空 live state は affinity key の有無ではなく `live_request_bytes == 0` で判定します。
+
 この方針は **GPU 番号、GPU モデル、PCIe 幅をハードコードしません。** `busy` の寿命は request/stream 単位、affinity の寿命は session 単位です。1つの engine に複数 session key を記憶できるため、途中で別リクエストがその engine を使っても、古い session は同じ engine に戻り、Strata の per-engine prompt-cache checkpoint を再利用できます。
 
-production smoke では A → B → C → D → A を検証しました。A/B/C が空き lane を埋め、D は live state が最小の lane を選択し、最後の A は元の lane に戻りました。短い別リクエストが長い会話の lane ownership を消し、次ターンを別 GPU へ送ってしまう回帰経路は、テストと実サービングの両方でカバーしています。
+production smoke では A → B → C → D → A を検証しました。A/B/C が空き lane を埋め、D は live state が最小の lane を選択し、最後の A は元の lane に戻りました。さらに overload smoke では3つの lane をすべて使用中に4リクエストを追加し、`peak_queue_depth=4` を観測しました。7リクエストすべて成功した後、`queue_depth=0`、全 lane idle に正常復帰しました。
 
 この scheduler は **現行の lane-local KV アーキテクチャを安全に運用するための serving hardening** であり、最終的な最適 scheduler と主張するものではありません。cache-aware global scheduling、migration/transfer cost、overload queueing、より明示的な cost model は roadmap 項目です。
 

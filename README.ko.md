@@ -7,7 +7,7 @@
 ## 현재 상태
 
 - 구현 포크: [`rhgo1749/Strata`](https://github.com/rhgo1749/Strata)
-- **현재 운용 Strata pin:** [`05ec7bf`](https://github.com/rhgo1749/Strata/commit/05ec7bfd329ee2205b05519b3907745b181a7793)
+- **현재 운용 Strata pin:** [`ae74f43`](https://github.com/rhgo1749/Strata/commit/ae74f431259e03749f598b137dea92e155d867ae)
 - 엔진 기준: Strata **0.1.27** (upstream `a790805`)
 - 기준 서버 현재 production quant: **Qwen3.8-Flash-Next GSQ-RCO IQ3_S**
 - 동결된 paper-v1 recipe snapshot: [`f54597a`](https://github.com/rhgo1749/qwen3.8-flash-next-strata-gpu-per-lane-recipe/commit/f54597a071e56bb0412685c46c4d604d50e26e45), branch `paper-v1`
@@ -47,9 +47,11 @@ CUDA 상태, GPU hot-expert cache, GPU-resident KV, host-KV/session 상태, spec
 5. 모든 idle 후보에 live state가 있으면 **현재 live request state가 가장 작은 lane**을 선택해 덮어쓰는 prompt-cache locality 비용을 최소화한다.
 6. 비용이 같으면 **가장 오래 쓰지 않은 live state(LRU)** 를 우선하고, 마지막 동률은 rotating cursor로 공정하게 푼다.
 
+대기 중인 새 세션은 **compatible FIFO ticket**으로 줄을 선다. 먼저 기다린 compatible 요청이 새로 풀린 lane을 먼저 받고, vision 같은 capability 제약 요청은 자신이 쓸 수 없는 다른 lane까지 막지 않는다. 기존 세션 continuation이 자기 lane을 기다리는 동안에는 그 lane을 예약하므로 `notify_all()` wake-up race 때문에 새 세션이 cache-rich lane을 가로채지 못한다. 실제 빈 live state는 affinity key 유무가 아니라 `live_request_bytes == 0`으로 판정한다.
+
 이 정책에는 **GPU 번호, GPU 모델, PCIe 폭을 하드코딩하지 않는다.** `busy` 수명은 request/stream 단위이고, affinity 수명은 session 단위다. 하나의 engine에 여러 session key가 기억될 수 있어, 중간에 다른 요청이 그 engine을 사용하더라도 예전 세션이 같은 engine으로 돌아와 Strata의 per-engine prompt-cache checkpoint를 다시 활용할 수 있다.
 
-실 production smoke에서는 A → B → C → D → A 순서로 검증했다. A/B/C가 각각 빈 lane을 채운 뒤 D는 live state가 가장 작은 lane을 사용했고, 마지막 A는 다시 원래 lane으로 돌아왔다. 즉 짧은 별도 요청이 긴 대화의 lane 소유권을 지워 다음 턴을 다른 GPU로 보내던 회귀 경로를 테스트와 실제 서빙에서 모두 막았다.
+실 production smoke에서는 A → B → C → D → A 순서로 검증했다. A/B/C가 각각 빈 lane을 채운 뒤 D는 live state가 가장 작은 lane을 사용했고, 마지막 A는 다시 원래 lane으로 돌아왔다. 별도의 overload smoke에서는 3개 요청으로 세 lane을 모두 점유한 상태에서 4개 요청을 추가해 `peak_queue_depth=4`를 관측했고, 7개 요청 모두 성공한 뒤 `queue_depth=0`, 모든 lane idle로 정상 복귀했다.
 
 이 스케줄러는 **현재 lane-local KV 구조를 안전하게 운용하기 위한 serving hardening**이며, 최종 최적 스케줄러라고 주장하지 않는다. cache-aware global scheduling, migration/transfer cost, overload queueing, 더 정교한 cost model은 로드맵 과제로 남긴다.
 

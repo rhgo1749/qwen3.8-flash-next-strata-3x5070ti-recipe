@@ -7,7 +7,7 @@ A practical recipe for running **one independent Strata generation lane per GPU*
 ## Current state
 
 - Implementation fork: [`rhgo1749/Strata`](https://github.com/rhgo1749/Strata)
-- **Current operational Strata pin:** [`05ec7bf`](https://github.com/rhgo1749/Strata/commit/05ec7bfd329ee2205b05519b3907745b181a7793)
+- **Current operational Strata pin:** [`ae74f43`](https://github.com/rhgo1749/Strata/commit/ae74f431259e03749f598b137dea92e155d867ae)
 - Engine baseline: Strata **0.1.27** (`a790805` upstream)
 - Current production quant on the reference host: **Qwen3.8-Flash-Next GSQ-RCO IQ3_S**
 - Frozen paper-v1 recipe snapshot: [`f54597a`](https://github.com/rhgo1749/qwen3.8-flash-next-strata-gpu-per-lane-recipe/commit/f54597a071e56bb0412685c46c4d604d50e26e45), branch `paper-v1`
@@ -47,9 +47,11 @@ Current `main` therefore uses **session affinity plus live-state-aware placement
 5. If all idle candidates have live state, prefer the lane with the **smallest live request state** to minimize overwritten prompt-cache locality.
 6. If that cost is tied, prefer the **least recently used live state**; rotating candidate order is the final fairness tie-breaker.
 
+Queued new sessions use **compatible FIFO tickets**: an older compatible waiter gets a newly released lane first, while capability-constrained work such as vision does not block unrelated lanes. A remembered continuation waiting for its lane reserves that lane, so a `notify_all()` wake-up race cannot let a new session steal the cache-rich lane. An empty live state is defined by `live_request_bytes == 0`, not by the absence of an affinity key.
+
 The policy is **hardware-agnostic**: it does not hard-code GPU number, GPU model, or PCIe width. `busy` is request/stream-scoped; affinity is session-scoped. Several session keys may remain mapped to the same engine so Strata can recover older per-engine prompt-cache checkpoints after intervening requests.
 
-A production smoke after the fix exercised A → B → C → D → A: A/B/C filled separate lanes, D selected the lane with the smallest live state, and A still returned to its original lane. The regression path where a short unrelated request erased a long conversation's lane ownership is therefore covered by both tests and live serving validation.
+A production smoke after the fix exercised A → B → C → D → A: A/B/C filled separate lanes, D selected the lane with the smallest live state, and A still returned to its original lane. A separate overload smoke ran 3 active requests plus 4 queued requests, observed `peak_queue_depth=4`, and drained all 7 requests successfully back to `queue_depth=0` with all lanes idle.
 
 This scheduler is **serving hardening for the current lane-local KV architecture, not claimed as the final optimal scheduler**. Cache-aware global scheduling, migration/transfer costs, overload queueing, and more explicit cost models remain roadmap work.
 

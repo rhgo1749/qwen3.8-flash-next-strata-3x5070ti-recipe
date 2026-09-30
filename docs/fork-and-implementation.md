@@ -52,13 +52,13 @@ The frozen `paper-v1` snapshot must not move or be rewritten.
 The moving Strata `main` currently follows post-paper serving work. At the time of this document update:
 
 ```text
-Strata operational main  05ec7bfd329ee2205b05519b3907745b181a7793
+Strata operational main  ae74f431259e03749f598b137dea92e155d867ae
 engine baseline           Strata 0.1.27
 paper-v1 Strata pin       6cf101d5b98523cbaefc34a199faa5657c5c2719
 paper-v1 recipe snapshot  f54597a071e56bb0412685c46c4d604d50e26e45
 ```
 
-`05ec7bf` includes capability-aware vision routing and session-aware scheduler hardening. These changes are **post-paper operational work** and do not retroactively change paper-v1 measurements.
+`ae74f43` includes capability-aware vision routing and session-aware scheduler hardening, including lane reservation for remembered continuations and compatible FIFO ordering for queued new sessions. These changes are **post-paper operational work** and do not retroactively change paper-v1 measurements.
 
 ## Production architecture principle
 
@@ -91,7 +91,7 @@ The supervisor derives one lane config per GPU and can set per-lane context, PCI
 
 Paper-v1 evaluated independent request-level serving. Post-paper `main` adds a conservative session-aware scheduler because production logs showed that request-level rotation could move a long multi-turn conversation away from its lane-local prompt/KV state and trigger a full re-prefill.
 
-The current operational policy is a **safe baseline, not the final scheduler design**. It keeps known sessions associated with a lane, never inserts new work into a busy single-request lane, and uses hardware-agnostic live-state-aware placement for new sessions. The roadmap now tracks a more principled cache/load cost model separately.
+The current operational policy is a **safe baseline, not the final scheduler design**. It keeps known sessions associated with a lane, reserves that lane for a waiting continuation, never inserts new work into a busy single-request lane, uses compatible FIFO ordering for queued new sessions, and applies hardware-agnostic live-state-aware placement among eligible idle lanes. The roadmap now tracks a more principled cache/load cost model separately.
 
 ## Coexistence with upstream layer-split
 
