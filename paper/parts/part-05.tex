@@ -1,0 +1,14 @@
+Model & Qwen3.8-Flash-Next IQ3\_S \\
+Context & 262,144 tokens/lane \\
+Resident KV & 32,768 tokens/lane \\
+3-lane CPU split & 5 / 6 / 5 physical cores \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The validated 0.1.27 build passed the repository's serve/server/multi-GPU tests, the upstream file expert-source test, configuration sanitation checks, and pinned-source parity checks; exact counts and hashes are in the companion artifact. The benchmark package records the binary hash, driver/CUDA versions, PCIe widths, prompt hashes, and retained repetitions. The three RTX 5070 Ti cards were normally operated under a documented non-stock reference V/F profile (2300~MHz at $\geq$875~mV with a +2500 VRAM offset), but a benchmark-start snapshot was not preserved, so we cannot prove that exact profile was active for every retained run. The RTX 5060 Ti tuning state is not documented. We therefore disclose the non-stock reference profile without attributing the final results to a precisely verified benchmark-start clock/voltage state.
+
+\paragraph{Scaling protocol.}
+For 1, 2, and 3 active lanes, a fixed warm prompt produces 512 completion tokens per lane. The primary scaling metric is \emph{common-wall aggregate completion throughput}: total completion tokens across all active requests divided by one client wall interval measured around the concurrent HTTP requests. It is a makespan-based metric and therefore intentionally penalizes the slowest completion; it should not be confused with the engine's lane-local decode-TG metric used below. Inspection of the harness confirms that every scaling repetition uses the same prompt, temperature 0, and seed 1234. The request inputs are therefore fixed; the observed repetition-to-repetition changes in speculative acceptance/cache statistics must arise from evolving runtime state across the warm sequence rather than from different sampled prompts. This also means the five repetitions are not strictly IID. The 1- and 2-lane CSVs have identical per-repetition cache-hit and speculative-acceptance summaries, and three-lane throughput is strongly correlated with acceptance ($r=0.989$, $n=5$). We retain all five completed repetitions and report their descriptive dispersion; the t-based intervals below should be read as descriptive intervals for this stateful sequence rather than as population-level IID inference. No completed scaling observation was removed.
+
+\paragraph{Memory protocol.}

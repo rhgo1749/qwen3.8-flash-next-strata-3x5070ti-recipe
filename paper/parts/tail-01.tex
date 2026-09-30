@@ -1,0 +1,7 @@
+\subsection{Why the two mechanisms belong together}
+Request-level replicas remove mandatory token-step dependencies between replicas, but a pinned-anonymous offload runtime can pay for that independence by duplicating its largest host allocation. Shared backing reduces that memory cost, but it is operationally simple only when progress-bearing execution state remains private. The design principle is therefore: \emph{share model backing, not request progress}. The paper's measurements quantify the resulting operating point; they do not establish that independent lanes dominate heterogeneity-aware model parallelism.
+
+\subsection{When this design is the wrong choice}
+The architecture does not make one request faster with additional GPUs. A request that cannot fit one lane, or an application dominated by single-request latency, may prefer tensor, pipeline, layer, or expert parallelism. Every participating GPU must independently fit one lane's device-resident working set (hot experts, KV, and runtime state), so very small-VRAM cards may be unusable even when a coupled scheme could pool capacity. Independent lanes also duplicate the GPU-resident hot cache across replicas; this paper removes host-arena duplication, not all model-state duplication. If all weights fit comfortably in every GPU and host RAM is not constraining, the shared arena offers less value.
+
+\subsection{Scaling ceiling}

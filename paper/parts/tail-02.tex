@@ -1,0 +1,5 @@
+Equation~\ref{eq:aggregate} includes a shared-contention term for a reason. CPU execution, DRAM bandwidth, PCIe root-complex bandwidth, and shared filesystem/page-cache behavior remain finite. Three lanes at 89.5\% efficiency show that the reference host has useful remaining concurrency, not that scaling will remain linear indefinitely. A larger-GPU-count study is future work.
+
+\section{Limitations}
+The evidence is a measurement study on one workstation, one model family, one current runtime baseline, and at most three primary serving lanes. We do not include a matched 0.1.27 coupled layer/tensor/expert-parallel baseline or a one-GPU multi-request batching baseline; the historical 0.1.22 layer-split probes are contextual only. Consequently the paper claims an operating point, not superiority over those alternatives. The heterogeneous experiment covers only one same-generation 5070 Ti + 5060 Ti pair, lacks a retained full-length 5060 Ti solo arm, and confounds GPU model with x8/x4 link width.
+

@@ -1,0 +1,21 @@
+\addplot[only marks,mark=*,mark options={fill=white}] coordinates {
+(50.77,68.64) (56.28,67.98) (73.70,79.30) (75.27,79.42) (72.14,76.98) (63.66,68.06) (68.73,62.98)};
+\node[font=\scriptsize,anchor=south west] at (axis cs:50.77,68.64) {F-s};
+\node[font=\scriptsize,anchor=north west] at (axis cs:56.28,67.98) {F-m};
+\node[font=\scriptsize,anchor=south east] at (axis cs:73.70,79.30) {C-s};
+\node[font=\scriptsize,anchor=north east] at (axis cs:75.27,79.42) {C-m};
+\node[font=\scriptsize,anchor=south east] at (axis cs:72.14,76.98) {R-s};
+\node[font=\scriptsize,anchor=north east] at (axis cs:63.66,68.06) {R-m};
+\node[font=\scriptsize,anchor=north east] at (axis cs:68.73,62.98) {L};
+\end{groupplot}
+\end{tikzpicture}
+\caption{Workload TG versus cache hit rate and speculative acceptance. Higher cache hit rate alone does not imply faster decode: fiction has the highest cache locality but lower TG than coding. Labels: F=fiction, C=coding, R=reasoning, L=long review; s/m=short/medium.}
+\label{fig:workloadscatter}
+\end{figure*}
+
+No retained workload window publishes an adaptive expert swap, so these measurements do not support claims about workload-specific adaptive-replacement benefit.
+
+\subsection{Mixed-content three-lane rotation}
+To move beyond identical prompts, fiction, coding, and reasoning are rotated across GPU0 x8 / GPU2 x8 / GPU1 x4. Nine common-wall runs produce 187.15$\pm$5.63 tok/s aggregate, range 176.85--196.18 tok/s. Averaged across the rotations, lane-local TG is 66.27 tok/s on GPU0 x8, 67.03 on GPU2 x8, and 66.99 on GPU1 x4; the corresponding cache-hit means are 0.860, 0.866, and 0.816. This does not isolate PCIe width, but it shows no obvious lane-local TG penalty for the x4 5070 Ti in this mixed-content matrix. Historical 0.1.22 IQ3\_S measurements do show a prefill sensitivity to the narrower link: in concurrent 15K no-reuse PP, the x4 lane reached 1,806.5 tok/s versus a 2,309.3 tok/s mean for the two x8 lanes (21.8\% lower). Because that result comes from an earlier software generation, we use it only as qualitative context: PCIe width can matter strongly for PP even when this 0.1.27 mixed-decode matrix shows little lane-local TG difference. We treat the current result as a support experiment rather than a trace-driven serving benchmark.
+
+\subsection{Historical layer-split context}

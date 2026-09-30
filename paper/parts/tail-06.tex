@@ -1,0 +1,8 @@
+On one consumer workstation, common-wall aggregate completion throughput across independent requests reaches 191.75 tok/s on three RTX 5070 Ti lanes, a 2.68$\times$ point speedup over one lane at 89.5\% parallel efficiency. A two-engine structural ablation measures a 43.2~GiB (45.4\%) PSS reduction with direct OS evidence that the 46.8-GiB arena mapping is physically shared. In one same-generation heterogeneous pair, the unadjusted fast-lane mean changes by $-0.65$ tok/s, while an exploratory adjustment for speculative acceptance estimates a small $-1.00$ tok/s ($-1.4\%$) concurrent cost. Concurrent common-wall aggregate throughput is 116.96$\pm$2.42 tok/s. Within this measured 5070 Ti + 5060 Ti pair, the result supports a small shared-resource cost rather than zero interference; it does not establish a low-single-digit bound for other lane counts or hardware combinations. Broader heterogeneity claims require more data.
+
+The result is best understood as a memory-feasible independent-serving operating point, not as a universal replacement for model parallelism. Coupled execution remains appropriate when one request needs pooled GPU capacity; independent lanes are attractive when concurrent requests exist and one wants shared host model state without a mandatory token-step dependency between replicas.
+
+\balance
+\begin{thebibliography}{99}
+\bibitem{flexgen}
+Y. Sheng, L. Zheng, B. Yuan, Z. Li, M. Ryabinin, B. Chen, P. Liang, C. Re, I. Stoica, and C. Zhang,

@@ -1,0 +1,45 @@
+Table~\ref{tab:workloads} separates no-reuse prompt processing from warm decode. For matched $\sim$15K prompts, fiction, coding, and reasoning PP all fall between 2542 and 2554 tok/s, within roughly 0.5\% of one another. Short $\sim$1.5K prompts are slower in tok/s because fixed costs dominate. A 109,958-token long review reaches 2554.09 tok/s PP and 43.32~s TTFT.
+
+\begin{table*}[t]
+\centering
+\caption{Workload sensitivity on the x8 reference lane. PP/TTFT are no-reuse; TG/cache/spec are warm steady-state. Each workload/bucket retains five repetitions.}
+\label{tab:workloads}
+\begin{tabular}{@{}lrrrrr@{}}
+\toprule
+Workload & Prompt tokens & PP (tok/s) & TTFT (s) & TG (tok/s) & Cache hit / Spec. accept \\
+\midrule
+Fiction short & 1,517 & 887.88 & 1.73 & 68.64 & 90.56\% / 50.77\% \\
+Fiction medium & 14,957 & 2553.38 & 5.91 & 67.98 & 89.42\% / 56.28\% \\
+Coding short & 1,446 & 895.93 & 1.64 & 79.30 & 86.96\% / 73.70\% \\
+Coding medium & 15,012 & 2542.27 & 5.96 & 79.42 & 86.22\% / 75.27\% \\
+Reasoning short & 1,490 & 939.10 & 1.61 & 76.98 & 87.78\% / 72.14\% \\
+Reasoning medium & 15,026 & 2553.71 & 5.94 & 68.06 & 86.50\% / 63.66\% \\
+Long review & 109,958 & 2554.09 & 43.32 & 62.98 & 84.14\% / 68.73\% \\
+\bottomrule
+\end{tabular}
+\end{table*}
+
+Decode behaves differently. Fiction has the highest expert-cache hit rates (89--91\%) but is slower than coding, whose cache hit rate is about 86--87\%. Coding also has higher speculative acceptance (74--75\% versus 51--56\% for fiction). Figure~\ref{fig:workloadscatter} therefore shows only that cache-hit rate alone does not determine the observed TG ordering. Because context length and workload class are not jointly controlled---especially for the long-review point---we do not infer that speculative acceptance is the cause of the difference.
+
+\begin{figure*}[t]
+\centering
+\begin{tikzpicture}
+\begin{groupplot}[
+group style={group size=2 by 1,horizontal sep=1.2cm},
+width=0.43\textwidth,height=4.6cm,
+axis lines*=left,grid=major,major grid style={dotted},
+ylabel={TG (tok/s)},
+scatter/classes={a={mark=*,draw=black,fill=white}},
+]
+\nextgroupplot[xlabel={Expert-cache hit rate (\%)},xmin=83,xmax=92,ymin=60,ymax=82,title={Cache locality}]
+\addplot[only marks,mark=*,mark options={fill=white}] coordinates {
+(90.56,68.64) (89.42,67.98) (86.96,79.30) (86.22,79.42) (87.78,76.98) (86.50,68.06) (84.14,62.98)};
+\node[font=\scriptsize,anchor=south west] at (axis cs:90.56,68.64) {F-s};
+\node[font=\scriptsize,anchor=north west] at (axis cs:89.42,67.98) {F-m};
+\node[font=\scriptsize,anchor=south] at (axis cs:86.96,79.30) {C-s};
+\node[font=\scriptsize,anchor=north east] at (axis cs:86.22,79.42) {C-m};
+\node[font=\scriptsize,anchor=south west] at (axis cs:87.78,76.98) {R-s};
+\node[font=\scriptsize,anchor=north east] at (axis cs:86.50,68.06) {R-m};
+\node[font=\scriptsize,anchor=south west] at (axis cs:84.14,62.98) {L};
+
+\nextgroupplot[xlabel={Speculative acceptance (\%)},xmin=48,xmax=78,ymin=60,ymax=82,title={Speculative behavior}]

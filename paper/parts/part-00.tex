@@ -1,0 +1,38 @@
+\documentclass[10pt,twocolumn]{article}
+
+\usepackage[letterpaper,margin=0.68in,columnsep=0.24in]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{microtype}
+\usepackage{hyperref}
+\usepackage{xurl}
+\usepackage{enumitem}
+\usepackage{tikz}
+\usepackage{pgfplots}
+\usepackage{pgfplotstable}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{balance}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usetikzlibrary{arrows.meta,positioning,fit,calc}
+\usepgfplotslibrary{groupplots}
+\pgfplotsset{compat=1.18}
+\hypersetup{hidelinks,pdftitle={Independent GPU Lanes with a Shared Pinned Expert Arena for Offloaded MoE Serving},pdfauthor={Daehun Go},pdfsubject={Consumer multi-GPU MoE serving with shared host expert backing}}
+\setlist{nosep,leftmargin=*}
+\setlength{\parskip}{0.15em}
+\setlength{\parindent}{1em}
+\captionsetup{font=small,labelfont=bf}
+
+\title{\textbf{Independent GPU Lanes with a Shared Pinned Expert Arena}\\
+\large Offloaded MoE Serving on a Consumer Multi-GPU Workstation}
+\author{Daehun Go\\Independent Researcher}
+\date{Preprint v1 --- September 2026}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+Partially offloaded mixture-of-experts (MoE) runtimes can keep tens of GiB of expert weights in page-locked host memory while caching a working set on each GPU. Running one inference process per GPU makes request progress independent---useful on consumer workstations where GPU performance and PCIe links differ---but a runtime that allocates a private pinned expert arena per process also replicates its dominant host-memory object. We evaluate a narrow state-ownership split: each complete request is assigned to one GPU lane; all lane processes map one physical shared expert arena; and CUDA state, GPU expert caches, KV state, speculative-decoding state, and sessions remain lane-local. The lane mode therefore has no mandatory token-by-token cross-GPU dependency by construction. We do not claim that it is universally faster than coupled model parallelism.
+

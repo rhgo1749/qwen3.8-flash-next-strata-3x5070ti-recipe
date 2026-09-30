@@ -1,0 +1,37 @@
+If every lane privately allocates a host expert arena of size $M_E$, then with $N$ replicas the host requirement is approximately
+\begin{equation}
+M_{\mathrm{private}} \approx N M_E + \sum_{i=1}^{N} M_{\mathrm{lane},i},
+\label{eq:private}
+\end{equation}
+where $M_{\mathrm{lane},i}$ covers private session, KV, runtime, and bookkeeping state. With one shared expert arena,
+\begin{equation}
+M_{\mathrm{shared}} \approx M_E + \sum_{i=1}^{N} M_{\mathrm{lane},i}.
+\label{eq:shared}
+\end{equation}
+The savings approach $(N-1)M_E$ as the shared object dominates process-private state.
+
+\subsection{State ownership}
+The design shares only the large model state that is naturally identical across replicas. The shared category is the host expert backing. Lane-local state includes CUDA contexts and streams, GPU hot-expert caches, adaptive-residency metadata, GPU-resident KV, host-KV/session state, speculative/MTP state, request state, and cancellation. This boundary avoids turning normal serving progress into a distributed consistency problem. The current file-backed mapping remains writable at the OS level after initialization, so memory corruption of the shared arena is a shared failure mode; this prototype does not claim fault isolation of the weight backing.
+
+\section{Implementation}
+We implement the architecture as an opt-in compatibility layer around Strata~\cite{strata}. Each GPU lane is an ordinary Strata engine process. A supervisor sanitizes generated lane configurations so inherited \texttt{gpu} and \texttt{layer\_split} settings cannot accidentally expand one lane back into coupled multi-GPU execution.
+
+On Linux, the fork intercepts only the exact pinned-arena allocation when the shared-arena path and byte count are explicitly supplied. Otherwise, the upstream anonymous/hugetlb allocation path remains unchanged. For the evaluated 0.1.27 baseline, the retained upstream pinned implementation is byte-identical to upstream Strata 0.1.27; the fork changes the allocation ownership boundary rather than the numerical MoE kernels. The shared mapping is \texttt{rw-s}: expert contents are logically read-mostly after population, but read-only protection is not yet enforced with \texttt{mprotect}.
+
+The paper-validation fork commit is \texttt{6cf101d}; upstream Strata 0.1.27 is \texttt{a790805}. The evaluated binary is \texttt{build-production-027/strata}; its full commit IDs and SHA-256 are pinned in the companion artifact. The companion artifact retains repetition-level CSVs and methodology documents~\cite{artifact}.
+
+\section{Experimental Methodology}
+\begin{table}[t]
+\centering
+\caption{Reference host and paper-validation baseline.}
+\label{tab:host}
+\begin{tabular}{@{}ll@{}}
+\toprule
+CPU & Ryzen 9 9950X3D, 16C/32T \\
+RAM & 128 GB DDR5 \\
+GPU0 & RTX 5070 Ti 16 GB, PCIe x8 \\
+GPU1 & RTX 5070 Ti 16 GB, PCIe x4 \\
+GPU2 & RTX 5070 Ti 16 GB, PCIe x8 \\
+GPU3 & RTX 5060 Ti 16 GB, PCIe x4 \\
+Driver / CUDA & 615.71.09 / 13.4 \\
+Engine & Strata 0.1.27 \\

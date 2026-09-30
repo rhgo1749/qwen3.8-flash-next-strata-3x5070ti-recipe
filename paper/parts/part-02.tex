@@ -1,0 +1,26 @@
+Request-level replication takes the opposite operating point: run one ordinary inference engine per GPU and route different requests to different engines. In that mode a lane has no algorithmic requirement to wait for another lane at each token step. The cost is memory. In Strata, the partially offloaded MoE engine allocates a large pinned anonymous host expert arena for DMA. Naively launching several processes therefore duplicates that allocation even though its expert contents are logically identical after initialization.
+
+We apply one design principle: \emph{couple lanes through shared model backing, but keep progress-bearing execution state lane-local}. Concretely:
+\begin{enumerate}
+    \item \textbf{Independent request lanes} assign one complete request to one GPU engine, avoiding mandatory token-step dependencies between lanes.
+    \item \textbf{A shared pinned host expert arena} lets those engine processes reuse one physical expert backing while retaining private CUDA, cache, KV, speculation, and session state.
+\end{enumerate}
+
+The design is intentionally narrow. It targets concurrent serving, not single-request acceleration, and it requires each participating GPU to fit one complete lane's device-resident working state. We do not claim to invent data parallelism, shared memory mapping, or weight sharing. The contribution is an implementation and measurement study of this ownership boundary for partially offloaded autoregressive MoE inference on a consumer workstation.
+
+\paragraph{Contributions.}
+This work makes four measured contributions:
+\begin{itemize}
+    \item We make Strata's pinned host expert arena cross-process shared without changing the numerical MoE kernels or the ordinary single-GPU allocation path when shared mode is disabled.
+    \item We measure 1$\rightarrow$2$\rightarrow$3 independent-lane scaling on an x8/x8/x4 consumer PCIe topology, reaching a point estimate of 89.5\% three-lane parallel efficiency.
+    \item We provide direct OS-level evidence of physical arena sharing and measure a 43.2~GiB (45.4\%) two-engine PSS reduction.
+    \item We quantify one same-generation heterogeneous pair with confidence intervals and characterize workload sensitivity, while explicitly separating these observations from broader heterogeneity or causal claims.
+\end{itemize}
+
+\section{Motivation and Design}
+\subsection{Keeping lane progress off a shared token-step path}
+For a multi-GPU strategy that introduces a repeated barrier or dependency across $N$ devices, if device $i$ contributes step time $t_i$, a simplified lower-bound structure is
+\begin{equation}
+T_{\mathrm{step}}^{\mathrm{sync}} \gtrsim \max_i t_i + T_{\mathrm{coord}},
+\label{eq:sync}
+\end{equation}

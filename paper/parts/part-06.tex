@@ -1,0 +1,22 @@
+The private-vs-shared ablation uses two x8 RTX 5070 Ti engines with reduced 32,768-token context and 8,192 resident-KV tokens so the private control is feasible. It is a structural paired snapshot rather than a repeated statistical benchmark. Physical memory is measured from \texttt{/proc/<pid>/smaps\_rollup} and the arena mapping itself, emphasizing PSS and shared/private dirty accounting rather than RSS alone. The export also records \emph{system-wide} used swap from \texttt{/proc/meminfo}: 9.44~GiB in the private snapshot and 5.70~GiB in the shared snapshot. These are host-global counters, not per-engine swap, so their difference is reported but not causally attributed to the arena.
+
+\paragraph{Heterogeneous protocol.}
+The RTX 5070 Ti x8 solo condition and the RTX 5070 Ti x8 + RTX 5060 Ti x4 concurrent condition follow an \texttt{ABBAABBAABBAABBA} order to reduce time-order bias. We report both the engine-reported lane-local decode rates and the concurrent common-wall aggregate throughput. Eight completed fast-lane repetitions are retained per condition, with the slow lane measured concurrently. The retained dataset does not include a full-length RTX 5060 Ti solo control. A secondary OLS/ANCOVA sensitivity analysis adjusts fast-lane TG for per-run speculative acceptance; because acceptance is an observed runtime outcome rather than a randomized pre-treatment covariate, we do not interpret the adjusted coefficient as a causal effect.
+
+\paragraph{Workloads.}
+Five repetitions are retained for fiction, coding, reasoning, and long-review workload/bucket states. No-reuse PP and warm steady-state TG are treated as separate measurement classes. A mixed-serving experiment rotates fiction, coding, and reasoning across the x8/x8/x4 5070 Ti lanes for nine common-wall runs.
+
+\paragraph{Data hygiene.}
+The heterogeneous raw JSONL contains one malformed trailing fragment written after the last valid summary record. All 8 solo and 8 concurrent completed measurements are valid and retained; only that unparsable non-observation is absent from the publication CSV. The scaling dataset retains all completed runs, including the slowest three-lane repetition.
+
+\section{Evaluation}
+\subsection{RQ1: How does independent-request capacity scale to three lanes?}
+Figure~\ref{fig:scaling} shows strong but sublinear scaling in common-wall aggregate completion throughput. The mean increases from 71.45 tok/s on one x8 5070 Ti to 137.57 tok/s on two x8 cards and 191.75 tok/s after adding the x4 5070 Ti. These correspond to point speedups of 1.93$\times$ and 2.68$\times$, or 96.3\% and 89.5\% parallel efficiency relative to the one-x8-lane mean. Approximate t-based 95\% CIs for the throughput means are 70.06--72.84, 134.85--140.29, and 182.76--200.74 tok/s; the three-lane range is 182.63--199.20 tok/s.
+
+\begin{figure}[t]
+\centering
+\begin{tikzpicture}
+\begin{axis}[
+width=\columnwidth,height=4.2cm,
+ybar,bar width=11pt,
+ymin=0,ymax=220,
