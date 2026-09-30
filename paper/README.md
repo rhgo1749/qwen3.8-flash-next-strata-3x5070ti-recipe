@@ -2,29 +2,40 @@
 
 This directory is the working preprint area for the GPU-per-lane / shared-host expert-arena paper.
 
+## Paper v1 freeze
+
+The submitted v1 is reproducibly anchored independently of the moving `main` branch.
+
+- immutable recipe snapshot by exact commit: [`f54597a071e56bb0412685c46c4d604d50e26e45`](https://github.com/rhgo1749/qwen3.8-flash-next-strata-gpu-per-lane-recipe/commit/f54597a071e56bb0412685c46c4d604d50e26e45)
+- convenience branch for that snapshot: [`paper-v1`](https://github.com/rhgo1749/qwen3.8-flash-next-strata-gpu-per-lane-recipe/tree/paper-v1)
+- implementation fork used by the paper: [`rhgo1749/Strata@6cf101d5b98523cbaefc34a199faa5657c5c2719`](https://github.com/rhgo1749/Strata/commit/6cf101d5b98523cbaefc34a199faa5657c5c2719)
+- upstream Strata 0.1.27 baseline: `a79080535d1b2a71a3419a0d97d8e7dca194b0f1`
+
+For v1 reproduction, use the exact commit links above. `main` is allowed to continue evolving after submission and must not be interpreted as the paper's immutable code/evidence revision.
+
 ## Branch policy
 
-- Work on the paper in `paper/preprint` while the manuscript is changing rapidly.
-- Keep benchmark data, promoted measurements, and experiment methodology canonical on `main` under `bench/`, `docs/`, and `RESULTS.md`.
-- Do not copy or silently edit benchmark numbers inside the paper without first reconciling them with the canonical evidence on `main`.
-- Merge `paper/` to `main` only after the first public preprint is stable.
+- `paper-v1` is the frozen v1 snapshot and should not be moved or rewritten.
+- `paper/preprint` remains a working manuscript branch for later revisions.
+- `main` may continue to receive runtime, recipe, benchmark, and documentation work after v1.
+- New paper revisions should receive a new explicit snapshot/pin rather than reusing the v1 pin.
+- Do not copy or silently edit benchmark numbers inside a paper revision without reconciling them with the evidence snapshot used by that revision.
 - Add `CITATION.cff` to `main` when the public preprint/arXiv identifier and preferred citation are known.
 
-## Current evidence pin
+## V1 evidence pin
 
-The v1 preprint uses the Strata 0.1.27 validation package:
+The v1 preprint uses the Strata 0.1.27 validation package at the frozen recipe snapshot above.
 
-- implementation fork: `rhgo1749/Strata@6cf101d5b98523cbaefc34a199faa5657c5c2719`
-- upstream Strata 0.1.27: `a79080535d1b2a71a3419a0d97d8e7dca194b0f1`
+Canonical v1 inputs at `f54597a` are:
 
-Canonical inputs:
+- `RESULTS.md`
+- `docs/systems-ablation-0.1.27-20260930.md`
+- `docs/workload-sensitivity-0.1.27-20260930.md`
+- `bench/systems-ablation-0.1.27-20260930.csv`
+- `bench/workload-sensitivity-0.1.27-20260930.csv`
+- `bench/strata-0.1.27-promotion-20260930.csv`
 
-- `../RESULTS.md`
-- `../docs/systems-ablation-0.1.27-20260930.md`
-- `../docs/workload-sensitivity-0.1.27-20260930.md`
-- `../bench/systems-ablation-0.1.27-20260930.csv`
-- `../bench/workload-sensitivity-0.1.27-20260930.csv`
-- `../bench/strata-0.1.27-promotion-20260930.csv`
+These paths should be interpreted at `paper-v1` / `f54597a`, not at whatever commit `main` points to later.
 
 ## Build
 
