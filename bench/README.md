@@ -28,6 +28,8 @@ The Phase 2D current-default overload baseline is documented in `phase2d-overloa
 
 The first Phase 2D admission gate is documented in `phase2d-admission-retry-gate-20261001.md`. A benchmark-only 7.5 s bounded-wait challenger substantially reduces the tail of requests that remain admitted, but when every 429 is immediately retried until all logical requests complete, the M=9 logical E2E p95 is unchanged (~22.47 s vs ~22.46 s), logical TTFT p95 is slightly worse, attempt amplification rises to 1.48x, and goodput falls 3.6%. Bounded admission is therefore not promoted for all-complete-immediately interactive overload; a future admission experiment requires an actionable SLO/priority/defer contract rather than automatic immediate retry.
 
+Phase 2E is documented in `phase2e-workload-regime-gate-20261001.md`. On one persistent supervisor, a short -> long -> short sequence (60 facts / 64-token continuation -> 900 facts / 192-token continuation -> short again) keeps new-session placement exactly 2/2/2 in all six waves. The fixed balanced-additive policy therefore remains the promoted policy and workload-regime adaptation is not triggered by current evidence.
+
 ## 0.1.30 promoted campaign
 
 Strata 0.1.30 is the **promoted result generation**. The measured implementation is `rhgo1749/Strata-Lanes@dcdd46ff37b1baf5172a96389fbdc0c7b51a7dbc`, based on upstream tag `Niko1221/Strata@30ec18ec7094550fcc594fd948220d511d80464e`. The unpromoted 0.1.29 campaign was superseded before its headline matrix was completed.

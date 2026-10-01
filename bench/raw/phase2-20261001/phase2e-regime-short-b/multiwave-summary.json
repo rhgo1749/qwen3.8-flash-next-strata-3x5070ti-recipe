@@ -1,0 +1,94 @@
+{
+  "aggregate": {
+    "continuation_common_wall_tg": {
+      "max": 69.18957711208486,
+      "mean": 57.31160611273526,
+      "min": 45.433635113385655,
+      "n": 2,
+      "sd": 16.797987680754513
+    },
+    "continuation_e2e_p95_ms": {
+      "max": 8451.504383,
+      "mean": 7000.6160475,
+      "min": 5549.727712,
+      "n": 2,
+      "sd": 2051.865961553025
+    },
+    "continuation_queue_p95_ms": {
+      "max": 4237.24,
+      "mean": 3536.5335,
+      "min": 2835.827,
+      "n": 2,
+      "sd": 990.9486355429829
+    },
+    "continuation_token_ttft_p95_ms": {
+      "max": 7672.76916,
+      "mean": 6203.89462,
+      "min": 4735.02008,
+      "n": 2,
+      "sd": 2077.302295892541
+    },
+    "max_lane_share": {
+      "max": 0.3333333333333333,
+      "mean": 0.3333333333333333,
+      "min": 0.3333333333333333,
+      "n": 2,
+      "sd": 0.0
+    }
+  },
+  "all_waves_pass": true,
+  "facts": 60,
+  "kind": "multiwave_summary",
+  "max_observed_lane_share": 0.3333333333333333,
+  "persistent_supervisor": true,
+  "policy": "balanced-additive-new-prefill-retained-state-proxy-v1",
+  "sessions_per_wave": 6,
+  "turn1_tokens": 32,
+  "turn2_tokens": 64,
+  "wave_files": [
+    "wave-01.jsonl",
+    "wave-02.jsonl"
+  ],
+  "waves": [
+    {
+      "assignment_shape": {
+        "counts": {
+          "0": 2,
+          "1": 2,
+          "2": 2
+        },
+        "max_lane_share": 0.3333333333333333,
+        "spread": 0,
+        "total": 6
+      },
+      "continuation_common_wall_tg": 69.18957711208486,
+      "continuation_e2e_p95_ms": 5549.727712,
+      "continuation_queue_p95_ms": 2835.827,
+      "continuation_token_ttft_p95_ms": 4735.02008,
+      "pass": true,
+      "run_id": "phase2-online-balanced-additive-new-prefill-retained-state-proxy-v1-20261001-220514",
+      "wave": 1
+    },
+    {
+      "assignment_shape": {
+        "counts": {
+          "0": 2,
+          "1": 2,
+          "2": 2
+        },
+        "max_lane_share": 0.3333333333333333,
+        "spread": 0,
+        "total": 6
+      },
+      "continuation_common_wall_tg": 45.433635113385655,
+      "continuation_e2e_p95_ms": 8451.504383,
+      "continuation_queue_p95_ms": 4237.24,
+      "continuation_token_ttft_p95_ms": 7672.76916,
+      "pass": true,
+      "run_id": "phase2-online-balanced-additive-new-prefill-retained-state-proxy-v1-20261001-220536",
+      "wave": 2
+    }
+  ],
+  "waves_completed": 2,
+  "waves_requested": 2
+}
