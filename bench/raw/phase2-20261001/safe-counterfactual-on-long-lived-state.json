@@ -1,0 +1,15 @@
+{
+  "all_same_as_actual": true,
+  "decisions": [
+    {"actual_lane":2,"lane_keys":{"0":[1,15335,11,0],"1":[1,15335,12,1],"2":[1,15335,10,2]},"request_id":"phase2-online-additive-new-prefill-retained-state-proxy-v1-20261001-184631-start-0","safe_counterfactual_key":[1,15335,10,2],"safe_counterfactual_lane":2},
+    {"actual_lane":2,"lane_keys":{"0":[1,15335,11,0],"1":[1,15335,12,1],"2":[1,15187,13,2]},"request_id":"phase2-online-additive-new-prefill-retained-state-proxy-v1-20261001-184631-start-1","safe_counterfactual_key":[1,15187,13,2],"safe_counterfactual_lane":2},
+    {"actual_lane":2,"lane_keys":{"0":[1,15335,11,0],"1":[1,15335,12,1],"2":[1,15187,14,2]},"request_id":"phase2-online-additive-new-prefill-retained-state-proxy-v1-20261001-184631-start-2","safe_counterfactual_key":[1,15187,14,2],"safe_counterfactual_lane":2},
+    {"actual_lane":2,"lane_keys":{"0":[1,15335,11,0],"1":[1,15335,12,1],"2":[1,15187,15,2]},"request_id":"phase2-online-additive-new-prefill-retained-state-proxy-v1-20261001-184631-start-3","safe_counterfactual_key":[1,15187,15,2],"safe_counterfactual_lane":2},
+    {"actual_lane":2,"lane_keys":{"0":[1,15335,11,0],"1":[1,15335,12,1],"2":[1,15187,16,2]},"request_id":"phase2-online-additive-new-prefill-retained-state-proxy-v1-20261001-184631-start-4","safe_counterfactual_key":[1,15187,16,2],"safe_counterfactual_lane":2},
+    {"actual_lane":2,"lane_keys":{"0":[1,15335,11,0],"1":[1,15335,12,1],"2":[1,15187,17,2]},"request_id":"phase2-online-additive-new-prefill-retained-state-proxy-v1-20261001-184631-start-5","safe_counterfactual_key":[1,15187,17,2],"safe_counterfactual_lane":2}
+  ],
+  "method": "choose lexicographic minimum of recorded legacy placement_key among eligible idle lanes; because actual and counterfactual choices coincide at every step, state evolution is identical by induction",
+  "policy_counterfactual": "safe-affinity-live-state-v1",
+  "run_id": "phase2-online-additive-new-prefill-retained-state-proxy-v1-20261001-184631",
+  "source": "bench/raw/phase2-20261001/additive-long-lived-two-wave-trace.jsonl"
+}

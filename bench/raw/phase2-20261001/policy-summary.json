@@ -1,0 +1,211 @@
+{
+  "date": "2026-10-01",
+  "strata_commit": "0d6f237bc7a2bffd6cf5c795956118e9a92283da",
+  "workload": {
+    "sessions": 6,
+    "facts": 300,
+    "turn1_tokens": 32,
+    "turn2_tokens": 128,
+    "shape": "sequential new-session starts sharing an exact leading prefix; synchronized continuation wave"
+  },
+  "decision": {
+    "promote_challenger": false,
+    "keep_default": "safe-affinity-live-state-v1",
+    "fresh_restart_leader": "additive-new-prefill-retained-state-proxy-v1",
+    "blocker": "long-lived retained state can create a 6-to-1 session-start attractor; recorded safe placement keys select the same lane on the observed second-wave state",
+    "next_step": "add explicit session-start balance or bounded imbalance fallback, then repeat multiple workload waves on one persistent supervisor"
+  },
+  "fresh_restart_repeats": {
+    "safe-affinity-live-state-v1": {
+      "aggregate": {
+        "common_wall_tg": {
+          "mean": 74.5498183845783,
+          "sd": 8.652739069018944,
+          "min": 64.66509569474037,
+          "max": 80.75276943486504
+        },
+        "queue_p95_ms": {
+          "mean": 5569.6956666666665,
+          "sd": 515.3498332146165
+        },
+        "token_ttft_p95_ms": {
+          "mean": 8608.032539333333,
+          "sd": 1274.7342820878312
+        }
+      },
+      "runs": [
+        {
+          "file": "bench/raw/phase2-20261001/safe-client.jsonl",
+          "run_id": "phase2-online-safe-affinity-live-state-v1-20261001-181136",
+          "assignment": {
+            "0": 2,
+            "1": 2,
+            "2": 2
+          },
+          "common_wall_tg": 78.23159002412949,
+          "queue_p95_ms": 5295.444,
+          "token_ttft_p95_ms": 7884.630523
+        },
+        {
+          "file": "bench/raw/phase2-20261001/safe-r2-client.jsonl",
+          "run_id": "phase2-online-safe-affinity-live-state-v1-20261001-183701",
+          "assignment": {
+            "0": 2,
+            "1": 2,
+            "2": 2
+          },
+          "common_wall_tg": 80.75276943486504,
+          "queue_p95_ms": 5249.465,
+          "token_ttft_p95_ms": 7859.569311,
+          "trace_note": "filter exact run_id from safe-r2-appended-raw-trace.jsonl"
+        },
+        {
+          "file": "bench/raw/phase2-20261001/safe-r3-client.jsonl",
+          "run_id": "phase2-online-safe-affinity-live-state-v1-20261001-184232",
+          "assignment": {
+            "0": 2,
+            "1": 2,
+            "2": 2
+          },
+          "common_wall_tg": 64.66509569474037,
+          "queue_p95_ms": 6164.178,
+          "token_ttft_p95_ms": 10079.897784
+        }
+      ]
+    },
+    "round-robin-idle-v1": {
+      "aggregate": {
+        "common_wall_tg": {
+          "mean": 70.1353350184853,
+          "sd": 9.483155183041092,
+          "min": 64.46207100088861,
+          "max": 81.08311915047929
+        },
+        "queue_p95_ms": {
+          "mean": 5843.823666666666,
+          "sd": 534.8088781577335
+        },
+        "token_ttft_p95_ms": {
+          "mean": 9320.553918333333,
+          "sd": 1299.2621840777178
+        }
+      },
+      "runs": [
+        {
+          "file": "bench/raw/phase2-20261001/round-robin-r1-client.jsonl",
+          "assignment": {
+            "0": 2,
+            "1": 2,
+            "2": 2
+          },
+          "common_wall_tg": 81.08311915047929,
+          "queue_p95_ms": 5227.048,
+          "token_ttft_p95_ms": 7820.664884
+        },
+        {
+          "file": "bench/raw/phase2-20261001/round-robin-r2-client.jsonl",
+          "assignment": {
+            "0": 2,
+            "1": 2,
+            "2": 2
+          },
+          "common_wall_tg": 64.86081490408802,
+          "queue_p95_ms": 6125.54,
+          "token_ttft_p95_ms": 10041.655993
+        },
+        {
+          "file": "bench/raw/phase2-20261001/round-robin-r3-client.jsonl",
+          "assignment": {
+            "0": 2,
+            "1": 2,
+            "2": 2
+          },
+          "common_wall_tg": 64.46207100088861,
+          "queue_p95_ms": 6178.883,
+          "token_ttft_p95_ms": 10099.340878
+        }
+      ]
+    },
+    "additive-new-prefill-retained-state-proxy-v1": {
+      "aggregate": {
+        "common_wall_tg": {
+          "mean": 80.75267702190291,
+          "sd": 0.9052118791057417,
+          "min": 79.77508715507736,
+          "max": 81.56185779346112
+        },
+        "queue_p95_ms": {
+          "mean": 5001.4186666666665,
+          "sd": 209.68494999959674
+        },
+        "token_ttft_p95_ms": {
+          "mean": 7655.74175,
+          "sd": 205.47946808354317
+        }
+      },
+      "runs": [
+        {
+          "file": "bench/raw/phase2-20261001/additive-r1-client.jsonl",
+          "assignment": {
+            "0": 2,
+            "1": 2,
+            "2": 2
+          },
+          "common_wall_tg": 81.56185779346112,
+          "queue_p95_ms": 4843.669,
+          "token_ttft_p95_ms": 7507.418369
+        },
+        {
+          "file": "bench/raw/phase2-20261001/additive-r2-client.jsonl",
+          "assignment": {
+            "0": 2,
+            "1": 2,
+            "2": 2
+          },
+          "common_wall_tg": 79.77508715507736,
+          "queue_p95_ms": 5239.366,
+          "token_ttft_p95_ms": 7890.284059
+        },
+        {
+          "file": "bench/raw/phase2-20261001/additive-r3-client.jsonl",
+          "assignment": {
+            "0": 2,
+            "1": 2,
+            "2": 2
+          },
+          "common_wall_tg": 80.92108611717025,
+          "queue_p95_ms": 4921.221,
+          "token_ttft_p95_ms": 7569.522822
+        }
+      ]
+    }
+  },
+  "long_lived_probe": {
+    "policy": "additive-new-prefill-retained-state-proxy-v1",
+    "trace": "bench/raw/phase2-20261001/additive-long-lived-two-wave-trace.jsonl",
+    "second_wave_client": "bench/raw/phase2-20261001/additive-long-lived-second-client.jsonl",
+    "first_wave_assignment": {
+      "0": 2,
+      "1": 2,
+      "2": 2
+    },
+    "second_wave_assignment": {
+      "2": 6
+    },
+    "second_wave_common_wall_tg": 29.330781280895035,
+    "second_wave_queue_p95_ms": 21838.833,
+    "second_wave_token_ttft_p95_ms": 24396.68083,
+    "safe_counterfactual": "bench/raw/phase2-20261001/safe-counterfactual-on-long-lived-state.json",
+    "safe_counterfactual_same_choices": true
+  },
+  "excluded_runs": [
+    {
+      "file": "/tmp/phase2-safe-r3-client.jsonl",
+      "reason": "orchestration contamination from a timed-out shell; not retained"
+    },
+    {
+      "event": "safe clean-r4 startup",
+      "reason": "GPU2 engine failed after NVIDIA RTD3/RM driver entered error state; no performance result retained"
+    }
+  ]
+}
