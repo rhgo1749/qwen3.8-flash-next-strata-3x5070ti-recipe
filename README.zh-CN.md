@@ -12,12 +12,7 @@
 - **当前运行用 Strata pin：** [`15be918`](https://github.com/rhgo1749/Strata-Lanes/commit/15be91859ffdc49010bf37ed60cb2dfaf4d6e7d5)
 - 引擎基线：Strata **0.1.31**（upstream `9259cad`）；升级记录：[`docs/strata-0.1.31-promotion-20261001.md`](docs/strata-0.1.31-promotion-20261001.md)
 - 参考主机当前 production quant：**Qwen3.8-Flash-Next GSQ-RCO IQ3_S**
-- 冻结的 paper-v1 recipe snapshot：[`f54597a`](https://github.com/rhgo1749/qwen3.8-flash-next-strata-gpu-per-lane-recipe/commit/f54597a071e56bb0412685c46c4d604d50e26e45)，branch `paper-v1`
-- 冻结的 paper-v1 Strata 实现 pin：[`6cf101d`](https://github.com/rhgo1749/Strata/commit/6cf101d5b98523cbaefc34a199faa5657c5c2719)
-
-`main` 是论文提交后的滚动运行/开发分支。即使 `main` 继续前进，**paper-v1 的证据和复现 pin 也不会被追溯修改。** 复现论文 v1 时应使用上面的冻结 snapshot 和实现 pin。
-
-详细保留结果见 [`RESULTS.md`](RESULTS.md)。论文之后的 x4 vision-lane 实验见 [`recipe/vision-x4-lane.md`](recipe/vision-x4-lane.md)。
+`main` 跟踪当前运行方案。保留的实测结果与版本边界记录在 [`RESULTS.md`](RESULTS.md)。更早的快照不再重复保留在滚动 `main` 中，可通过 Git history 与命名分支查看。
 
 ## 核心结构
 
@@ -36,7 +31,7 @@ flowchart TB
 
 CUDA 状态、GPU hot-expert cache、GPU-resident KV、host-KV/session 状态、speculative/MTP 状态以及 generation loop 都保持 lane-local。正常 production 路径不需要强制 token-by-token 跨 GPU 同步，也不依赖 NVLink。
 
-## 论文之后的 session-aware 调度器
+## Session-aware 调度器
 
 最初的 multi-lane supervisor 使用 request-level free-lane/round-robin。对独立吞吐测试这没问题，但 KV/prompt cache 是 lane-local 的，因此长对话后续轮次如果被送到另一张 GPU，就可能重新支付完整或大规模 prompt prefill。
 
@@ -86,16 +81,16 @@ current quant       IQ3_S
 required host RAM ≈ one shared expert arena + every lane's host-KV + OS/runtime headroom
 ```
 
-## 论文证据边界
+## 版本化证据
 
-已提交的 paper-v1 证据固定在 recipe snapshot `f54597a` 和 Strata `6cf101d`。其中包含 1→2→3 lane scaling、shared-vs-private arena PSS、heterogeneous isolation、workload sensitivity 与 mixed-serving 结果。论文之后进入 `main` 的 vision/scheduler 修改**不会追溯写回 paper-v1 结果**。
+滚动 `main` 只保留当前 **0.1.31 运行基线**与紧邻的 **0.1.30 benchmark generation**。测量结果保留原始引擎版本，不把旧版本结果重新标记为当前结果。
 
 参见：
 
-- [`RESULTS.md`](RESULTS.md) — 保留的 benchmark evidence
-- [`docs/fork-and-implementation.md`](docs/fork-and-implementation.md) — 实现/recipe 所有权与复现边界
-- [`docs/paper-v1-reproducibility.md`](docs/paper-v1-reproducibility.md) — 冻结的 v1 复现链接
-- [`recipe/vision-x4-lane.md`](recipe/vision-x4-lane.md) — post-v1 vision-lane 实验
+- [`RESULTS.md`](RESULTS.md) — 当前摘要与保留的 benchmark evidence
+- [`docs/strata-0.1.31-promotion-20261001.md`](docs/strata-0.1.31-promotion-20261001.md) — 当前运行 parity 升级记录
+- [`docs/strata-0.1.30-promotion-20261001.md`](docs/strata-0.1.30-promotion-20261001.md) — 保留的完整 benchmark generation
+- [`docs/fork-and-implementation.md`](docs/fork-and-implementation.md) — upstream/fork/recipe 角色边界
 
 ## 在其他机器上应用
 

@@ -12,12 +12,7 @@ A practical recipe for running **one independent Strata generation lane per GPU*
 - **Current operational Strata pin:** [`15be918`](https://github.com/rhgo1749/Strata-Lanes/commit/15be91859ffdc49010bf37ed60cb2dfaf4d6e7d5)
 - Engine baseline: Strata **0.1.31** (`9259cad` upstream); promotion record: [`docs/strata-0.1.31-promotion-20261001.md`](docs/strata-0.1.31-promotion-20261001.md)
 - Current production quant on the reference host: **Qwen3.8-Flash-Next GSQ-RCO IQ3_S**
-- Frozen paper-v1 recipe snapshot: [`f54597a`](https://github.com/rhgo1749/qwen3.8-flash-next-strata-gpu-per-lane-recipe/commit/f54597a071e56bb0412685c46c4d604d50e26e45), branch `paper-v1`
-- Frozen paper-v1 Strata implementation pin: [`6cf101d`](https://github.com/rhgo1749/Strata/commit/6cf101d5b98523cbaefc34a199faa5657c5c2719)
-
-`main` is a moving post-paper operational branch. **Paper-v1 evidence is not rewritten when `main` advances.** For paper reproduction, use the frozen snapshot and implementation pin above.
-
-Detailed retained measurements remain in [`RESULTS.md`](RESULTS.md). The post-v1 x4 vision-lane campaign is in [`recipe/vision-x4-lane.md`](recipe/vision-x4-lane.md).
+`main` tracks the current operational recipe. Detailed retained measurements and version boundaries are in [`RESULTS.md`](RESULTS.md). Older snapshots remain available through Git history and named branches rather than being mirrored on the moving main branch.
 
 ## Core architecture
 
@@ -36,7 +31,7 @@ flowchart TB
 
 Lane-local state includes CUDA state, GPU hot-expert cache, GPU-resident KV, host-KV/session state, speculative/MTP state, and the generation loop. The normal production path has no mandatory token-by-token cross-GPU synchronization and does not require NVLink.
 
-## Post-paper session-aware scheduler
+## Session-aware scheduler
 
 The first multi-lane supervisor used request-level free-lane/round-robin scheduling. That is fine for independent throughput tests, but it can move a later turn of a long conversation to another GPU even though prompt/KV state is lane-local. On a real long session this caused a later turn to pay a full prompt re-prefill.
 
@@ -86,16 +81,16 @@ A useful host-RAM rule is:
 required host RAM ≈ one shared expert arena + every lane's host-KV + OS/runtime headroom
 ```
 
-## Evidence boundary
+## Versioned evidence
 
-The submitted paper-v1 evidence remains pinned to recipe snapshot `f54597a` and Strata `6cf101d`. Its controlled results include 1→2→3 lane scaling, shared-vs-private arena PSS, heterogeneous isolation, workload sensitivity, and mixed-serving runs. Post-paper vision and scheduler changes on `main` are operational follow-up work and are **not retroactively inserted into paper-v1 results**.
+The moving `main` keeps the current **0.1.31 operational baseline** and the immediately preceding **0.1.30 benchmark generation**. Measurements keep their original engine version; older generations are not carried forward on `main` or relabeled as current.
 
 See:
 
-- [`RESULTS.md`](RESULTS.md) — retained benchmark evidence
-- [`docs/fork-and-implementation.md`](docs/fork-and-implementation.md) — ownership and reproducibility boundary
-- [`docs/paper-v1-reproducibility.md`](docs/paper-v1-reproducibility.md) — frozen v1 reproduction links
-- [`recipe/vision-x4-lane.md`](recipe/vision-x4-lane.md) — post-v1 vision-lane experiment
+- [`RESULTS.md`](RESULTS.md) — current summary and retained benchmark evidence
+- [`docs/strata-0.1.31-promotion-20261001.md`](docs/strata-0.1.31-promotion-20261001.md) — current operational parity promotion
+- [`docs/strata-0.1.30-promotion-20261001.md`](docs/strata-0.1.30-promotion-20261001.md) — retained full benchmark generation
+- [`docs/fork-and-implementation.md`](docs/fork-and-implementation.md) — upstream/fork/recipe ownership boundary
 
 ## Adapting the recipe
 

@@ -8,15 +8,13 @@ Current promotion evidence:
 - `docs/strata-0.1.31-promotion-20261001.md` — human-readable parity promotion record;
 - `raw/0.1.31-20261001/` — retained 0.1.31 candidate and matched 0.1.30 control smoke / persistent-wave evidence.
 
-Current paper-facing architecture evidence:
+Retained 0.1.30 architecture evidence:
 
 - `strata-0.1.30-promotion-20261001.csv` — promoted validation/provenance gate;
 - `systems-ablation-0.1.30-20261001.csv` — scaling, native shared-arena PSS, heterogeneous isolation and mixed serving;
 - `workload-sensitivity-0.1.30-20261001.csv` — PP/TTFT and warm decode summaries;
 - `oversubscription-0.1.30-summary-20261001.csv` — 3/4/6/9-request exact-queue summaries;
 - `layer-split-ab-0.1.30-20261001.csv` — matched independent-lane ↔ layer-split A/B.
-
-Historical 0.1.22/0.1.24 files remain historical and must not be treated as matched software A/Bs unless their measurement contracts also match.
 
 ## Phase 1 cross-lane interference
 
@@ -36,9 +34,9 @@ The first Phase 2D admission gate is documented in `phase2d-admission-retry-gate
 
 Phase 2E is documented in `phase2e-workload-regime-gate-20261001.md`. On one persistent supervisor, a short -> long -> short sequence (60 facts / 64-token continuation -> 900 facts / 192-token continuation -> short again) keeps new-session placement exactly 2/2/2 in all six waves. The fixed balanced-additive policy therefore remains the promoted policy and workload-regime adaptation is not triggered by current evidence.
 
-## 0.1.30 promoted campaign
+## 0.1.30 retained benchmark generation
 
-Strata 0.1.30 is the **promoted result generation**. The measured implementation is `rhgo1749/Strata-Lanes@dcdd46ff37b1baf5172a96389fbdc0c7b51a7dbc`, based on upstream tag `Niko1221/Strata@30ec18ec7094550fcc594fd948220d511d80464e`. The unpromoted 0.1.29 campaign was superseded before its headline matrix was completed.
+Strata 0.1.30 is the **retained full benchmark generation**. The measured implementation is `rhgo1749/Strata-Lanes@dcdd46ff37b1baf5172a96389fbdc0c7b51a7dbc`, based on upstream tag `Niko1221/Strata@30ec18ec7094550fcc594fd948220d511d80464e`. The unpromoted 0.1.29 campaign was superseded before its headline matrix was completed.
 
 Upstream 0.1.30 contains the shared-arena primitive contributed through Strata PR #129. The lane runtime uses native `--shared-expert-arena`, forces conversation parking off until scheduler locality is modeled, preflights stale listeners, and exposes opt-in exact lane-admission telemetry. Gate 0 and the complete Gate 1 matrix passed on one generation; the 3/4/6/9 oversubscription extension and matched three-GPU layer-split A/B also completed. See `docs/strata-0.1.30-promotion-20261001.md`.
 
@@ -91,7 +89,7 @@ For the retained RTX 5070 Ti x8 + RTX 5060 Ti x4 concurrent runs:
 common-wall concurrent aggregate  113.898 ± 2.985 tok/s
 ```
 
-The fast-lane mean difference is **-0.400 tok/s (-0.56%)**, smaller than the observed run-to-run dispersion in either condition. The paper-safe interpretation is **no material pacing of the fast lane within this measured pair and run set**; do not generalize a numerical bound to other GPU mixes or lane counts.
+The fast-lane mean difference is **-0.400 tok/s (-0.56%)**, smaller than the observed run-to-run dispersion in either condition. The conservative interpretation is **no material pacing of the fast lane within this measured pair and run set**; do not generalize a numerical bound to other GPU mixes or lane counts.
 
 ## Shared-arena memory accounting
 
@@ -104,10 +102,6 @@ PSS saved    46.841001 GiB / 47.35%
 ```
 
 The shared arena is the same 49,116,200 KiB `rw-s` `/dev/shm` mapping in both engines, with `Shared_Dirty` rather than `Private_Dirty`, which is direct physical-sharing evidence.
-
-### Historical swap note
-
-The older 0.1.27 `swap_gib` column is a **host-global** counter, not per-process swap. It remains historical context only and is not used to derive the promoted 0.1.30 PSS saving.
 
 ## Heterogeneous and mixed-content reporting
 
@@ -125,7 +119,7 @@ The ordinary upstream one-engine server serializes generation through its FIFO l
 
 ## Workload sensitivity
 
-Keep no-reuse PP/TTFT and warm steady-state decode as separate measurement classes. Cache-hit rate and speculative acceptance are observational correlates; do not infer causality without a controlled A/B. The promoted 0.1.30 summary is in `workload-sensitivity-0.1.30-20261001.csv`; older generations remain historical only.
+Keep no-reuse PP/TTFT and warm steady-state decode as separate measurement classes. Cache-hit rate and speculative acceptance are observational correlates; do not infer causality without a controlled A/B. The retained 0.1.30 summary is in `workload-sensitivity-0.1.30-20261001.csv`.
 
 ## Statistical/data hygiene
 
@@ -133,9 +127,9 @@ Keep no-reuse PP/TTFT and warm steady-state decode as separate measurement class
 - failed/overlapped client runs are excluded from the retained raw directory; the four retained hetero ABBA chunks are complete JSONL files;
 - report `n`, mean, SD, min/max, and metric definition;
 - state when repetitions are stateful/non-IID;
-- keep historical measurement-contract differences explicit;
+- keep versioned measurement-contract differences explicit;
 - snapshot GPU tuning state in future campaigns rather than reconstructing it later.
 
 ## Reproducibility metadata
 
-Promoted results should identify, where available: fork/upstream commit, binary hash, model/quant, GPU models and negotiated PCIe widths, CPU/RAM, driver/CUDA, lane context/KV, CPU partition, PCIe tuning, MTP/spec settings, sampling/seed, GPU tuning state, warm/cold/reuse state, prompt hash/tokens, output tokens, repetition count, common wall interval, and speculative acceptance when relevant.
+Retained results should identify, where available: fork/upstream commit, binary hash, model/quant, GPU models and negotiated PCIe widths, CPU/RAM, driver/CUDA, lane context/KV, CPU partition, PCIe tuning, MTP/spec settings, sampling/seed, GPU tuning state, warm/cold/reuse state, prompt hash/tokens, output tokens, repetition count, common wall interval, and speculative acceptance when relevant.

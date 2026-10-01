@@ -33,7 +33,7 @@ Before performance runs, record:
 - GPU clock/power/undervolt/memory tuning snapshot;
 - whether the run is cold, clean-warm, reused-prefix, or steady-state warm.
 
-The implementation gate is tracked separately in `strata-0.1.30-candidate-20261001.csv`. Missing optional model fixtures are recorded as unavailable, not silently converted to passes.
+The implementation gate is retained in `strata-0.1.30-promotion-20261001.csv` and the companion promotion record. Missing optional model fixtures are recorded as unavailable, not silently converted to passes.
 
 ## Gate 1 — regenerate the headline systems table
 

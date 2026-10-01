@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 # Qwen3.8-Flash-Next / Strata-Lanes / 3x RTX 5070 Ti
 #
-# Current promoted measurement pin (Strata 0.1.30):
-#   rhgo1749/Strata-Lanes@dcdd46ff37b1baf5172a96389fbdc0c7b51a7dbc
-# Upstream 0.1.30:
-#   Niko1221/Strata@30ec18ec7094550fcc594fd948220d511d80464e
+# Current operational pin (Strata 0.1.31):
+#   rhgo1749/Strata-Lanes@15be91859ffdc49010bf37ed60cb2dfaf4d6e7d5
+# Upstream 0.1.31:
+#   Niko1221/Strata@9259cad4cfa3543cd3b8decab5962672b968c649
 #
-# Upstream 0.1.30 owns the shared expert-arena primitive. The supervisor passes
-# one native --shared-expert-arena backing to all lanes and forces conversation
-# parking off until parked-locality routing is implemented.
+# The supervisor passes one upstream-native --shared-expert-arena backing to
+# all lanes and keeps conversation parking disabled until parked-locality
+# routing is explicitly modeled.
 #
 # This is a host-specific example for the validated GPU enumeration:
 #   GPU0 = PCIe 5.0 x8

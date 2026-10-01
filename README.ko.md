@@ -12,12 +12,7 @@
 - **현재 운용 Strata pin:** [`15be918`](https://github.com/rhgo1749/Strata-Lanes/commit/15be91859ffdc49010bf37ed60cb2dfaf4d6e7d5)
 - 엔진 기준: Strata **0.1.31** (upstream `9259cad`); 승격 기록: [`docs/strata-0.1.31-promotion-20261001.md`](docs/strata-0.1.31-promotion-20261001.md)
 - 기준 서버 현재 production quant: **Qwen3.8-Flash-Next GSQ-RCO IQ3_S**
-- 동결된 paper-v1 recipe snapshot: [`f54597a`](https://github.com/rhgo1749/qwen3.8-flash-next-strata-gpu-per-lane-recipe/commit/f54597a071e56bb0412685c46c4d604d50e26e45), branch `paper-v1`
-- 동결된 paper-v1 Strata 구현 pin: [`6cf101d`](https://github.com/rhgo1749/Strata/commit/6cf101d5b98523cbaefc34a199faa5657c5c2719)
-
-`main`은 논문 제출 이후 계속 움직이는 **운용/개발 브랜치**다. `main`이 바뀌어도 **paper-v1의 측정 결과와 재현 pin은 소급 변경하지 않는다.** 논문 v1을 재현할 때는 위 동결 snapshot과 구현 pin을 사용한다.
-
-상세 실측 결과는 [`RESULTS.md`](RESULTS.md)에 유지한다. 논문 이후 x4 vision-lane 실험은 [`recipe/vision-x4-lane.md`](recipe/vision-x4-lane.md)에 분리돼 있다.
+`main`은 현재 운용 레시피를 따라간다. 유지 중인 실측 결과와 버전 경계는 [`RESULTS.md`](RESULTS.md)에 정리한다. 더 오래된 스냅샷은 움직이는 `main`에 중복 보관하지 않고 Git history와 별도 브랜치에서 확인할 수 있다.
 
 ## 핵심 구조
 
@@ -36,7 +31,7 @@ flowchart TB
 
 CUDA 상태, GPU hot-expert cache, GPU-resident KV, host-KV/session 상태, speculative/MTP 상태, generation loop는 lane별로 독립이다. 정상 production 경로에는 필수 token-by-token cross-GPU 동기화가 없고 NVLink도 필요하지 않다.
 
-## 논문 이후 세션 인지 스케줄러
+## 세션 인지 스케줄러
 
 초기 multi-lane supervisor는 request-level free-lane/round-robin 방식이었다. 독립 요청 throughput 실험에서는 문제가 없지만, KV/prompt cache가 lane-local인 상황에서 긴 대화의 다음 턴이 다른 GPU로 이동하면 전체 또는 대규모 prompt re-prefill을 다시 치를 수 있다.
 
@@ -86,16 +81,16 @@ host RAM은 대략 다음처럼 잡는다.
 필요 host RAM ≈ shared expert arena 1벌 + 모든 lane의 host-KV + OS/runtime 여유
 ```
 
-## 논문 증거 경계
+## 버전별 증거 경계
 
-제출된 paper-v1 증거는 recipe snapshot `f54597a`와 Strata `6cf101d`에 고정돼 있다. 여기에는 1→2→3 lane scaling, shared-vs-private arena PSS, heterogeneous isolation, workload sensitivity, mixed-serving 결과가 포함된다. 논문 이후 `main`에 들어온 vision/scheduler 변경은 **paper-v1 결과에 소급 반영하지 않는다.**
+움직이는 `main`에는 현재 **0.1.31 운용 baseline**과 바로 전 **0.1.30 benchmark generation**만 유지한다. 측정값은 원래 엔진 버전을 그대로 유지하며, 더 오래된 세대의 기록을 현재 결과처럼 재라벨링하지 않는다.
 
 참고:
 
-- [`RESULTS.md`](RESULTS.md) — 보존된 benchmark evidence
-- [`docs/fork-and-implementation.md`](docs/fork-and-implementation.md) — 구현/레시피 소유권과 재현 경계
-- [`docs/paper-v1-reproducibility.md`](docs/paper-v1-reproducibility.md) — 동결된 v1 재현 링크
-- [`recipe/vision-x4-lane.md`](recipe/vision-x4-lane.md) — post-v1 vision-lane 실험
+- [`RESULTS.md`](RESULTS.md) — 현재 요약과 유지 중인 benchmark evidence
+- [`docs/strata-0.1.31-promotion-20261001.md`](docs/strata-0.1.31-promotion-20261001.md) — 현재 운용 parity 승격 기록
+- [`docs/strata-0.1.30-promotion-20261001.md`](docs/strata-0.1.30-promotion-20261001.md) — 유지 중인 전체 benchmark generation
+- [`docs/fork-and-implementation.md`](docs/fork-and-implementation.md) — upstream/fork/recipe 역할 경계
 
 ## 다른 PC에 적용할 때
 

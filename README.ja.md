@@ -12,12 +12,7 @@
 - **現在の運用 Strata pin:** [`15be918`](https://github.com/rhgo1749/Strata-Lanes/commit/15be91859ffdc49010bf37ed60cb2dfaf4d6e7d5)
 - エンジン基準: Strata **0.1.31**（upstream `9259cad`）；昇格記録: [`docs/strata-0.1.31-promotion-20261001.md`](docs/strata-0.1.31-promotion-20261001.md)
 - 参照ホストの現行 production quant: **Qwen3.8-Flash-Next GSQ-RCO IQ3_S**
-- 凍結済み paper-v1 recipe snapshot: [`f54597a`](https://github.com/rhgo1749/qwen3.8-flash-next-strata-gpu-per-lane-recipe/commit/f54597a071e56bb0412685c46c4d604d50e26e45), branch `paper-v1`
-- 凍結済み paper-v1 Strata 実装 pin: [`6cf101d`](https://github.com/rhgo1749/Strata/commit/6cf101d5b98523cbaefc34a199faa5657c5c2719)
-
-`main` は論文提出後も更新される運用/開発ブランチです。`main` が進んでも、**paper-v1 の証拠と再現 pin は遡及的に変更しません。** 論文 v1 を再現する場合は、上記の凍結 snapshot と実装 pin を使用します。
-
-保持している詳細な測定結果は [`RESULTS.md`](RESULTS.md) にあります。論文後の x4 vision-lane 実験は [`recipe/vision-x4-lane.md`](recipe/vision-x4-lane.md) に分離しています。
+`main` は現在の運用レシピを追跡します。保持する実測結果とバージョン境界は [`RESULTS.md`](RESULTS.md) にまとめます。さらに古いスナップショットは moving `main` に重複保持せず、Git history と名前付き branch から確認できます。
 
 ## 基本アーキテクチャ
 
@@ -36,7 +31,7 @@ flowchart TB
 
 CUDA state、GPU hot-expert cache、GPU-resident KV、host-KV/session state、speculative/MTP state、generation loop は lane-local です。通常の production path には必須の token-by-token cross-GPU 同期がなく、NVLink も必須ではありません。
 
-## 論文後の session-aware scheduler
+## Session-aware scheduler
 
 初期 multi-lane supervisor は request-level の free-lane/round-robin でした。独立リクエストの throughput 試験には十分ですが、KV/prompt cache は lane-local なので、長い会話の次ターンが別 GPU に移ると full または大規模な prompt re-prefill が発生し得ます。
 
@@ -86,16 +81,16 @@ host RAM は概ね次のように見積もれます。
 required host RAM ≈ one shared expert arena + every lane's host-KV + OS/runtime headroom
 ```
 
-## 論文証拠の境界
+## バージョン別 evidence
 
-提出済み paper-v1 の証拠は recipe snapshot `f54597a` と Strata `6cf101d` に固定されています。1→2→3 lane scaling、shared-vs-private arena PSS、heterogeneous isolation、workload sensitivity、mixed-serving の結果を含みます。論文後に `main` へ入った vision/scheduler の変更は、**paper-v1 の結果へ遡及して組み込みません。**
+moving `main` には現在の **0.1.31 運用 baseline** と直前の **0.1.30 benchmark generation** のみを保持します。測定値は元の engine version を維持し、古い結果を current として再ラベルしません。
 
 参照:
 
-- [`RESULTS.md`](RESULTS.md) — 保持された benchmark evidence
-- [`docs/fork-and-implementation.md`](docs/fork-and-implementation.md) — 実装/recipe の所有範囲と再現境界
-- [`docs/paper-v1-reproducibility.md`](docs/paper-v1-reproducibility.md) — 凍結済み v1 再現リンク
-- [`recipe/vision-x4-lane.md`](recipe/vision-x4-lane.md) — post-v1 vision-lane 実験
+- [`RESULTS.md`](RESULTS.md) — 現在の要約と保持中の benchmark evidence
+- [`docs/strata-0.1.31-promotion-20261001.md`](docs/strata-0.1.31-promotion-20261001.md) — 現在の運用 parity promotion
+- [`docs/strata-0.1.30-promotion-20261001.md`](docs/strata-0.1.30-promotion-20261001.md) — 保持中の完全な benchmark generation
+- [`docs/fork-and-implementation.md`](docs/fork-and-implementation.md) — upstream/fork/recipe の役割境界
 
 ## 別の PC へ適用する場合
 
