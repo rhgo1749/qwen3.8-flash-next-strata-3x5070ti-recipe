@@ -5,18 +5,19 @@ This repository owns the reference-host measurements for the GPU-per-lane Strata
 ## Current promoted implementation
 
 ```text
-repository       rhgo1749/Strata-Lanes
-measured commit  dcdd46ff37b1baf5172a96389fbdc0c7b51a7dbc
-upstream 0.1.30  30ec18ec7094550fcc594fd948220d511d80464e
-engine           Strata 0.1.30
-binary sha256    cc4236096662b1786a7730316002cbd38850f7451b517102fe4fec89eadf0147
+repository          rhgo1749/Strata-Lanes
+operational main    15be91859ffdc49010bf37ed60cb2dfaf4d6e7d5
+measured runtime    0e29989c8a1ba016950ec3722531edcae42bdae5
+upstream 0.1.31     9259cad4cfa3543cd3b8decab5962672b968c649
+engine              Strata 0.1.31
+binary sha256       afe4970c509860fe000131d20726972962b98179a04949212126c2742040dc4d
 ```
 
-Strata 0.1.30 is now the promoted measurement generation. The complete same-generation campaign passed implementation/provenance, 1→2→3 lane scaling, native shared-arena PSS, heterogeneous isolation, workload sensitivity, mixed three-lane serving, exact-queue oversubscription, and the matched independent-lanes ↔ upstream layer-split A/B.
+Strata 0.1.31 is the current **operational baseline** after a compatibility/parity promotion. It passed the expanded serving suite, sm_120 CUDA build, fixture-independent CTests, live text/vision/session/disconnect correctness, native shared-arena structural validation, and three persistent balanced-additive scheduler waves. See [`docs/strata-0.1.31-promotion-20261001.md`](docs/strata-0.1.31-promotion-20261001.md) and `bench/strata-0.1.31-promotion-20261001.csv`.
 
-Headline results: **70.804 → 132.760 → 189.486 tok/s** common-wall scaling, **98.925 → 52.084 GiB** two-engine PSS with upstream-native sharing, **184.669 ± 5.966 tok/s** mixed three-lane serving, and no material fast-lane pacing in the measured 5070 Ti + 5060 Ti pair. In the matched architecture A/B, three-GPU layer split is **45.4% faster for one warm request**, while three independent lanes deliver **84.7% more aggregate throughput for three simultaneous requests**.
+The complete architecture-performance matrix remains the **Strata 0.1.30 measured generation** rather than being relabeled. Its headline results are **70.804 → 132.760 → 189.486 tok/s** common-wall scaling, **98.925 → 52.084 GiB** two-engine PSS with upstream-native sharing, **184.669 ± 5.966 tok/s** mixed three-lane serving, and no material fast-lane pacing in the measured 5070 Ti + 5060 Ti pair. In the matched architecture A/B, three-GPU layer split is **45.4% faster for one warm request**, while three independent lanes deliver **84.7% more aggregate throughput for three simultaneous requests**.
 
-Full promotion record: [`docs/strata-0.1.30-promotion-20261001.md`](docs/strata-0.1.30-promotion-20261001.md). Machine-readable summaries start with `bench/strata-0.1.30-promotion-20261001.csv` and the companion `bench/*0.1.30*20261001.csv` result tables. Historical 0.1.27 and earlier evidence is retained below and must not be relabeled as 0.1.30.
+Full 0.1.30 measurement record: [`docs/strata-0.1.30-promotion-20261001.md`](docs/strata-0.1.30-promotion-20261001.md). Historical evidence retains its original engine generation and is not retroactively relabeled.
 
 ## Reference host
 

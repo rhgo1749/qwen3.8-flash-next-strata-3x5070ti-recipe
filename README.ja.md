@@ -9,8 +9,8 @@
 ## 現在の状態
 
 - 実装 fork: [`rhgo1749/Strata-Lanes`](https://github.com/rhgo1749/Strata-Lanes)
-- **現在の運用 Strata pin:** [`614b2ae`](https://github.com/rhgo1749/Strata-Lanes/commit/614b2ae904bbe949144c694388b985fc6a0d20d8)
-- エンジン基準: Strata **0.1.27**（upstream `a790805`）
+- **現在の運用 Strata pin:** [`15be918`](https://github.com/rhgo1749/Strata-Lanes/commit/15be91859ffdc49010bf37ed60cb2dfaf4d6e7d5)
+- エンジン基準: Strata **0.1.31**（upstream `9259cad`）；昇格記録: [`docs/strata-0.1.31-promotion-20261001.md`](docs/strata-0.1.31-promotion-20261001.md)
 - 参照ホストの現行 production quant: **Qwen3.8-Flash-Next GSQ-RCO IQ3_S**
 - 凍結済み paper-v1 recipe snapshot: [`f54597a`](https://github.com/rhgo1749/qwen3.8-flash-next-strata-gpu-per-lane-recipe/commit/f54597a071e56bb0412685c46c4d604d50e26e45), branch `paper-v1`
 - 凍結済み paper-v1 Strata 実装 pin: [`6cf101d`](https://github.com/rhgo1749/Strata/commit/6cf101d5b98523cbaefc34a199faa5657c5c2719)
@@ -40,14 +40,14 @@ CUDA state、GPU hot-expert cache、GPU-resident KV、host-KV/session state、sp
 
 初期 multi-lane supervisor は request-level の free-lane/round-robin でした。独立リクエストの throughput 試験には十分ですが、KV/prompt cache は lane-local なので、長い会話の次ターンが別 GPU に移ると full または大規模な prompt re-prefill が発生し得ます。
 
-現在の `main` は **session affinity + live-state-aware placement** を使い、優先順位を明示しています。
+現在の `main` は **厳格な session affinity + balanced-additive の新規 session 配置**を使い、優先順位を明示しています。
 
 1. まず、healthy で hard capability 条件（例: vision）を満たす lane だけを候補にします。
 2. 既知 session の場合は、その session が記憶している lane を使います。その lane が busy なら、**別 GPU へ spill せず、その lane の後ろで待ちます。**
 3. 完全に新しい session は busy lane に割り込みません。すべての候補が busy なら、request/stream が完全に終了して lane が release されるまで待ちます。
-4. idle 候補の中では live conversation state がない lane を最優先します。
-5. すべての idle 候補に live state がある場合は、**現在の live request state が最も小さい lane**を選び、上書きする prompt-cache locality のコストを抑えます。
-6. コストが同じなら **最も長く使われていない live state（LRU）** を優先し、最後の同率は rotating cursor で公平に処理します。
+4. 利用可能な idle lane の中では、まず **記憶済み affinity session 数が最も少ない lane**を優先し、長期 cache state が1つの lane を恒常的な attractor にしないようにします。
+5. session 数が同じ候補では、**推定 new-prefill bytes + 直前に完了した request の retained bytes** の合計を最小化します。これは routing-state proxy であり、engine-truth の compute cost を意味しません。
+6. live-state recency と rotating candidate order は同率時の tie-breaker として残します。`safe-affinity-live-state-v1` は明示的な rollback policy として維持します。
 
 待機中の新しい session は **compatible FIFO ticket** で並びます。先に待っていてその lane を利用できる request が、新しく解放された lane を優先して取得します。一方、vision のように capability 制約のある request は、自分が利用できない別 lane まで塞ぎません。既知 session の continuation が自分の lane を待っている間はその lane を予約するため、`notify_all()` の wake-up race で新しい session が cache-rich lane を横取りできません。実際の空 live state は affinity key の有無ではなく `live_request_bytes == 0` で判定します。
 

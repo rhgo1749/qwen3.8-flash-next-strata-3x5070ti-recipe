@@ -1,0 +1,11 @@
+kind,engine,fork_commit,upstream_commit,metric,value,unit,status,notes
+provenance,0.1.31,0e29989c8a1ba016950ec3722531edcae42bdae5,9259cad4cfa3543cd3b8decab5962672b968c649,binary_sha256,afe4970c509860fe000131d20726972962b98179a04949212126c2742040dc4d,sha256,pass,CUDA 13.4 sm_120 Release
+validation,0.1.31,0e29989c8a1ba016950ec3722531edcae42bdae5,9259cad4cfa3543cd3b8decab5962672b968c649,python_serving_passed,156,tests,pass,7 skipped
+validation,0.1.31,0e29989c8a1ba016950ec3722531edcae42bdae5,9259cad4cfa3543cd3b8decab5962672b968c649,ctest_passed,47,tests,pass,2 skipped; 3 external-fixture unavailable
+smoke,0.1.31,0e29989c8a1ba016950ec3722531edcae42bdae5,9259cad4cfa3543cd3b8decab5962672b968c649,correctness_runs,3,runs,pass,text vision affinity malformed disconnect recovery
+disconnect,0.1.31,0e29989c8a1ba016950ec3722531edcae42bdae5,9259cad4cfa3543cd3b8decab5962672b968c649,cleanup_polls,36|29|31,250ms-polls,pass,matched control 0.1.30=36|34|33
+scheduler,0.1.31,0e29989c8a1ba016950ec3722531edcae42bdae5,9259cad4cfa3543cd3b8decab5962672b968c649,wave_1_common_wall_tg,88.492126,tok/s,pass,2/2/2 placement; affinity preserved
+scheduler,0.1.31,0e29989c8a1ba016950ec3722531edcae42bdae5,9259cad4cfa3543cd3b8decab5962672b968c649,wave_2_common_wall_tg,87.166071,tok/s,pass,2/2/2 placement; affinity preserved
+scheduler,0.1.31,0e29989c8a1ba016950ec3722531edcae42bdae5,9259cad4cfa3543cd3b8decab5962672b968c649,wave_3_common_wall_tg,65.915707,tok/s,pass,2/2/2 placement; affinity preserved
+shared_arena,0.1.31,0e29989c8a1ba016950ec3722531edcae42bdae5,9259cad4cfa3543cd3b8decab5962672b968c649,file_size,50294992896,bytes,pass,same inode mapped by all 3 engines
+shared_arena,0.1.31,0e29989c8a1ba016950ec3722531edcae42bdae5,9259cad4cfa3543cd3b8decab5962672b968c649,shared_dirty_per_engine,49116200,KiB,pass,Private_Dirty=0

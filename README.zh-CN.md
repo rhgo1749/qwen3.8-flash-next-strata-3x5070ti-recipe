@@ -9,8 +9,8 @@
 ## 当前状态
 
 - 实现 fork：[`rhgo1749/Strata-Lanes`](https://github.com/rhgo1749/Strata-Lanes)
-- **当前运行用 Strata pin：** [`614b2ae`](https://github.com/rhgo1749/Strata-Lanes/commit/614b2ae904bbe949144c694388b985fc6a0d20d8)
-- 引擎基线：Strata **0.1.27**（upstream `a790805`）
+- **当前运行用 Strata pin：** [`15be918`](https://github.com/rhgo1749/Strata-Lanes/commit/15be91859ffdc49010bf37ed60cb2dfaf4d6e7d5)
+- 引擎基线：Strata **0.1.31**（upstream `9259cad`）；升级记录：[`docs/strata-0.1.31-promotion-20261001.md`](docs/strata-0.1.31-promotion-20261001.md)
 - 参考主机当前 production quant：**Qwen3.8-Flash-Next GSQ-RCO IQ3_S**
 - 冻结的 paper-v1 recipe snapshot：[`f54597a`](https://github.com/rhgo1749/qwen3.8-flash-next-strata-gpu-per-lane-recipe/commit/f54597a071e56bb0412685c46c4d604d50e26e45)，branch `paper-v1`
 - 冻结的 paper-v1 Strata 实现 pin：[`6cf101d`](https://github.com/rhgo1749/Strata/commit/6cf101d5b98523cbaefc34a199faa5657c5c2719)
@@ -40,14 +40,14 @@ CUDA 状态、GPU hot-expert cache、GPU-resident KV、host-KV/session 状态、
 
 最初的 multi-lane supervisor 使用 request-level free-lane/round-robin。对独立吞吐测试这没问题，但 KV/prompt cache 是 lane-local 的，因此长对话后续轮次如果被送到另一张 GPU，就可能重新支付完整或大规模 prompt prefill。
 
-当前 `main` 使用 **session affinity + live-state-aware placement**，优先级明确如下：
+当前 `main` 使用 **严格 session affinity + balanced-additive 新 session 放置**，优先级明确如下：
 
 1. 先只保留健康、且满足硬能力条件（例如 vision）的 lane。
 2. 如果请求属于已知 session，则使用该 session 记住的 lane。若该 lane busy，**等待该 lane，而不是 spill 到其他 GPU。**
 3. 完全新的 session 不会插入 busy lane。若所有候选 lane 都 busy，则等到某个 request/stream 完全结束并 release lane。
-4. 在 idle lane 中，优先选择没有 live conversation state 的 lane。
-5. 若所有 idle 候选都有 live state，则选择 **当前 live request state 最小的 lane**，尽量减少被覆盖的 prompt-cache locality 成本。
-6. 若成本相同，则优先 **最久未使用的 live state（LRU）**；最后用 rotating cursor 解决公平性平局。
+4. 在可用的 idle lane 中，先选择 **已记忆 affinity session 数最少的 lane**，避免长期 cache state 把某个 lane 变成永久吸引点。
+5. affinity session 数相同的候选中，最小化 **估计 new-prefill bytes + 最近一次已完成请求的 retained bytes**。这只是 routing-state proxy，不代表 engine-truth compute cost。
+6. live-state recency 与 rotating candidate order 仍用于最终平局处理。`safe-affinity-live-state-v1` 保留为明确的 rollback 策略。
 
 排队的新 session 使用 **compatible FIFO ticket**：更早等待且可使用该 lane 的请求优先获得刚释放的 lane，而 vision 之类有 capability 约束的请求不会阻塞自己不能使用的其他 lane。已知 session 的 continuation 在等待自己的 lane 时会对该 lane 做 reservation，因此 `notify_all()` 的唤醒竞争不会让新 session 抢走 cache-rich lane。真正的空 live state 由 `live_request_bytes == 0` 判断，而不是看是否存在 affinity key。
 

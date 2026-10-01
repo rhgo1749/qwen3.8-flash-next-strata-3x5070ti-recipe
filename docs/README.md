@@ -4,7 +4,12 @@ This directory keeps human-readable experiment and implementation records for th
 
 Machine-readable benchmark repetitions live under [`../bench/`](../bench/). The current promoted summary is [`../RESULTS.md`](../RESULTS.md). Generic runtime contracts and source code belong in [`rhgo1749/Strata-Lanes`](https://github.com/rhgo1749/Strata-Lanes).
 
-## Current paper-validation evidence — Strata 0.1.27
+## Current operational baseline — Strata 0.1.31
+
+- [`strata-0.1.31-promotion-20261001.md`](strata-0.1.31-promotion-20261001.md) — upstream-sync parity promotion, including implementation tests, live serving smoke, matched disconnect control, persistent scheduler parity and shared-arena structural evidence.
+- The complete architecture-performance matrix remains in the 0.1.30 records; 0.1.31 does not retroactively relabel those measurements.
+
+## Frozen paper-validation evidence — Strata 0.1.27
 
 - [`systems-ablation-0.1.27-20260930.md`](systems-ablation-0.1.27-20260930.md) — 1→2→3 GPU scaling, private-vs-shared PSS, heterogeneous isolation, methodology, and caveats.
 - [`workload-sensitivity-0.1.27-20260930.md`](workload-sensitivity-0.1.27-20260930.md) — fiction/coding/reasoning/long-context PP/TG, cache-hit, speculative-acceptance, and mixed-serving measurements.
@@ -35,4 +40,4 @@ Historical records are intentionally kept at their original paths so existing li
 
 ## Reporting rule
 
-Use the 0.1.27 files above for current paper claims. Historical files are retained for provenance and qualitative comparison, not as strict software-version A/B measurements unless the underlying prompts, model, quantization, runtime settings, and measurement contract match.
+Use the 0.1.27 files above only for the frozen paper-v1 claim set. Use the 0.1.30 records for the complete post-paper architecture-performance matrix, and the 0.1.31 record for the current operational parity promotion. Historical files are retained for provenance and qualitative comparison, not as strict software-version A/B measurements unless the underlying prompts, model, quantization, runtime settings, and measurement contract match.

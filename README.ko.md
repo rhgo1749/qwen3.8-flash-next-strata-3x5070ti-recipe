@@ -9,8 +9,8 @@
 ## 현재 상태
 
 - 구현 포크: [`rhgo1749/Strata-Lanes`](https://github.com/rhgo1749/Strata-Lanes)
-- **현재 운용 Strata pin:** [`614b2ae`](https://github.com/rhgo1749/Strata-Lanes/commit/614b2ae904bbe949144c694388b985fc6a0d20d8)
-- 엔진 기준: Strata **0.1.27** (upstream `a790805`)
+- **현재 운용 Strata pin:** [`15be918`](https://github.com/rhgo1749/Strata-Lanes/commit/15be91859ffdc49010bf37ed60cb2dfaf4d6e7d5)
+- 엔진 기준: Strata **0.1.31** (upstream `9259cad`); 승격 기록: [`docs/strata-0.1.31-promotion-20261001.md`](docs/strata-0.1.31-promotion-20261001.md)
 - 기준 서버 현재 production quant: **Qwen3.8-Flash-Next GSQ-RCO IQ3_S**
 - 동결된 paper-v1 recipe snapshot: [`f54597a`](https://github.com/rhgo1749/qwen3.8-flash-next-strata-gpu-per-lane-recipe/commit/f54597a071e56bb0412685c46c4d604d50e26e45), branch `paper-v1`
 - 동결된 paper-v1 Strata 구현 pin: [`6cf101d`](https://github.com/rhgo1749/Strata/commit/6cf101d5b98523cbaefc34a199faa5657c5c2719)
@@ -40,14 +40,14 @@ CUDA 상태, GPU hot-expert cache, GPU-resident KV, host-KV/session 상태, spec
 
 초기 multi-lane supervisor는 request-level free-lane/round-robin 방식이었다. 독립 요청 throughput 실험에서는 문제가 없지만, KV/prompt cache가 lane-local인 상황에서 긴 대화의 다음 턴이 다른 GPU로 이동하면 전체 또는 대규모 prompt re-prefill을 다시 치를 수 있다.
 
-현재 `main`은 **session affinity + live-state-aware placement**를 사용한다. 우선순위는 명시적으로 다음과 같다.
+현재 `main`은 **엄격한 session affinity + balanced-additive 새 세션 배치**를 사용한다. 우선순위는 명시적으로 다음과 같다.
 
 1. 먼저 살아 있고 capability 조건(예: vision)을 만족하는 lane만 후보로 남긴다.
 2. 이미 알려진 세션이면 그 세션이 기억하고 있는 lane을 사용한다. 그 lane이 busy면 **다른 GPU로 도망가지 않고 그 lane 뒤에서 기다린다.**
 3. 완전히 새로운 세션은 이미 busy인 lane에 끼어들지 않는다. 모든 후보가 busy면 request/stream 하나가 완전히 끝나 lane을 release할 때까지 기다린다.
-4. idle 후보 중 live conversation state가 없는 lane을 가장 먼저 쓴다.
-5. 모든 idle 후보에 live state가 있으면 **현재 live request state가 가장 작은 lane**을 선택해 덮어쓰는 prompt-cache locality 비용을 최소화한다.
-6. 비용이 같으면 **가장 오래 쓰지 않은 live state(LRU)** 를 우선하고, 마지막 동률은 rotating cursor로 공정하게 푼다.
+4. 사용 가능한 idle lane 중에서는 먼저 **기억된 affinity session 수가 가장 적은 lane**을 선호해 장기 cache state가 한 lane을 영구적인 attractor로 만들지 않게 한다.
+5. session 수가 같은 후보끼리는 **추정 new-prefill bytes + 마지막 완료 요청의 retained bytes** 합을 최소화한다. 이는 routing-state proxy이지 engine-truth compute cost 주장이 아니다.
+6. live-state recency와 rotating candidate order는 동률 해소용으로 남는다. `safe-affinity-live-state-v1`은 명시적인 rollback 정책으로 유지한다.
 
 대기 중인 새 세션은 **compatible FIFO ticket**으로 줄을 선다. 먼저 기다린 compatible 요청이 새로 풀린 lane을 먼저 받고, vision 같은 capability 제약 요청은 자신이 쓸 수 없는 다른 lane까지 막지 않는다. 기존 세션 continuation이 자기 lane을 기다리는 동안에는 그 lane을 예약하므로 `notify_all()` wake-up race 때문에 새 세션이 cache-rich lane을 가로채지 못한다. 실제 빈 live state는 affinity key 유무가 아니라 `live_request_bytes == 0`으로 판정한다.
 

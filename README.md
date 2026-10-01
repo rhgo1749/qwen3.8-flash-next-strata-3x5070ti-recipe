@@ -9,8 +9,8 @@ A practical recipe for running **one independent Strata generation lane per GPU*
 ## Current state
 
 - Implementation fork: [`rhgo1749/Strata-Lanes`](https://github.com/rhgo1749/Strata-Lanes)
-- **Current operational Strata pin:** [`614b2ae`](https://github.com/rhgo1749/Strata-Lanes/commit/614b2ae904bbe949144c694388b985fc6a0d20d8)
-- Engine baseline: Strata **0.1.27** (`a790805` upstream)
+- **Current operational Strata pin:** [`15be918`](https://github.com/rhgo1749/Strata-Lanes/commit/15be91859ffdc49010bf37ed60cb2dfaf4d6e7d5)
+- Engine baseline: Strata **0.1.31** (`9259cad` upstream); promotion record: [`docs/strata-0.1.31-promotion-20261001.md`](docs/strata-0.1.31-promotion-20261001.md)
 - Current production quant on the reference host: **Qwen3.8-Flash-Next GSQ-RCO IQ3_S**
 - Frozen paper-v1 recipe snapshot: [`f54597a`](https://github.com/rhgo1749/qwen3.8-flash-next-strata-gpu-per-lane-recipe/commit/f54597a071e56bb0412685c46c4d604d50e26e45), branch `paper-v1`
 - Frozen paper-v1 Strata implementation pin: [`6cf101d`](https://github.com/rhgo1749/Strata/commit/6cf101d5b98523cbaefc34a199faa5657c5c2719)
@@ -40,14 +40,14 @@ Lane-local state includes CUDA state, GPU hot-expert cache, GPU-resident KV, hos
 
 The first multi-lane supervisor used request-level free-lane/round-robin scheduling. That is fine for independent throughput tests, but it can move a later turn of a long conversation to another GPU even though prompt/KV state is lane-local. On a real long session this caused a later turn to pay a full prompt re-prefill.
 
-Current `main` therefore uses **session affinity plus live-state-aware placement**. The ordering is explicit:
+Current `main` uses **strict session affinity plus balanced-additive new-session placement**. The ordering is explicit:
 
 1. Filter to healthy lanes that satisfy hard capabilities such as vision.
 2. If the request belongs to a known session, use its remembered lane. If that lane is busy, **wait behind that lane instead of spilling to another GPU**.
 3. A completely new session never enters an already-busy lane. If every eligible lane is busy, it waits until a request/stream fully releases a lane.
-4. Among idle lanes, prefer a lane with no live conversation state.
-5. If all idle candidates have live state, prefer the lane with the **smallest live request state** to minimize overwritten prompt-cache locality.
-6. If that cost is tied, prefer the **least recently used live state**; rotating candidate order is the final fairness tie-breaker.
+4. Among eligible idle lanes, first prefer the lane with the **fewest remembered affinity sessions** so long-lived cache state does not turn one lane into a permanent attractor.
+5. Among equally balanced candidates, minimize **estimated new-prefill bytes + retained last-completed-request bytes**. This is an explicit routing-state proxy, not engine-truth compute cost.
+6. Live-state recency and rotating candidate order remain tie-breakers. `safe-affinity-live-state-v1` remains the explicit rollback policy.
 
 Queued new sessions use **compatible FIFO tickets**: an older compatible waiter gets a newly released lane first, while capability-constrained work such as vision does not block unrelated lanes. A remembered continuation waiting for its lane reserves that lane, so a `notify_all()` wake-up race cannot let a new session steal the cache-rich lane. An empty live state is defined by `live_request_bytes == 0`, not by the absence of an affinity key.
 

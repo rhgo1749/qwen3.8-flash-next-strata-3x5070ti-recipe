@@ -1,8 +1,14 @@
 # Benchmark and reporting contract
 
-The **current promoted software baseline** is Strata **0.1.30** on measured fork commit `dcdd46ff37b1baf5172a96389fbdc0c7b51a7dbc`, upstream `30ec18ec7094550fcc594fd948220d511d80464e`.
+The **current operational software baseline** is Strata **0.1.31** on fork main `15be91859ffdc49010bf37ed60cb2dfaf4d6e7d5`, measured at runtime merge `0e29989c8a1ba016950ec3722531edcae42bdae5`, upstream `9259cad4cfa3543cd3b8decab5962672b968c649`. The 0.1.31 promotion is a compatibility/parity gate; the complete architecture-performance matrix remains the retained 0.1.30 measurement generation.
 
-Current paper-facing evidence:
+Current promotion evidence:
+
+- `strata-0.1.31-promotion-20261001.csv` — 0.1.31 provenance, implementation, smoke, scheduler-parity and shared-arena gate;
+- `docs/strata-0.1.31-promotion-20261001.md` — human-readable parity promotion record;
+- `raw/0.1.31-20261001/` — retained 0.1.31 candidate and matched 0.1.30 control smoke / persistent-wave evidence.
+
+Current paper-facing architecture evidence:
 
 - `strata-0.1.30-promotion-20261001.csv` — promoted validation/provenance gate;
 - `systems-ablation-0.1.30-20261001.csv` — scaling, native shared-arena PSS, heterogeneous isolation and mixed serving;
