@@ -1,0 +1,763 @@
+{
+  "date": "2026-10-01",
+  "experiments": {
+    "direct_cold_long": {
+      "arms": {
+        "plus1": {
+          "cache_n": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0,
+            "n": 3,
+            "sd": 0.0
+          },
+          "client_token_ttft_ms": {
+            "max": 11710.647,
+            "mean": 11625.292,
+            "median": 11639.64,
+            "min": 11525.589,
+            "n": 3,
+            "sd": 93.36
+          },
+          "decode_ms": {
+            "max": 4168.9,
+            "mean": 4037.5,
+            "min": 3930.2,
+            "n": 3,
+            "sd": 121.161
+          },
+          "decode_tg_vs_solo_pct": -7.125,
+          "decode_tok_s": {
+            "max": 65.1,
+            "mean": 63.433,
+            "min": 61.4,
+            "n": 3,
+            "sd": 1.877
+          },
+          "decode_vs_solo_pct": 7.432,
+          "expert_hit_rate": {
+            "max": 0.798,
+            "mean": 0.788,
+            "min": 0.777,
+            "n": 3,
+            "sd": 0.011
+          },
+          "prompt_ms": {
+            "max": 11644.7,
+            "mean": 11558.867,
+            "min": 11459.9,
+            "n": 3,
+            "sd": 93.097
+          },
+          "prompt_vs_solo_pct": 0.438
+        },
+        "plus2": {
+          "cache_n": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0,
+            "n": 3,
+            "sd": 0.0
+          },
+          "client_token_ttft_ms": {
+            "max": 11902.604,
+            "mean": 11877.018,
+            "median": 11887.574,
+            "min": 11840.876,
+            "n": 3,
+            "sd": 32.189
+          },
+          "decode_ms": {
+            "max": 4346.3,
+            "mean": 4269.533,
+            "min": 4123.8,
+            "n": 3,
+            "sd": 126.269
+          },
+          "decode_tg_vs_solo_pct": -12.152,
+          "decode_tok_s": {
+            "max": 62.1,
+            "mean": 60.0,
+            "min": 58.9,
+            "n": 3,
+            "sd": 1.819
+          },
+          "decode_vs_solo_pct": 13.606,
+          "expert_hit_rate": {
+            "max": 0.816,
+            "mean": 0.809,
+            "min": 0.805,
+            "n": 3,
+            "sd": 0.006
+          },
+          "prompt_ms": {
+            "max": 11832.0,
+            "mean": 11808.5,
+            "min": 11771.4,
+            "n": 3,
+            "sd": 32.509
+          },
+          "prompt_vs_solo_pct": 2.607
+        },
+        "solo": {
+          "cache_n": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0,
+            "n": 3,
+            "sd": 0.0
+          },
+          "client_token_ttft_ms": {
+            "max": 11631.246,
+            "mean": 11571.554,
+            "median": 11575.552,
+            "min": 11507.864,
+            "n": 3,
+            "sd": 61.788
+          },
+          "decode_ms": {
+            "max": 4021.5,
+            "mean": 3758.2,
+            "min": 3625.9,
+            "n": 3,
+            "sd": 228.025
+          },
+          "decode_tg_vs_solo_pct": 0.0,
+          "decode_tok_s": {
+            "max": 70.6,
+            "mean": 68.3,
+            "min": 63.7,
+            "n": 3,
+            "sd": 3.984
+          },
+          "decode_vs_solo_pct": 0.0,
+          "expert_hit_rate": {
+            "max": 0.81,
+            "mean": 0.805,
+            "min": 0.797,
+            "n": 3,
+            "sd": 0.007
+          },
+          "prompt_ms": {
+            "max": 11569.5,
+            "mean": 11508.5,
+            "min": 11446.6,
+            "n": 3,
+            "sd": 61.455
+          },
+          "prompt_vs_solo_pct": 0.0
+        }
+      },
+      "source_files": [
+        "/home/gonus/projects/qwen3.8-flash-next-strata-gpu-per-lane-recipe/bench/raw/phase1-20261001/phase1-direct-cold-long-cold-long-v1.jsonl"
+      ]
+    },
+    "direct_cold_short": {
+      "arms": {
+        "plus1": {
+          "cache_n": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0,
+            "n": 6,
+            "sd": 0.0
+          },
+          "client_token_ttft_ms": {
+            "max": 1848.916,
+            "mean": 1844.754,
+            "median": 1844.804,
+            "min": 1840.474,
+            "n": 6,
+            "sd": 2.786
+          },
+          "decode_ms": {
+            "max": 4606.5,
+            "mean": 3949.617,
+            "min": 3602.0,
+            "n": 6,
+            "sd": 360.687
+          },
+          "decode_tg_vs_solo_pct": -8.487,
+          "decode_tok_s": {
+            "max": 71.1,
+            "mean": 65.233,
+            "min": 55.6,
+            "n": 6,
+            "sd": 5.503
+          },
+          "decode_vs_solo_pct": 9.657,
+          "expert_hit_rate": {
+            "max": 0.806,
+            "mean": 0.797,
+            "min": 0.78,
+            "n": 6,
+            "sd": 0.011
+          },
+          "prompt_ms": {
+            "max": 1815.3,
+            "mean": 1811.3,
+            "min": 1806.7,
+            "n": 6,
+            "sd": 3.298
+          },
+          "prompt_vs_solo_pct": -0.353
+        },
+        "plus2": {
+          "cache_n": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0,
+            "n": 6,
+            "sd": 0.0
+          },
+          "client_token_ttft_ms": {
+            "max": 2193.202,
+            "mean": 2152.42,
+            "median": 2146.794,
+            "min": 2138.025,
+            "n": 6,
+            "sd": 20.619
+          },
+          "decode_ms": {
+            "max": 4636.4,
+            "mean": 4241.033,
+            "min": 3994.1,
+            "n": 6,
+            "sd": 249.085
+          },
+          "decode_tg_vs_solo_pct": -15.081,
+          "decode_tok_s": {
+            "max": 64.1,
+            "mean": 60.533,
+            "min": 55.2,
+            "n": 6,
+            "sd": 3.449
+          },
+          "decode_vs_solo_pct": 17.748,
+          "expert_hit_rate": {
+            "max": 0.809,
+            "mean": 0.799,
+            "min": 0.772,
+            "n": 6,
+            "sd": 0.014
+          },
+          "prompt_ms": {
+            "max": 2158.0,
+            "mean": 2116.35,
+            "min": 2101.4,
+            "n": 6,
+            "sd": 20.913
+          },
+          "prompt_vs_solo_pct": 16.429
+        },
+        "solo": {
+          "cache_n": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0,
+            "n": 6,
+            "sd": 0.0
+          },
+          "client_token_ttft_ms": {
+            "max": 1883.978,
+            "mean": 1847.847,
+            "median": 1834.296,
+            "min": 1825.76,
+            "n": 6,
+            "sd": 25.791
+          },
+          "decode_ms": {
+            "max": 3967.0,
+            "mean": 3601.8,
+            "min": 3318.9,
+            "n": 6,
+            "sd": 224.459
+          },
+          "decode_tg_vs_solo_pct": 0.0,
+          "decode_tok_s": {
+            "max": 77.1,
+            "mean": 71.283,
+            "min": 64.5,
+            "n": 6,
+            "sd": 4.352
+          },
+          "decode_vs_solo_pct": 0.0,
+          "expert_hit_rate": {
+            "max": 0.816,
+            "mean": 0.796,
+            "min": 0.78,
+            "n": 6,
+            "sd": 0.014
+          },
+          "prompt_ms": {
+            "max": 1852.5,
+            "mean": 1817.717,
+            "min": 1797.6,
+            "n": 6,
+            "sd": 25.779
+          },
+          "prompt_vs_solo_pct": 0.0
+        }
+      },
+      "source_files": [
+        "/home/gonus/projects/qwen3.8-flash-next-strata-gpu-per-lane-recipe/bench/raw/phase1-20261001/phase1-direct-cold-short-cold-short-v1.jsonl",
+        "/home/gonus/projects/qwen3.8-flash-next-strata-gpu-per-lane-recipe/bench/raw/phase1-20261001/phase1-direct-cold-short-cold-short-v2.jsonl"
+      ]
+    },
+    "direct_warm_short": {
+      "arms": {
+        "plus1": {
+          "cache_n": {
+            "max": 2327.0,
+            "mean": 2327.0,
+            "min": 2327.0,
+            "n": 6,
+            "sd": 0.0
+          },
+          "client_token_ttft_ms": {
+            "max": 143.56,
+            "mean": 106.764,
+            "median": 100.342,
+            "min": 90.723,
+            "n": 6,
+            "sd": 18.732
+          },
+          "decode_ms": {
+            "max": 4389.6,
+            "mean": 4038.85,
+            "min": 3764.5,
+            "n": 6,
+            "sd": 229.124
+          },
+          "decode_tg_vs_solo_pct": -6.864,
+          "decode_tok_s": {
+            "max": 68.0,
+            "mean": 63.55,
+            "min": 58.3,
+            "n": 6,
+            "sd": 3.532
+          },
+          "decode_vs_solo_pct": 7.299,
+          "expert_hit_rate": {
+            "max": 0.796,
+            "mean": 0.79,
+            "min": 0.786,
+            "n": 6,
+            "sd": 0.004
+          },
+          "prompt_ms": {
+            "max": 109.5,
+            "mean": 73.633,
+            "min": 61.4,
+            "n": 6,
+            "sd": 17.837
+          },
+          "prompt_vs_solo_pct": 33.112
+        },
+        "plus2": {
+          "cache_n": {
+            "max": 2327.0,
+            "mean": 2327.0,
+            "min": 2327.0,
+            "n": 6,
+            "sd": 0.0
+          },
+          "client_token_ttft_ms": {
+            "max": 125.692,
+            "mean": 116.488,
+            "median": 116.555,
+            "min": 105.5,
+            "n": 6,
+            "sd": 6.884
+          },
+          "decode_ms": {
+            "max": 4783.5,
+            "mean": 4543.117,
+            "min": 4303.0,
+            "n": 6,
+            "sd": 237.732
+          },
+          "decode_tg_vs_solo_pct": -17.22,
+          "decode_tok_s": {
+            "max": 59.5,
+            "mean": 56.483,
+            "min": 53.5,
+            "n": 6,
+            "sd": 2.959
+          },
+          "decode_vs_solo_pct": 20.696,
+          "expert_hit_rate": {
+            "max": 0.802,
+            "mean": 0.786,
+            "min": 0.778,
+            "n": 6,
+            "sd": 0.01
+          },
+          "prompt_ms": {
+            "max": 83.7,
+            "mean": 79.467,
+            "min": 74.0,
+            "n": 6,
+            "sd": 3.603
+          },
+          "prompt_vs_solo_pct": 43.658
+        },
+        "solo": {
+          "cache_n": {
+            "max": 2327.0,
+            "mean": 2327.0,
+            "min": 2327.0,
+            "n": 6,
+            "sd": 0.0
+          },
+          "client_token_ttft_ms": {
+            "max": 89.274,
+            "mean": 84.836,
+            "median": 86.445,
+            "min": 74.277,
+            "n": 6,
+            "sd": 5.4
+          },
+          "decode_ms": {
+            "max": 4124.6,
+            "mean": 3764.1,
+            "min": 3534.1,
+            "n": 6,
+            "sd": 232.774
+          },
+          "decode_tg_vs_solo_pct": 0.0,
+          "decode_tok_s": {
+            "max": 72.4,
+            "mean": 68.233,
+            "min": 62.1,
+            "n": 6,
+            "sd": 4.087
+          },
+          "decode_vs_solo_pct": 0.0,
+          "expert_hit_rate": {
+            "max": 0.814,
+            "mean": 0.795,
+            "min": 0.782,
+            "n": 6,
+            "sd": 0.012
+          },
+          "prompt_ms": {
+            "max": 57.7,
+            "mean": 55.317,
+            "min": 49.5,
+            "n": 6,
+            "sd": 3.05
+          },
+          "prompt_vs_solo_pct": 0.0
+        }
+      },
+      "source_files": [
+        "/home/gonus/projects/qwen3.8-flash-next-strata-gpu-per-lane-recipe/bench/raw/phase1-20261001/phase1-direct-warm-short-warm-short-telemetryfix.jsonl"
+      ]
+    },
+    "direct_warm_target_cold_long_peers": {
+      "arms": {
+        "plus1": {
+          "cache_n": {
+            "max": 2327.0,
+            "mean": 2327.0,
+            "min": 2327.0,
+            "n": 3,
+            "sd": 0.0
+          },
+          "client_token_ttft_ms": {
+            "max": 102.702,
+            "mean": 95.151,
+            "median": 93.653,
+            "min": 89.098,
+            "n": 3,
+            "sd": 6.925
+          },
+          "decode_ms": {
+            "max": 4276.9,
+            "mean": 4105.7,
+            "min": 4013.1,
+            "n": 3,
+            "sd": 148.429
+          },
+          "decode_tg_vs_solo_pct": -3.85,
+          "decode_tok_s": {
+            "max": 63.8,
+            "mean": 62.433,
+            "min": 59.9,
+            "n": 3,
+            "sd": 2.196
+          },
+          "decode_vs_solo_pct": 3.925,
+          "expert_hit_rate": {
+            "max": 0.796,
+            "mean": 0.788,
+            "min": 0.772,
+            "n": 3,
+            "sd": 0.014
+          },
+          "prompt_ms": {
+            "max": 64.8,
+            "mean": 58.6,
+            "min": 54.4,
+            "n": 3,
+            "sd": 5.481
+          },
+          "prompt_vs_solo_pct": 3.23
+        },
+        "plus2": {
+          "cache_n": {
+            "max": 2327.0,
+            "mean": 2327.0,
+            "min": 2327.0,
+            "n": 3,
+            "sd": 0.0
+          },
+          "client_token_ttft_ms": {
+            "max": 95.598,
+            "mean": 93.326,
+            "median": 92.558,
+            "min": 91.822,
+            "n": 3,
+            "sd": 2.002
+          },
+          "decode_ms": {
+            "max": 4757.5,
+            "mean": 4490.133,
+            "min": 4097.5,
+            "n": 3,
+            "sd": 347.374
+          },
+          "decode_tg_vs_solo_pct": -11.807,
+          "decode_tok_s": {
+            "max": 62.5,
+            "mean": 57.267,
+            "min": 53.8,
+            "n": 3,
+            "sd": 4.611
+          },
+          "decode_vs_solo_pct": 13.656,
+          "expert_hit_rate": {
+            "max": 0.801,
+            "mean": 0.794,
+            "min": 0.789,
+            "n": 3,
+            "sd": 0.006
+          },
+          "prompt_ms": {
+            "max": 59.4,
+            "mean": 58.533,
+            "min": 57.5,
+            "n": 3,
+            "sd": 0.961
+          },
+          "prompt_vs_solo_pct": 3.112
+        },
+        "solo": {
+          "cache_n": {
+            "max": 2327.0,
+            "mean": 2327.0,
+            "min": 2327.0,
+            "n": 3,
+            "sd": 0.0
+          },
+          "client_token_ttft_ms": {
+            "max": 93.316,
+            "mean": 87.109,
+            "median": 86.067,
+            "min": 81.945,
+            "n": 3,
+            "sd": 5.757
+          },
+          "decode_ms": {
+            "max": 4123.7,
+            "mean": 3950.633,
+            "min": 3721.2,
+            "n": 3,
+            "sd": 207.086
+          },
+          "decode_tg_vs_solo_pct": 0.0,
+          "decode_tok_s": {
+            "max": 68.8,
+            "mean": 64.933,
+            "min": 62.1,
+            "n": 3,
+            "sd": 3.467
+          },
+          "decode_vs_solo_pct": 0.0,
+          "expert_hit_rate": {
+            "max": 0.791,
+            "mean": 0.778,
+            "min": 0.755,
+            "n": 3,
+            "sd": 0.02
+          },
+          "prompt_ms": {
+            "max": 60.5,
+            "mean": 56.767,
+            "min": 53.6,
+            "n": 3,
+            "sd": 3.485
+          },
+          "prompt_vs_solo_pct": 0.0
+        }
+      },
+      "source_files": [
+        "/home/gonus/projects/qwen3.8-flash-next-strata-gpu-per-lane-recipe/bench/raw/phase1-20261001/phase1-direct-warm-short-cold-long-v1.jsonl"
+      ]
+    },
+    "public_warm_scheduler": {
+      "arms": {
+        "plus1": {
+          "cache_n": {
+            "max": 2327.0,
+            "mean": 2327.0,
+            "min": 2327.0,
+            "n": 6,
+            "sd": 0.0
+          },
+          "client_token_ttft_ms": {
+            "max": 106.267,
+            "mean": 98.934,
+            "median": 96.927,
+            "min": 92.797,
+            "n": 6,
+            "sd": 5.293
+          },
+          "decode_ms": {
+            "max": 4573.4,
+            "mean": 4198.167,
+            "min": 3822.9,
+            "n": 6,
+            "sd": 303.54
+          },
+          "decode_tg_vs_solo_pct": -13.421,
+          "decode_tok_s": {
+            "max": 67.0,
+            "mean": 61.283,
+            "min": 56.0,
+            "n": 6,
+            "sd": 4.52
+          },
+          "decode_vs_solo_pct": 15.857,
+          "expert_hit_rate": {
+            "max": 0.807,
+            "mean": 0.792,
+            "min": 0.77,
+            "n": 6,
+            "sd": 0.013
+          },
+          "prompt_ms": {
+            "max": 69.4,
+            "mean": 65.0,
+            "min": 59.6,
+            "n": 6,
+            "sd": 3.775
+          },
+          "prompt_vs_solo_pct": 16.244
+        },
+        "plus2": {
+          "cache_n": {
+            "max": 2327.0,
+            "mean": 2327.0,
+            "min": 2327.0,
+            "n": 6,
+            "sd": 0.0
+          },
+          "client_token_ttft_ms": {
+            "max": 126.204,
+            "mean": 116.1,
+            "median": 116.963,
+            "min": 100.719,
+            "n": 6,
+            "sd": 8.671
+          },
+          "decode_ms": {
+            "max": 4405.6,
+            "mean": 4268.783,
+            "min": 4173.9,
+            "n": 6,
+            "sd": 79.313
+          },
+          "decode_tg_vs_solo_pct": -15.258,
+          "decode_tok_s": {
+            "max": 61.3,
+            "mean": 59.983,
+            "min": 58.1,
+            "n": 6,
+            "sd": 1.096
+          },
+          "decode_vs_solo_pct": 17.806,
+          "expert_hit_rate": {
+            "max": 0.802,
+            "mean": 0.785,
+            "min": 0.764,
+            "n": 6,
+            "sd": 0.013
+          },
+          "prompt_ms": {
+            "max": 81.1,
+            "mean": 76.517,
+            "min": 67.7,
+            "n": 6,
+            "sd": 4.717
+          },
+          "prompt_vs_solo_pct": 36.841
+        },
+        "solo": {
+          "cache_n": {
+            "max": 2327.0,
+            "mean": 2327.0,
+            "min": 2327.0,
+            "n": 6,
+            "sd": 0.0
+          },
+          "client_token_ttft_ms": {
+            "max": 599.178,
+            "mean": 173.505,
+            "median": 87.252,
+            "min": 81.936,
+            "n": 6,
+            "sd": 208.612
+          },
+          "decode_ms": {
+            "max": 3830.5,
+            "mean": 3623.583,
+            "min": 3379.4,
+            "n": 6,
+            "sd": 165.947
+          },
+          "decode_tg_vs_solo_pct": 0.0,
+          "decode_tok_s": {
+            "max": 75.8,
+            "mean": 70.783,
+            "min": 66.8,
+            "n": 6,
+            "sd": 3.283
+          },
+          "decode_vs_solo_pct": 0.0,
+          "expert_hit_rate": {
+            "max": 0.813,
+            "mean": 0.791,
+            "min": 0.766,
+            "n": 6,
+            "sd": 0.016
+          },
+          "prompt_ms": {
+            "max": 63.2,
+            "mean": 55.917,
+            "min": 51.7,
+            "n": 6,
+            "sd": 4.002
+          },
+          "prompt_vs_solo_pct": 0.0
+        }
+      },
+      "source_files": [
+        "/home/gonus/projects/qwen3.8-flash-next-strata-gpu-per-lane-recipe/bench/raw/phase1-20261001/strata-phase1-warm-client-telemetryfix.jsonl"
+      ]
+    }
+  },
+  "fork_commit": "e947183a6a819dfe567a6bfbb87e5a2528590a8e",
+  "schema": 1
+}

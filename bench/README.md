@@ -12,6 +12,10 @@ Current paper-facing evidence:
 
 Historical 0.1.22/0.1.24 files remain historical and must not be treated as matched software A/Bs unless their measurement contracts also match.
 
+## Phase 1 cross-lane interference
+
+The post-promotion observability campaign is documented in `phase1-interference-20261001.md`. It keeps one target request on lane 0 and compares solo / +1 / +2 peer-lane activity under scheduler-visible and direct-lane controls. The retained measurements cover exact-prefix reuse, zero reuse, short and longer cold prompts, and warm-target/cold-long-peer stress. Across the main matched controls the three-lane arm repeatedly slows target decode without a corresponding collapse in target expert-cache hit rate; the evidence is consistent with shared host/PCIe contention but does not yet isolate one causal resource. Machine-readable aggregates are in `raw/phase1-20261001/phase1-summary-20261001.json`.
+
 ## 0.1.30 promoted campaign
 
 Strata 0.1.30 is the **promoted result generation**. The measured implementation is `rhgo1749/Strata-Lanes@dcdd46ff37b1baf5172a96389fbdc0c7b51a7dbc`, based on upstream tag `Niko1221/Strata@30ec18ec7094550fcc594fd948220d511d80464e`. The unpromoted 0.1.29 campaign was superseded before its headline matrix was completed.
