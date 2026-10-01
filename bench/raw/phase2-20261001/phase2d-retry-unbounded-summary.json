@@ -1,0 +1,167 @@
+{
+  "admission_policy": "unbounded-wait-v1",
+  "admission_wait_budget_ms": null,
+  "by_request_count": {
+    "6": {
+      "all_completed": true,
+      "attempt_amplification_per_run": {
+        "max": 1.0,
+        "mean": 1.0,
+        "min": 1.0,
+        "n": 4,
+        "p50": 1.0,
+        "p95": 1.0,
+        "sd": 0.0
+      },
+      "attempt_count": {
+        "max": 1.0,
+        "mean": 1.0,
+        "min": 1.0,
+        "n": 24,
+        "p50": 1.0,
+        "p95": 1.0,
+        "sd": 0.0
+      },
+      "completion_tokens": 6144,
+      "deferred_wait_total_ms": {
+        "max": 0.0,
+        "mean": 0.0,
+        "min": 0.0,
+        "n": 24,
+        "p50": 0.0,
+        "p95": 0.0,
+        "sd": 0.0
+      },
+      "logical_e2e_ms": {
+        "max": 16087.442096,
+        "mean": 9879.804887708333,
+        "min": 4136.16927,
+        "n": 24,
+        "p50": 8476.767793,
+        "p95": 15191.844391,
+        "sd": 3722.3941689100493
+      },
+      "logical_requests": 24,
+      "logical_ttft_ms": {
+        "max": 12002.38722,
+        "mean": 5700.823393083334,
+        "min": 109.186114,
+        "n": 24,
+        "p50": 3559.926159,
+        "p95": 11199.472841,
+        "sd": 3879.1063971687518
+      },
+      "requests_with_retry": 0,
+      "retry_count": {
+        "max": 0.0,
+        "mean": 0.0,
+        "min": 0.0,
+        "n": 24,
+        "p50": 0.0,
+        "p95": 0.0,
+        "sd": 0.0
+      },
+      "retry_request_fraction": 0.0,
+      "run_wall_s": {
+        "max": 16.087690966,
+        "mean": 15.22668449725,
+        "min": 14.799544403,
+        "n": 4,
+        "p50": 14.827466531,
+        "p95": 16.087690966,
+        "sd": 0.601208864460122
+      },
+      "successful_goodput_tok_s": {
+        "max": 103.78697871865833,
+        "mean": 100.99020990636657,
+        "min": 95.47672212539442,
+        "n": 4,
+        "p50": 101.10560500262119,
+        "p95": 103.78697871865833,
+        "sd": 3.873011972519112
+      }
+    },
+    "9": {
+      "all_completed": true,
+      "attempt_amplification_per_run": {
+        "max": 1.0,
+        "mean": 1.0,
+        "min": 1.0,
+        "n": 3,
+        "p50": 1.0,
+        "p95": 1.0,
+        "sd": 0.0
+      },
+      "attempt_count": {
+        "max": 1.0,
+        "mean": 1.0,
+        "min": 1.0,
+        "n": 27,
+        "p50": 1.0,
+        "p95": 1.0,
+        "sd": 0.0
+      },
+      "completion_tokens": 6912,
+      "deferred_wait_total_ms": {
+        "max": 0.0,
+        "mean": 0.0,
+        "min": 0.0,
+        "n": 27,
+        "p50": 0.0,
+        "p95": 0.0,
+        "sd": 0.0
+      },
+      "logical_e2e_ms": {
+        "max": 22798.883153,
+        "mean": 12390.134254481482,
+        "min": 3938.962532,
+        "n": 27,
+        "p50": 11671.469071,
+        "p95": 22470.513548,
+        "sd": 5998.251940734402
+      },
+      "logical_requests": 27,
+      "logical_ttft_ms": {
+        "max": 18907.233074,
+        "mean": 8222.190698481481,
+        "min": 98.342338,
+        "n": 27,
+        "p50": 7576.33338,
+        "p95": 18722.59434,
+        "sd": 6020.95051780231
+      },
+      "requests_with_retry": 0,
+      "retry_count": {
+        "max": 0.0,
+        "mean": 0.0,
+        "min": 0.0,
+        "n": 27,
+        "p50": 0.0,
+        "p95": 0.0,
+        "sd": 0.0
+      },
+      "retry_request_fraction": 0.0,
+      "run_wall_s": {
+        "max": 22.79895107,
+        "mean": 21.631858687666668,
+        "min": 19.625726399,
+        "n": 3,
+        "p50": 22.470898594,
+        "p95": 22.79895107,
+        "sd": 1.7450872976661227
+      },
+      "successful_goodput_tok_s": {
+        "max": 117.3969285599231,
+        "mean": 106.99560820206817,
+        "min": 101.0572807900675,
+        "n": 3,
+        "p50": 102.5326152562139,
+        "p95": 117.3969285599231,
+        "sd": 9.037961708084156
+      }
+    }
+  },
+  "kind": "phase2d_retry_completion_ab",
+  "retry_strategy": "immediate_after_defer_response",
+  "scheduler_policy": "balanced-additive-new-prefill-retained-state-proxy-v1"
+}
