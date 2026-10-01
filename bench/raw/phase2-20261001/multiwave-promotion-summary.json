@@ -1,0 +1,52 @@
+{
+  "kind": "phase2b_multiwave_promotion",
+  "date": "2026-10-01",
+  "runtime_commit": "b40dc7538249f4b9d79c79a115e18babaace5877",
+  "promote": "balanced-additive-new-prefill-retained-state-proxy-v1",
+  "rollback": "safe-affinity-live-state-v1",
+  "safe": {
+    "placements": [{"0":2,"1":2,"2":2},{"1":6},{"0":6}],
+    "continuation_common_wall_tg": [78.76976082105003,22.265437912259355,29.548314238599197],
+    "mean_queue_p95_ms": 18479.58133333333,
+    "mean_token_ttft_p95_ms": 21517.562154333333,
+    "max_observed_lane_share": 1.0
+  },
+  "additive": {
+    "placements": [{"0":2,"1":2,"2":2},{"0":6},{"2":6}],
+    "continuation_common_wall_tg": [64.29935415220345,29.333256847884616,32.127259458787584],
+    "mean_queue_p95_ms": 15885.057999999999,
+    "mean_token_ttft_p95_ms": 18898.557438666667,
+    "max_observed_lane_share": 1.0
+  },
+  "balanced_campaigns": [
+    {
+      "placements": [{"0":2,"1":2,"2":2},{"0":2,"1":2,"2":2},{"0":2,"1":2,"2":2}],
+      "continuation_common_wall_tg": [64.79413097819072,66.99118266711716,65.98308071896315],
+      "mean_queue_p95_ms": 5968.466,
+      "mean_token_ttft_p95_ms": 9887.252023333334,
+      "max_observed_lane_share": 0.3333333333333333
+    },
+    {
+      "placements": [{"0":2,"1":2,"2":2},{"0":2,"1":2,"2":2},{"0":2,"1":2,"2":2}],
+      "continuation_common_wall_tg": [88.62096096323879,84.5918071443642,82.71906750679739],
+      "mean_queue_p95_ms": 4134.741333333333,
+      "mean_token_ttft_p95_ms": 7173.628350666666,
+      "max_observed_lane_share": 0.3333333333333333
+    }
+  ],
+  "balanced_pooled": {
+    "waves": 6,
+    "continuation_common_wall_tg_mean": 75.61670499644524,
+    "continuation_common_wall_tg_sd": 10.811485981103134,
+    "continuation_common_wall_tg_min": 64.79413097819072,
+    "continuation_common_wall_tg_max": 88.62096096323879,
+    "max_observed_lane_share": 0.3333333333333333
+  },
+  "gate": {
+    "correctness_affinity": "pass",
+    "no_progressive_concentration": "pass",
+    "no_material_tail_regression": "pass",
+    "repeatable_declared_objective": "pass",
+    "persistent_retained_state": "pass"
+  }
+}

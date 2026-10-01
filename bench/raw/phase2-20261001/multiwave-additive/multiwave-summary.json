@@ -1,0 +1,110 @@
+{
+  "aggregate": {
+    "continuation_common_wall_tg": {
+      "max": 64.29935415220345,
+      "mean": 41.91995681962522,
+      "min": 29.333256847884616,
+      "n": 3,
+      "sd": 19.431409659993545
+    },
+    "continuation_e2e_p95_ms": {
+      "max": 26181.701061,
+      "mean": 20676.738858333334,
+      "min": 11943.894862,
+      "n": 3,
+      "sd": 7648.084531141393
+    },
+    "continuation_queue_p95_ms": {
+      "max": 21906.211,
+      "mean": 15885.057999999999,
+      "min": 6155.816,
+      "n": 3,
+      "sd": 8504.773876355974
+    },
+    "continuation_token_ttft_p95_ms": {
+      "max": 24460.443893,
+      "mean": 18898.557438666667,
+      "min": 10083.231555,
+      "n": 3,
+      "sd": 7721.056258261589
+    },
+    "max_lane_share": {
+      "max": 1.0,
+      "mean": 0.7777777777777778,
+      "min": 0.3333333333333333,
+      "n": 3,
+      "sd": 0.3849001794597505
+    }
+  },
+  "all_waves_pass": true,
+  "facts": 300,
+  "kind": "multiwave_summary",
+  "max_observed_lane_share": 1.0,
+  "persistent_supervisor": true,
+  "policy": "additive-new-prefill-retained-state-proxy-v1",
+  "sessions_per_wave": 6,
+  "turn1_tokens": 32,
+  "turn2_tokens": 128,
+  "wave_files": [
+    "wave-01.jsonl",
+    "wave-02.jsonl",
+    "wave-03.jsonl"
+  ],
+  "waves": [
+    {
+      "assignment_shape": {
+        "counts": {
+          "0": 2,
+          "1": 2,
+          "2": 2
+        },
+        "max_lane_share": 0.3333333333333333,
+        "spread": 0,
+        "total": 6
+      },
+      "continuation_common_wall_tg": 64.29935415220345,
+      "continuation_e2e_p95_ms": 11943.894862,
+      "continuation_queue_p95_ms": 6155.816,
+      "continuation_token_ttft_p95_ms": 10083.231555,
+      "pass": true,
+      "run_id": "phase2-online-additive-new-prefill-retained-state-proxy-v1-20261001-202905",
+      "wave": 1
+    },
+    {
+      "assignment_shape": {
+        "counts": {
+          "0": 6
+        },
+        "max_lane_share": 1.0,
+        "spread": 0,
+        "total": 6
+      },
+      "continuation_common_wall_tg": 29.333256847884616,
+      "continuation_e2e_p95_ms": 26181.701061,
+      "continuation_queue_p95_ms": 21906.211,
+      "continuation_token_ttft_p95_ms": 24460.443893,
+      "pass": true,
+      "run_id": "phase2-online-additive-new-prefill-retained-state-proxy-v1-20261001-202939",
+      "wave": 2
+    },
+    {
+      "assignment_shape": {
+        "counts": {
+          "2": 6
+        },
+        "max_lane_share": 1.0,
+        "spread": 0,
+        "total": 6
+      },
+      "continuation_common_wall_tg": 32.127259458787584,
+      "continuation_e2e_p95_ms": 23904.620652,
+      "continuation_queue_p95_ms": 19593.147,
+      "continuation_token_ttft_p95_ms": 22151.996868,
+      "pass": true,
+      "run_id": "phase2-online-additive-new-prefill-retained-state-proxy-v1-20261001-203023",
+      "wave": 3
+    }
+  ],
+  "waves_completed": 3,
+  "waves_requested": 3
+}
