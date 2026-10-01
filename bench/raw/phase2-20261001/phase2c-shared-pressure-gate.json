@@ -1,0 +1,172 @@
+{
+  "aligned_warm_short_best_incremental_telemetry_model": {
+    "mae": 216.02294965499993,
+    "model": "peer_count_plus_aggregate_pcie_rx",
+    "n": 18,
+    "rmse": 252.76067563483286,
+    "rmse_improvement_vs_peer_count_fraction": -0.031835224850175425
+  },
+  "aligned_warm_short_grouped_rep_cv": {
+    "constant": {
+      "mae": 338.76444444444456,
+      "n": 18,
+      "rmse": 393.78252283321183
+    },
+    "peer_count": {
+      "mae": 222.2311111111113,
+      "n": 18,
+      "rmse": 244.96224740877037
+    },
+    "peer_count_plus_aggregate_pcie_rx": {
+      "mae": 216.02294965499993,
+      "n": 18,
+      "rmse": 252.76067563483286
+    },
+    "peer_count_plus_cpu": {
+      "mae": 244.28377946108924,
+      "n": 18,
+      "rmse": 268.6098615637121
+    },
+    "peer_count_plus_cpu_plus_aggregate_pcie_rx": {
+      "mae": 230.22857134602157,
+      "n": 18,
+      "rmse": 268.0961091553531
+    },
+    "peer_count_plus_peer_pcie_rx": {
+      "mae": 251.8922143768239,
+      "n": 18,
+      "rmse": 292.52278811612587
+    }
+  },
+  "decision": {
+    "add_lane_specific_shared_pressure_term_now": false,
+    "continuous_cpu_pcie_telemetry_adds_held_out_value_over_peer_count": false,
+    "next_gate": "carry active-concurrency pressure into Phase 2D admission/tail experiments; do not add a PCIe/CPU coupling coefficient to placement without new lane-pair-specific held-out evidence",
+    "shared_interference_material": true,
+    "simple_active_peer_count_generalizes_better_than_no_pressure": true
+  },
+  "kind": "phase2c_shared_pressure_gate",
+  "leave_one_campaign_out_slowdown_cv": {
+    "aggregate_no_pressure_model": {
+      "mae": 0.1363062997213311,
+      "n": 36,
+      "rmse": 0.16773478395575636
+    },
+    "aggregate_peer_count_model": {
+      "mae": 0.07940557171645068,
+      "n": 36,
+      "rmse": 0.09993636022873457
+    },
+    "aggregate_rmse_improvement_fraction": 0.40420014339366284,
+    "folds": [
+      {
+        "held_out_campaign": "phase1-direct-cold-long-cold-long-v1.jsonl",
+        "no_pressure_model": {
+          "mae": 0.11555470704994374,
+          "n": 6,
+          "rmse": 0.12822664812964057
+        },
+        "peer_count_model": {
+          "mae": 0.06120873241765837,
+          "n": 6,
+          "rmse": 0.0706504098875283
+        },
+        "peer_count_rmse_improvement_fraction": 0.44901928797125823
+      },
+      {
+        "held_out_campaign": "phase1-direct-cold-short-cold-short-v1.jsonl",
+        "no_pressure_model": {
+          "mae": 0.12372222596024655,
+          "n": 6,
+          "rmse": 0.1388478049372883
+        },
+        "peer_count_model": {
+          "mae": 0.06480550267112987,
+          "n": 6,
+          "rmse": 0.08768885449329898
+        },
+        "peer_count_rmse_improvement_fraction": 0.36845343336249103
+      },
+      {
+        "held_out_campaign": "phase1-direct-cold-short-cold-short-v2.jsonl",
+        "no_pressure_model": {
+          "mae": 0.19073159617792293,
+          "n": 6,
+          "rmse": 0.22437023930906608
+        },
+        "peer_count_model": {
+          "mae": 0.13180382575356345,
+          "n": 6,
+          "rmse": 0.14455820900125413
+        },
+        "peer_count_rmse_improvement_fraction": 0.3557157604929604
+      },
+      {
+        "held_out_campaign": "phase1-direct-warm-short-cold-long-v1.jsonl",
+        "no_pressure_model": {
+          "mae": 0.1013718373841813,
+          "n": 6,
+          "rmse": 0.13887388140579923
+        },
+        "peer_count_model": {
+          "mae": 0.08441730279191456,
+          "n": 6,
+          "rmse": 0.10236237373175404
+        },
+        "peer_count_rmse_improvement_fraction": 0.2629112638348172
+      },
+      {
+        "held_out_campaign": "phase1-direct-warm-short-warm-short-telemetryfix.jsonl",
+        "no_pressure_model": {
+          "mae": 0.14322871587784602,
+          "n": 12,
+          "rmse": 0.17813057154980458
+        },
+        "peer_count_model": {
+          "mae": 0.06709903333221894,
+          "n": 12,
+          "rmse": 0.08907218872726808
+        },
+        "peer_count_rmse_improvement_fraction": 0.499961247795335
+      }
+    ]
+  },
+  "limitations": [
+    "CPU/PCIe telemetry is sampled during the run, not a pre-routing signal.",
+    "Long-prefill peer runs outlive the target request, so their run-average telemetry is not used for incremental pressure-model validation.",
+    "The retained plus1 arm uses one specific peer lane; there is no peer-lane-1-only matched arm, so lane-pair-specific coupling is not identifiable from this dataset."
+  ],
+  "schema": 1,
+  "sources": {
+    "phase1-direct-cold-long-cold-long-v1.jsonl": {
+      "matched_reps": 3,
+      "peer_profile": "cold-long",
+      "target_context": "long",
+      "target_state": "cold"
+    },
+    "phase1-direct-cold-short-cold-short-v1.jsonl": {
+      "matched_reps": 3,
+      "peer_profile": "cold-short",
+      "target_context": "short",
+      "target_state": "cold"
+    },
+    "phase1-direct-cold-short-cold-short-v2.jsonl": {
+      "matched_reps": 3,
+      "peer_profile": "cold-short",
+      "target_context": "short",
+      "target_state": "cold"
+    },
+    "phase1-direct-warm-short-cold-long-v1.jsonl": {
+      "matched_reps": 3,
+      "peer_profile": "cold-long",
+      "target_context": "short",
+      "target_state": "warm"
+    },
+    "phase1-direct-warm-short-warm-short-telemetryfix.jsonl": {
+      "matched_reps": 6,
+      "peer_profile": "warm-short",
+      "target_context": "short",
+      "target_state": "warm"
+    }
+  }
+}
