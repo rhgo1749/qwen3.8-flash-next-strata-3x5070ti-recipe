@@ -82,4 +82,4 @@ The earlier fresh-state policy campaign remains historical evidence in `bench/ph
 
 ## Next gate
 
-Proceed to Phase 2C only as an evidence test. Phase 1 already established repeatable cross-lane interference, but that does not by itself justify adding a shared-pressure term to routing. First test whether the promoted local/session-placement model leaves a repeatable held-out residual that is predicted by observable host/PCIe/shared-expert pressure. If not, stop and keep the simpler scheduler.
+Phase 2C subsequently completed as an evidence-only gate; see `phase2c-shared-pressure-gate-20261001.md`. Active peer count generalizes as a shared-concurrency slowdown signal, but sampled CPU/PCIe telemetry does not improve held-out prediction beyond that simpler proxy, so no placement coupling coefficient is added. The next runtime gate is Phase 2D admission/tail control using bounded `route now | wait | defer` decisions under overload.
