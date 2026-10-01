@@ -9,7 +9,7 @@ set -euo pipefail
 STRATA_DIR="${STRATA_DIR:-$HOME/Strata-Lanes}"
 BINARY="${BINARY:-$STRATA_DIR/build/strata}"
 CUDA_HOME="${CUDA_HOME:-/usr/local/cuda-13.4}"
-EXPECTED_HEAD="7c95b2aa3799f1918f7450bae542d7bbe4f67284"
+EXPECTED_HEAD="dcdd46ff37b1baf5172a96389fbdc0c7b51a7dbc"
 EXPECTED_UPSTREAM="30ec18ec7094550fcc594fd948220d511d80464e"
 
 printf 'timestamp_utc='; date -u +%Y-%m-%dT%H:%M:%SZ

@@ -1,0 +1,15 @@
+workload,bucket,state,n,pp_tok_s,ttft_s,tg_tok_s,notes
+fiction,short,cold_pp,5,853.8273331,1.8071318,,no reuse
+fiction,short,warm_tg,5,,,67.88,reused prefix
+fiction,medium,cold_pp,5,2581.1317295,5.8564424,,no reuse
+fiction,medium,warm_tg,5,,,68.20,reused prefix
+coding,short,cold_pp,5,831.5994110,1.7673697,,no reuse
+coding,short,warm_tg,5,,,76.38,reused prefix
+coding,medium,cold_pp,5,2590.1263300,5.8514356,,no reuse
+coding,medium,warm_tg,5,,,78.36,reused prefix
+reasoning,short,cold_pp,5,850.6674373,1.7805570,,no reuse
+reasoning,short,warm_tg,5,,,73.78,reused prefix
+reasoning,medium,cold_pp,5,2583.8864025,5.8766431,,no reuse
+reasoning,medium,warm_tg,5,,,66.44,reused prefix
+long_review,long,cold_pp,5,2581.5559241,42.8747685,,~110K prompt no reuse
+long_review,long,warm_tg,5,,,62.10,~110K reused prefix

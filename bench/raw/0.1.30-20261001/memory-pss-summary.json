@@ -1,0 +1,18 @@
+{
+  "candidate": "dcdd46ff37b1baf5172a96389fbdc0c7b51a7dbc",
+  "binary_sha256": "cc4236096662b1786a7730316002cbd38850f7451b517102fe4fec89eadf0147",
+  "gpus": [0, 2],
+  "context_per_engine": 32768,
+  "resident_kv_per_engine": 8192,
+  "private_two_engine_pss_gib": 98.924864,
+  "shared_two_engine_pss_gib": 52.083863,
+  "saved_gib": 46.841001,
+  "saved_percent": 47.35,
+  "shared_arena_path": "/dev/shm/strata/shared-arena/iq3_s-ed64c4c25e52011f.bin",
+  "shared_arena_inode": 16,
+  "shared_arena_size_bytes": 50294992896,
+  "payload_mapping_kib": 49116200,
+  "shared_dirty_kib_per_mapping": 49116200,
+  "private_dirty_kib_per_mapping": 0,
+  "notes": "Final clean PSS run after clearing stale /dev/shm backing. Failed memory-pressure run is excluded."
+}

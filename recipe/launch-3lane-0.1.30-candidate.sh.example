@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-# Qwen3.8-Flash-Next / Strata-Lanes / 3-lane 0.1.30 measurement candidate
+# Qwen3.8-Flash-Next / Strata-Lanes / frozen 0.1.30 measurement launcher
 #
-# Candidate fork pin:
-#   rhgo1749/Strata-Lanes@7c95b2aa3799f1918f7450bae542d7bbe4f67284
+# Promoted measurement fork pin:
+#   rhgo1749/Strata-Lanes@dcdd46ff37b1baf5172a96389fbdc0c7b51a7dbc
 # Upstream v0.1.30:
 #   Niko1221/Strata@30ec18ec7094550fcc594fd948220d511d80464e
 #
@@ -25,19 +25,19 @@ ARENA_FILE="${ARENA_FILE:-/dev/shm/strata/bench/iq3_s-0.1.30.shared}"
 STATE_DIR="${STATE_DIR:-$HOME/.local/state/strata/bench-0.1.30-3lane}"
 BENCH_TRACE_JSONL="${BENCH_TRACE_JSONL:-$STATE_DIR/lane-leases.jsonl}"
 
-EXPECTED_HEAD="7c95b2aa3799f1918f7450bae542d7bbe4f67284"
+EXPECTED_HEAD="dcdd46ff37b1baf5172a96389fbdc0c7b51a7dbc"
 EXPECTED_UPSTREAM="30ec18ec7094550fcc594fd948220d511d80464e"
 
 cd "$STRATA_DIR"
 
 ACTUAL_HEAD="$(git rev-parse HEAD)"
 if [[ "$ACTUAL_HEAD" != "$EXPECTED_HEAD" ]]; then
-  echo "refusing 0.1.30 campaign: expected fork $EXPECTED_HEAD, found $ACTUAL_HEAD" >&2
+  echo "refusing frozen 0.1.30 run: expected fork $EXPECTED_HEAD, found $ACTUAL_HEAD" >&2
   exit 2
 fi
 ACTUAL_UPSTREAM="$(git rev-parse v0.1.30 2>/dev/null || true)"
 if [[ "$ACTUAL_UPSTREAM" != "$EXPECTED_UPSTREAM" ]]; then
-  echo "refusing 0.1.30 campaign: expected v0.1.30 $EXPECTED_UPSTREAM, found ${ACTUAL_UPSTREAM:-missing}" >&2
+  echo "refusing frozen 0.1.30 run: expected v0.1.30 $EXPECTED_UPSTREAM, found ${ACTUAL_UPSTREAM:-missing}" >&2
   exit 2
 fi
 if grep -Eq -- '"--conversation-cache-mib"[[:space:]]*,[[:space:]]*"[1-9][0-9]*"|--conversation-cache-mib[[:space:]]+[1-9][0-9]*' "$CONFIG"; then

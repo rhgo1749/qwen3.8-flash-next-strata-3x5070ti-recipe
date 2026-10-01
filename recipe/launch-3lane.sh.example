@@ -1,33 +1,38 @@
 #!/usr/bin/env bash
-# Qwen3.8-Flash-Next / Strata / 3x RTX 5070 Ti
+# Qwen3.8-Flash-Next / Strata-Lanes / 3x RTX 5070 Ti
 #
-# Current operational implementation pin (Strata 0.1.27):
-#   rhgo1749/Strata-Lanes@614b2ae904bbe949144c694388b985fc6a0d20d8
-# Frozen paper-v1 implementation pin:
-#   rhgo1749/Strata@6cf101d5b98523cbaefc34a199faa5657c5c2719
-# Upstream 0.1.27:
-#   Niko1221/Strata@a79080535d1b2a71a3419a0d97d8e7dca194b0f1
+# Current promoted measurement pin (Strata 0.1.30):
+#   rhgo1749/Strata-Lanes@dcdd46ff37b1baf5172a96389fbdc0c7b51a7dbc
+# Upstream 0.1.30:
+#   Niko1221/Strata@30ec18ec7094550fcc594fd948220d511d80464e
+#
+# Upstream 0.1.30 owns the shared expert-arena primitive. The supervisor passes
+# one native --shared-expert-arena backing to all lanes and forces conversation
+# parking off until parked-locality routing is implemented.
 #
 # This is a host-specific example for the validated GPU enumeration:
 #   GPU0 = PCIe 5.0 x8
-#   GPU1 = PCIe 5.0 x4
 #   GPU2 = PCIe 5.0 x8
+#   GPU1 = PCIe 5.0 x4
 #
 # Verify your own topology before copying the asymmetric pcie-frac values.
 
-STRATA_DIR="${STRATA_DIR:-$HOME/Strata}"
+STRATA_DIR="${STRATA_DIR:-$HOME/Strata-Lanes}"
 CONFIG="${CONFIG:-/absolute/path/to/strata.json}"
 PUBLIC_PORT="${PUBLIC_PORT:-18086}"
+BASE_PORT="${BASE_PORT:-19086}"
+ARENA_FILE="${ARENA_FILE:-/dev/shm/strata/qwen38-iq3_s.shared}"
 
 cd "$STRATA_DIR"
 
-exec python serve/multigpu_server.py \
+exec python3 serve/multigpu_server.py \
   --config "$CONFIG" \
-  --gpus 0,1,2 \
+  --gpus 0,2,1 \
   --lane-contexts 262144,262144,262144 \
   --kv-budget 786432 \
-  --lane-cpu-cores 5,6,5 \
-  --lane-pcie-fracs 0.55,0.25,0.55 \
+  --lane-cpu-cores 5,5,6 \
+  --lane-pcie-fracs 0.55,0.55,0.25 \
   --lane-kv-residents 32768,32768,32768 \
-  --lane-vram-reserve-mibs 1200,1200,1200 \
+  --arena-file "$ARENA_FILE" \
+  --base-port "$BASE_PORT" \
   --port "$PUBLIC_PORT"

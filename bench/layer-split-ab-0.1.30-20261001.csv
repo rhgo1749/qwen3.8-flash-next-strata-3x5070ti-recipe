@@ -1,0 +1,10 @@
+arm,metric,n,mean,sd,min,max,unit,notes
+independent_1lane,warm_512_tg,5,70.8040025,1.5462522,69.4125945,73.2511423,tok/s,fixed reasoning prompt
+layer_split_3gpu,warm_512_tg,5,102.9760942,1.5265955,101.5416332,105.2277900,tok/s,auto K=18,33
+independent_3lane,three_request_common_wall_tg,5,189.4855709,3.2051033,186.1370758,193.7133526,tok/s,three requests truly concurrent
+layer_split_3gpu,three_request_serial_common_wall_tg,5,102.5882822,1.6291258,101.0974978,105.3239536,tok/s,ordinary server FIFO serialization
+layer_split_3gpu,three_request_all_e2e,15,10.0028805,4.2042204,4.8693385,15.1932100,s,queue positions rotate
+independent_1lane,short_reasoning_cold_pp,5,850.6674373,,,,tok/s,
+layer_split_3gpu,short_reasoning_cold_pp,5,807.1065101,11.7909904,788.0262323,816.2594500,tok/s,
+independent_1lane,short_reasoning_ttft,5,1.7805570,,,,s,
+layer_split_3gpu,short_reasoning_ttft,5,1.8665704,0.0288117,1.8448062,1.9137429,s,

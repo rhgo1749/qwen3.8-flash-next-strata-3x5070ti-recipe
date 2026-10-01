@@ -1,12 +1,12 @@
 # Strata 0.1.30 measurement campaign
 
-This campaign regenerates the paper-facing systems evidence on one software generation before Strata 0.1.30 can replace the promoted 0.1.27 baseline.
+This campaign regenerated the paper-facing systems evidence on one software generation and promoted Strata 0.1.30 as the current recipe baseline on 2026-10-01.
 
-## Frozen candidate pins
+## Frozen promoted pins
 
 ```text
 implementation  rhgo1749/Strata-Lanes
-candidate       7c95b2aa3799f1918f7450bae542d7bbe4f67284
+candidate       dcdd46ff37b1baf5172a96389fbdc0c7b51a7dbc
 upstream        Niko1221/Strata
 upstream head   30ec18ec7094550fcc594fd948220d511d80464e
 engine          0.1.30
@@ -14,7 +14,7 @@ CUDA            13.4
 reference driver 615.71.09
 ```
 
-The candidate is not promoted merely because it builds or serves. Promotion occurs only after the required measurement matrix is complete and the retained rows all identify the same candidate/upstream generation. `recipe/launch-3lane-0.1.30-candidate.sh.example` pins the three-lane candidate launch, and `recipe/capture-0.1.30-provenance.sh.example` captures the read-only host/software snapshot used beside retained runs.
+The measured generation passed the required matrix and is promoted. All retained headline rows identify the same fork/upstream generation. `recipe/launch-3lane-0.1.30-candidate.sh.example` is retained as the frozen campaign launcher, while `recipe/launch-3lane.sh.example` is the promoted operational example. `recipe/capture-0.1.30-provenance.sh.example` captures the read-only host/software snapshot used beside retained runs.
 
 ## Gate 0 — implementation and provenance
 
@@ -153,6 +153,6 @@ The current upstream Strata server serializes model generation through a FIFO lo
 - Preserve raw per-request rows; summaries are derived artifacts. `bench/summarize_oversub.py` regenerates the overload percentiles, common-wall throughput, utilization/fairness summaries and FIFO-overtake diagnostic from the request-level CSV.
 - Never merge historical 0.1.27 values into a 0.1.30 headline table.
 
-## Promotion rule
+## Promotion outcome
 
-0.1.30 becomes the promoted recipe/paper-facing generation only when Gate 0 and the complete Gate 1 headline matrix pass. Gates 2 and 3 answer the serving/architecture follow-up questions and should accompany the revised results when available, but missing overload or layer-split data must be stated explicitly rather than filled with historical measurements.
+Gate 0 and the complete Gate 1 headline matrix passed on `dcdd46ff37b1baf5172a96389fbdc0c7b51a7dbc`, so 0.1.30 is the promoted recipe/paper-facing generation. Gates 2 and 3 also completed: the exact-queue 3/4/6/9 oversubscription curve and the matched independent-lanes ↔ three-GPU layer-split A/B are both retained. See `docs/strata-0.1.30-promotion-20261001.md` for the results.

@@ -1,0 +1,51 @@
+{
+  "exe": "/home/gonus/.local/share/devspace/worktrees/Strata-multigpu-test-8f9a4a55/build-sync-0130-cuda/strata",
+  "args": [
+    "--pack",
+    "/home/gonus/projects/models/strata-qwen38-iq3-s/runtime-data/packs/iq3_s",
+    "--native",
+    "/home/gonus/projects/models/strata-qwen38-iq3-s/IQ3_S/Qwen3.8-Flash-Next-GSQ-RCO-IQ3_S-00001-of-00002.gguf",
+    "--ple-gguf",
+    "/home/gonus/projects/models/strata-qwen38-iq3-s/IQ3_S/Qwen3.8-Flash-Next-GSQ-RCO-IQ3_S-00002-of-00002.gguf",
+    "--expert-profile",
+    "/home/gonus/.local/share/devspace/worktrees/Strata-multigpu-test-8f9a4a55/data/expert-profile.bin",
+    "--expert-cache",
+    "auto",
+    "--prefill",
+    "auto",
+    "--spec",
+    "4",
+    "--spec-min-p",
+    "0.5",
+    "--mtp",
+    "/home/gonus/projects/models/strata-qwen38-iq3-s/runtime-data/mtp/rt",
+    "--pcie-mode",
+    "auto",
+    "--max-context",
+    "262144",
+    "--kv",
+    "int8",
+    "--kv-resident",
+    "32768",
+    "--conversation-cache-mib",
+    "0"
+  ],
+  "gpu": [0, 2, 1],
+  "layer_split": "auto",
+  "cwd": "/home/gonus/.local/share/devspace/worktrees/Strata-multigpu-test-8f9a4a55",
+  "tokenizer": "/home/gonus/projects/models/strata-qwen38-iq3-s/runtime-data/packs/iq3_s/tokenizer",
+  "model_name": "qwen3.8-flash-next-strata-iq3-s-paper-030-layer-split",
+  "log": "/home/gonus/tmp/strata-paper-030-layer-split-engine.log",
+  "lib_dirs": [
+    "/usr/local/cuda-13.4/bin",
+    "/usr/local/cuda-13.4/lib64"
+  ],
+  "sampling": {
+    "temperature": 1,
+    "top_p": 0.95,
+    "top_k": 20,
+    "min_p": 0,
+    "presence_penalty": 0,
+    "repetition_penalty": 1
+  }
+}

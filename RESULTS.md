@@ -5,24 +5,18 @@ This repository owns the reference-host measurements for the GPU-per-lane Strata
 ## Current promoted implementation
 
 ```text
-repository       rhgo1749/Strata
-promoted commit  6cf101d5b98523cbaefc34a199faa5657c5c2719
-upstream 0.1.27  a79080535d1b2a71a3419a0d97d8e7dca194b0f1
-engine           Strata 0.1.27
-binary sha256    b40c2cee92b4681d861548c7140219f4cc62ca47d28a6835020055e78266dee0
+repository       rhgo1749/Strata-Lanes
+measured commit  dcdd46ff37b1baf5172a96389fbdc0c7b51a7dbc
+upstream 0.1.30  30ec18ec7094550fcc594fd948220d511d80464e
+engine           Strata 0.1.30
+binary sha256    cc4236096662b1786a7730316002cbd38850f7451b517102fe4fec89eadf0147
 ```
 
-The 0.1.27 sync preserves the production architecture: one independent engine/request lane per GPU, one shared host expert arena, lane-local CUDA/KV/cache/speculation state, and no mandatory token-step cross-GPU synchronization.
+Strata 0.1.30 is now the promoted measurement generation. The complete same-generation campaign passed implementation/provenance, 1→2→3 lane scaling, native shared-arena PSS, heterogeneous isolation, workload sensitivity, mixed three-lane serving, exact-queue oversubscription, and the matched independent-lanes ↔ upstream layer-split A/B.
 
-## 0.1.30 measurement candidate
+Headline results: **70.804 → 132.760 → 189.486 tok/s** common-wall scaling, **98.925 → 52.084 GiB** two-engine PSS with upstream-native sharing, **184.669 ± 5.966 tok/s** mixed three-lane serving, and no material fast-lane pacing in the measured 5070 Ti + 5060 Ti pair. In the matched architecture A/B, three-GPU layer split is **45.4% faster for one warm request**, while three independent lanes deliver **84.7% more aggregate throughput for three simultaneous requests**.
 
-The current implementation candidate is frozen at `rhgo1749/Strata-Lanes@7c95b2aa3799f1918f7450bae542d7bbe4f67284`, based on upstream Strata `30ec18ec7094550fcc594fd948220d511d80464e` (v0.1.30). The unpromoted 0.1.29 candidate was superseded before its full headline matrix was completed, so its intermediate measurements remain diagnostic only.
-
-The 0.1.30 candidate adopts upstream's native shared-expert-arena primitive contributed through PR #129, removes the fork's duplicate pinned-arena implementation, adds stale-port preflight, and exposes opt-in exact lane-admission telemetry for the overload campaign. Its source/test/build and real two-lane shared-arena smoke gates have passed, but **none of the 0.1.27 headline numbers below are relabeled as 0.1.30 results**.
-
-Promotion requires a fresh same-generation campaign covering 1→2→3 lane scaling, private↔shared PSS, heterogeneous isolation, workload sensitivity, mixed three-lane serving, PP/TTFT/TG and complete provenance. The extension campaign additionally covers three-lane oversubscription at 3/4/6/9 requests and a matched 0.1.30 independent-lanes↔three-GPU layer-split A/B. See [`bench/strata-0.1.30-campaign.md`](bench/strata-0.1.30-campaign.md) and [`bench/strata-0.1.30-candidate-20261001.csv`](bench/strata-0.1.30-candidate-20261001.csv).
-
-Until that campaign is complete, **0.1.27 remains the promoted evidence generation**.
+Full promotion record: [`docs/strata-0.1.30-promotion-20261001.md`](docs/strata-0.1.30-promotion-20261001.md). Machine-readable summaries start with `bench/strata-0.1.30-promotion-20261001.csv` and the companion `bench/*0.1.30*20261001.csv` result tables. Historical 0.1.27 and earlier evidence is retained below and must not be relabeled as 0.1.30.
 
 ## Reference host
 
@@ -38,7 +32,7 @@ Until that campaign is complete, **0.1.27 remains the promoted evidence generati
 
 Reference three-lane order is GPU0/GPU2/GPU1 = x8/x8/x4.
 
-## 0.1.27 validation gate
+## Historical 0.1.27 validation gate
 
 - `pytest serve -q`: **77 passed, 3 skipped, 47 subtests passed**.
 - server + multi-GPU subset: **53 passed, 39 subtests passed**.
@@ -49,7 +43,7 @@ Reference three-lane order is GPU0/GPU2/GPU1 = x8/x8/x4.
 
 Machine-readable gate: [`bench/strata-0.1.27-promotion-20260930.csv`](bench/strata-0.1.27-promotion-20260930.csv).
 
-## Fresh 0.1.27 systems evidence
+## Historical 0.1.27 systems evidence
 
 ### 1 -> 2 -> 3 GPU scaling
 
