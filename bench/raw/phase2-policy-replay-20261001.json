@@ -1,0 +1,257 @@
+{
+  "eligible_idle_candidate_counts": {
+    "1": 7,
+    "2": 12,
+    "3": 20
+  },
+  "input": "bench/raw/phase1-20261001/strata-phase1-warm-trace-162253.jsonl",
+  "manifest_fork_commit": "e947183a6a819dfe567a6bfbb87e5a2528590a8e",
+  "pairwise": {
+    "additive_new_prefill_plus_state_proxy__vs__multiplicative_new_prefill_x_state_proxy": {
+      "comparable": 39,
+      "disagreement_rate": 0.15384615384615385,
+      "disagreements": 6
+    },
+    "additive_new_prefill_plus_state_proxy__vs__session_affinity_then_cache": {
+      "comparable": 39,
+      "disagreement_rate": 0.6410256410256411,
+      "disagreements": 25
+    },
+    "cache_aware__vs__additive_new_prefill_plus_state_proxy": {
+      "comparable": 39,
+      "disagreement_rate": 0.358974358974359,
+      "disagreements": 14
+    },
+    "cache_aware__vs__multiplicative_new_prefill_x_state_proxy": {
+      "comparable": 39,
+      "disagreement_rate": 0.41025641025641024,
+      "disagreements": 16
+    },
+    "cache_aware__vs__session_affinity_then_cache": {
+      "comparable": 39,
+      "disagreement_rate": 0.48717948717948717,
+      "disagreements": 19
+    },
+    "current_safe__vs__additive_new_prefill_plus_state_proxy": {
+      "comparable": 39,
+      "disagreement_rate": 0.5897435897435898,
+      "disagreements": 23
+    },
+    "current_safe__vs__cache_aware": {
+      "comparable": 39,
+      "disagreement_rate": 0.5384615384615384,
+      "disagreements": 21
+    },
+    "current_safe__vs__least_live_state": {
+      "comparable": 39,
+      "disagreement_rate": 0.48717948717948717,
+      "disagreements": 19
+    },
+    "current_safe__vs__multiplicative_new_prefill_x_state_proxy": {
+      "comparable": 39,
+      "disagreement_rate": 0.5641025641025641,
+      "disagreements": 22
+    },
+    "current_safe__vs__round_robin_first_free": {
+      "comparable": 39,
+      "disagreement_rate": 0.5128205128205128,
+      "disagreements": 20
+    },
+    "current_safe__vs__session_affinity_then_cache": {
+      "comparable": 39,
+      "disagreement_rate": 0.05128205128205128,
+      "disagreements": 2
+    },
+    "least_live_state__vs__additive_new_prefill_plus_state_proxy": {
+      "comparable": 39,
+      "disagreement_rate": 0.3076923076923077,
+      "disagreements": 12
+    },
+    "least_live_state__vs__cache_aware": {
+      "comparable": 39,
+      "disagreement_rate": 0.05128205128205128,
+      "disagreements": 2
+    },
+    "least_live_state__vs__multiplicative_new_prefill_x_state_proxy": {
+      "comparable": 39,
+      "disagreement_rate": 0.46153846153846156,
+      "disagreements": 18
+    },
+    "least_live_state__vs__session_affinity_then_cache": {
+      "comparable": 39,
+      "disagreement_rate": 0.5384615384615384,
+      "disagreements": 21
+    },
+    "multiplicative_new_prefill_x_state_proxy__vs__session_affinity_then_cache": {
+      "comparable": 39,
+      "disagreement_rate": 0.5128205128205128,
+      "disagreements": 20
+    },
+    "round_robin_first_free__vs__additive_new_prefill_plus_state_proxy": {
+      "comparable": 39,
+      "disagreement_rate": 0.10256410256410256,
+      "disagreements": 4
+    },
+    "round_robin_first_free__vs__cache_aware": {
+      "comparable": 39,
+      "disagreement_rate": 0.46153846153846156,
+      "disagreements": 18
+    },
+    "round_robin_first_free__vs__least_live_state": {
+      "comparable": 39,
+      "disagreement_rate": 0.41025641025641024,
+      "disagreements": 16
+    },
+    "round_robin_first_free__vs__multiplicative_new_prefill_x_state_proxy": {
+      "comparable": 39,
+      "disagreement_rate": 0.05128205128205128,
+      "disagreements": 2
+    },
+    "round_robin_first_free__vs__session_affinity_then_cache": {
+      "comparable": 39,
+      "disagreement_rate": 0.5641025641025641,
+      "disagreements": 22
+    }
+  },
+  "policy_summary": {
+    "additive_new_prefill_plus_state_proxy": {
+      "agreement_rate": 0.41025641025641024,
+      "agrees_with_current": 16,
+      "comparable": 39,
+      "decisions": 39,
+      "disagrees_with_current": 23,
+      "lane_choice_counts": {
+        "0": 6,
+        "1": 26,
+        "2": 7
+      }
+    },
+    "cache_aware": {
+      "agreement_rate": 0.46153846153846156,
+      "agrees_with_current": 18,
+      "comparable": 39,
+      "decisions": 39,
+      "disagrees_with_current": 21,
+      "lane_choice_counts": {
+        "0": 13,
+        "1": 13,
+        "2": 13
+      }
+    },
+    "current_safe": {
+      "agreement_rate": 1.0,
+      "agrees_with_current": 39,
+      "comparable": 39,
+      "decisions": 39,
+      "disagrees_with_current": 0,
+      "lane_choice_counts": {
+        "0": 19,
+        "1": 7,
+        "2": 13
+      }
+    },
+    "least_live_state": {
+      "agreement_rate": 0.5128205128205128,
+      "agrees_with_current": 20,
+      "comparable": 39,
+      "decisions": 39,
+      "disagrees_with_current": 19,
+      "lane_choice_counts": {
+        "0": 11,
+        "1": 14,
+        "2": 14
+      }
+    },
+    "multiplicative_new_prefill_x_state_proxy": {
+      "agreement_rate": 0.4358974358974359,
+      "agrees_with_current": 17,
+      "comparable": 39,
+      "decisions": 39,
+      "disagrees_with_current": 22,
+      "lane_choice_counts": {
+        "0": 8,
+        "1": 24,
+        "2": 7
+      }
+    },
+    "round_robin_first_free": {
+      "agreement_rate": 0.48717948717948717,
+      "agrees_with_current": 19,
+      "comparable": 39,
+      "decisions": 39,
+      "disagrees_with_current": 20,
+      "lane_choice_counts": {
+        "0": 6,
+        "1": 25,
+        "2": 8
+      }
+    },
+    "session_affinity_then_cache": {
+      "agreement_rate": 0.9487179487179487,
+      "agrees_with_current": 37,
+      "comparable": 39,
+      "decisions": 39,
+      "disagrees_with_current": 2,
+      "lane_choice_counts": {
+        "0": 21,
+        "1": 6,
+        "2": 12
+      }
+    }
+  },
+  "proxy_warning": "additive and multiplicative policies use live_request_bytes as a retained-state/load proxy; trace schema 2 does not contain lane-local active remaining work",
+  "records": 39,
+  "replayable_records": 39,
+  "scope": "one-step snapshot replay only; later state is not counterfactually simulated, so disagreement is evidence about policy distinctness, not performance",
+  "selected_reason_counts": {
+    "live_state_lexicographic": 3,
+    "session_affinity": 36
+  },
+  "signal_gaps": [
+    {
+      "available": "no",
+      "signal": "per_lane_affinity_session_count",
+      "why": "needed to replay session-start balancing rather than only continuation affinity"
+    },
+    {
+      "available": "no",
+      "signal": "per_lane_active_decode_progress_or_remaining_work",
+      "why": "busy is observable, but wait-vs-recompute cost needs remaining-work or service-rate evidence"
+    },
+    {
+      "available": "no",
+      "signal": "per_lane_queue_age_and_queued_work",
+      "why": "global queued counts exist, but counterfactual lane-specific queue cost is not retained"
+    },
+    {
+      "available": "no",
+      "signal": "instant_shared_pressure_at_decision",
+      "why": "Phase 1 resource telemetry is retained separately; Phase 2C needs time-aligned decision input"
+    },
+    {
+      "available": "no",
+      "signal": "engine_truth_prefix_overlap",
+      "why": "current per-lane overlap is routing-history bytes and is explicitly approximate"
+    }
+  ],
+  "trace_schema": 2,
+  "unique_choice_vectors": {
+    "(0, 0, 0, 0, 0, 0, 0)": 4,
+    "(0, 0, 1, 1, 1, 0, 0)": 1,
+    "(0, 1, 0, 0, 1, 1, 0)": 4,
+    "(0, 1, 1, 1, 1, 1, 0)": 6,
+    "(0, 1, 2, 2, 1, 1, 0)": 3,
+    "(0, 2, 2, 2, 2, 2, 0)": 1,
+    "(1, 1, 0, 0, 0, 1, 1)": 1,
+    "(1, 1, 1, 0, 1, 0, 0)": 1,
+    "(1, 1, 1, 1, 1, 1, 1)": 3,
+    "(1, 1, 2, 2, 1, 1, 1)": 2,
+    "(2, 0, 1, 1, 1, 0, 2)": 1,
+    "(2, 1, 0, 0, 1, 1, 2)": 1,
+    "(2, 1, 1, 1, 1, 1, 2)": 2,
+    "(2, 1, 2, 2, 1, 1, 2)": 2,
+    "(2, 2, 0, 0, 0, 2, 2)": 1,
+    "(2, 2, 2, 0, 2, 0, 0)": 1,
+    "(2, 2, 2, 2, 2, 2, 2)": 5
+  }
+}
