@@ -39,4 +39,4 @@ For Phase 2B, a policy should not be promoted from a fresh-state win alone. At m
 4. repeatable throughput benefit or a clearly declared latency/locality objective;
 5. the same result after the supervisor has accumulated realistic retained state.
 
-On the reference host, avoid rapid teardown/start loops during this campaign. The prior campaign triggered an NVIDIA RTD3/RM power-management failure after many restarts; multi-wave testing is intentionally designed to gather more long-lived-state evidence per server start.
+Multi-wave testing is intentionally designed to gather long-lived-state evidence without resetting the scheduler state between waves.
