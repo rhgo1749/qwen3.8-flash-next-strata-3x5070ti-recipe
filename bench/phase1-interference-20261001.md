@@ -64,6 +64,22 @@ The scheduler trace records:
 
 For strict TTFT analysis, client-side first meaningful SSE token remains the preferred measurement.
 
+## Correctness and workload gates
+
+The performance campaign is paired with the existing 0.1.30 serving campaign and current-main correctness checks rather than treating interference measurements as the only Phase 1 evidence.
+
+- The promoted 0.1.30 oversubscription path already retains synchronized `M=3,4,6,9` request runs with exact queue admission/service timing, common-wall throughput, utilization and FIFO/fairness summaries.
+- Long-window reference-host validation already completed three overlapping 141k-145k-token requests without context overflow, CUDA OOM or lane death.
+- Agent/tool-call soak already covered malformed inputs, cancellation recovery and concurrent tool requests.
+- Current `Strata-Lanes@e947183` full serve regression passes 130 tests with 5 expected skips. Coverage includes session-affinity continuation, vision-only lane selection, vision affinity rebinding, exclusion of a wrapper-alive/child-dead lane, engine error propagation and engine restart after unexpected exit.
+- A current-main live text smoke returned HTTP 200 on a normal text lane.
+- A current-main live valid 64x64 BMP vision request returned HTTP 200 on lane 1, the configured vision-capable lane.
+- The retained two-turn live smoke stayed on the same lane for both turns (lane 0 in that run); turn 2 reported 56 cached prompt tokens, confirming lane-local continuation reuse.
+- A malformed live request returned HTTP 400.
+- The reproducible live smoke records a streaming client disconnect releasing all lane leases within four 250 ms status polls; the immediately following request returned HTTP 200.
+
+The live checks above are operational smoke evidence, not benchmark samples, and are intentionally not mixed into the performance aggregates. They are reproducible with `bench/phase1_correctness_smoke.py`; the retained output is `bench/raw/phase1-20261001/phase1-correctness-smoke-e947183.json`.
+
 ## Raw evidence retained
 
 Canonical retained files:
@@ -76,23 +92,24 @@ Canonical retained files:
 - `bench/raw/phase1-20261001/phase1-direct-cold-long-cold-long-v1.jsonl`
 - `bench/raw/phase1-20261001/phase1-direct-warm-short-cold-long-v1.jsonl`
 - `bench/raw/phase1-20261001/phase1-summary-20261001.json`
+- `bench/raw/phase1-20261001/phase1-correctness-smoke-e947183.json`
 
 Incomplete diagnostic/retry files are intentionally not part of the retained evidence set.
 
-## Phase 1 status after this campaign
+## Phase 1 acceptance
 
-This campaign satisfies the core matched target-lane interference gate for:
-- solo vs +1 vs +2 active lanes
-- high exact-prefix reuse
-- zero prefix reuse
-- short vs longer cold context
-- warm target under cold-long peer traffic
-- scheduler-visible and scheduler-bypassed controls
-- per-lane GPU telemetry after physical-GPU binding repair
+The combined evidence satisfies the Phase 1 acceptance contract:
 
-Still open before Phase 1 can be called complete:
-- a deliberately controlled expert-miss / expert-residency perturbation if we want causal separation from host/PCIe pressure
-- the remaining workload matrix evidence: mixed text/vision overlap, M>N overload on trace schema 2, cancellation/client disconnect, malformed request, and lane-failure recovery
-- optional wall-power capture if a hardware power meter is available during the retained campaign
+1. repeatable 1/2/3-request scaling and `M > N` overload paths exist;
+2. cold, warm and cache-reuse state are explicit;
+3. queue delay, token TTFT, E2E, throughput and tail-oriented overload summaries are captured;
+4. exact engine reuse plus the supervisor's explicitly approximate routing-history reuse/new-prefill signals are retained;
+5. scheduler decisions and component state are auditable in trace schema 2;
+6. matched solo / +1 / +2 controls show material, repeatable cross-lane coupling even with the scheduler bypassed;
+7. long context, multi-turn continuation, text/vision capability routing, malformed input, cancellation/disconnect recovery and lane/engine failure handling are covered;
+8. commit, config, topology and run metadata are sufficient to reproduce the retained measurements;
+9. the independent-lane 0.1.30 baseline remains rerunnable as the control for Phase 2.
 
-The serving scheduler is not changed by these measurements. Phase 2 should use only signals that survive the remaining validation work.
+A deliberately forced expert-residency/miss perturbation would still be useful for **causal decomposition**, but it is no longer required to establish that shared-pressure coupling is material because the retained cold-long peer run already supplies a higher host-traffic regime. Likewise, wall-meter power would improve energy analysis but is not needed for the serving decision gate.
+
+The serving scheduler is unchanged by Phase 1. The correct Phase 2 implication is narrow: retain the current local/session-aware baseline, then test whether a small shared-pressure term improves decisions out of sample. The correlations above are predictive candidates, not proof that PCIe bandwidth, CPU pressure or any one resource is the sole physical cause.
