@@ -1,0 +1,110 @@
+{
+  "aggregate": {
+    "continuation_common_wall_tg": {
+      "max": 78.76976082105003,
+      "mean": 43.52783765730286,
+      "min": 22.265437912259355,
+      "n": 3,
+      "sd": 30.73686602608966
+    },
+    "continuation_e2e_p95_ms": {
+      "max": 34492.52913,
+      "mean": 23411.055285,
+      "min": 9749.736612,
+      "n": 3,
+      "sd": 12571.52118478977
+    },
+    "continuation_queue_p95_ms": {
+      "max": 28796.424,
+      "mean": 18479.58133333333,
+      "min": 5075.011,
+      "n": 3,
+      "sd": 12158.408830384275
+    },
+    "continuation_token_ttft_p95_ms": {
+      "max": 32710.636706,
+      "mean": 21517.562154333333,
+      "min": 7722.82039,
+      "n": 3,
+      "sd": 12695.441909387697
+    },
+    "max_lane_share": {
+      "max": 1.0,
+      "mean": 0.7777777777777778,
+      "min": 0.3333333333333333,
+      "n": 3,
+      "sd": 0.3849001794597505
+    }
+  },
+  "all_waves_pass": true,
+  "facts": 300,
+  "kind": "multiwave_summary",
+  "max_observed_lane_share": 1.0,
+  "persistent_supervisor": true,
+  "policy": "safe-affinity-live-state-v1",
+  "sessions_per_wave": 6,
+  "turn1_tokens": 32,
+  "turn2_tokens": 128,
+  "wave_files": [
+    "wave-01.jsonl",
+    "wave-02.jsonl",
+    "wave-03.jsonl"
+  ],
+  "waves": [
+    {
+      "assignment_shape": {
+        "counts": {
+          "0": 2,
+          "1": 2,
+          "2": 2
+        },
+        "max_lane_share": 0.3333333333333333,
+        "spread": 0,
+        "total": 6
+      },
+      "continuation_common_wall_tg": 78.76976082105003,
+      "continuation_e2e_p95_ms": 9749.736612,
+      "continuation_queue_p95_ms": 5075.011,
+      "continuation_token_ttft_p95_ms": 7722.82039,
+      "pass": true,
+      "run_id": "phase2-online-safe-affinity-live-state-v1-20261001-201742",
+      "wave": 1
+    },
+    {
+      "assignment_shape": {
+        "counts": {
+          "1": 6
+        },
+        "max_lane_share": 1.0,
+        "spread": 0,
+        "total": 6
+      },
+      "continuation_common_wall_tg": 22.265437912259355,
+      "continuation_e2e_p95_ms": 34492.52913,
+      "continuation_queue_p95_ms": 28796.424,
+      "continuation_token_ttft_p95_ms": 32710.636706,
+      "pass": true,
+      "run_id": "phase2-online-safe-affinity-live-state-v1-20261001-201814",
+      "wave": 2
+    },
+    {
+      "assignment_shape": {
+        "counts": {
+          "0": 6
+        },
+        "max_lane_share": 1.0,
+        "spread": 0,
+        "total": 6
+      },
+      "continuation_common_wall_tg": 29.548314238599197,
+      "continuation_e2e_p95_ms": 25990.900113,
+      "continuation_queue_p95_ms": 21567.309,
+      "continuation_token_ttft_p95_ms": 24119.229367,
+      "pass": true,
+      "run_id": "phase2-online-safe-affinity-live-state-v1-20261001-201914",
+      "wave": 3
+    }
+  ],
+  "waves_completed": 3,
+  "waves_requested": 3
+}

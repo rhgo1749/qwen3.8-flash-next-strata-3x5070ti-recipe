@@ -40,3 +40,11 @@ For Phase 2B, a policy should not be promoted from a fresh-state win alone. At m
 5. the same result after the supervisor has accumulated realistic retained state.
 
 Multi-wave testing is intentionally designed to gather long-lived-state evidence without resetting the scheduler state between waves.
+
+## 2026-10-01 promotion outcome
+
+The promotion gate was run on the reference three-lane host with three persistent waves per campaign and six fresh sessions per wave. The safe control placed 2/2/2, then 0/6/0, then 6/0/0; the unbalanced additive challenger placed 2/2/2, then 6/0/0, then 0/0/6. Both therefore reproduced the long-lived session-start attractor.
+
+`balanced-additive-new-prefill-retained-state-proxy-v1` was then run in two independent persistent campaigns. All six retained candidate waves placed exactly 2/2/2, all underlying correctness/affinity gates passed, and candidate p95 queue/TTFT remained well below the concentrated control waves. The candidate passes this gate and is promoted as the production default; `safe-affinity-live-state-v1` remains the explicit rollback policy.
+
+See `phase2-multiwave-promotion-20261001.md` and `raw/phase2-20261001/multiwave-*` for the retained measurements.
