@@ -202,10 +202,6 @@
     {
       "file": "/tmp/phase2-safe-r3-client.jsonl",
       "reason": "orchestration contamination from a timed-out shell; not retained"
-    },
-    {
-      "event": "safe clean-r4 startup",
-      "reason": "GPU2 engine failed after NVIDIA RTD3/RM driver entered error state; no performance result retained"
     }
   ]
 }

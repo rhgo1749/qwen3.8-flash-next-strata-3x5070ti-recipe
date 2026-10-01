@@ -57,12 +57,6 @@ The file `safe-r2-appended-raw-trace.jsonl` contains two fresh-server runs becau
 
 All retained policy traces used for this campaign report runtime commit `0d6f237bc7a2bffd6cf5c795956118e9a92283da`.
 
-## Additional operational finding
-
-After many rapid benchmark teardown/start cycles, NVIDIA RTD3 entered an error state on PCI devices `02:00.0` and `16:00.0`. Kernel logs show RM lock assertions and power-management unload failures; `nvidia-smi` reports those devices as `Unknown Error`. Host RAM remained plentiful and memlock was unlimited, so the later lane-2 startup failure is not evidence for a scheduler regression. No performance result from that failed startup is retained.
-
-This also means future repeated scheduler campaigns should avoid bypassing the production idle-holder/RTD3 lifecycle for dozens of rapid restarts. Prefer fewer controlled restarts or temporarily pin the benchmark GPUs active during a campaign.
-
 ## Gate outcome
 
 - Phase 2A observability/signals: complete.
