@@ -24,6 +24,8 @@ Phase 2B promotion evidence is documented in `phase2-multiwave-promotion-2026100
 
 Phase 2C is documented in `phase2c-shared-pressure-gate-20261001.md`. Across leave-one-campaign-out matched slowdown tests, active peer count reduces pooled prediction RMSE by 40.4% versus a no-pressure model, confirming that shared concurrency matters. However, on the aligned warm-short telemetry campaign, adding sampled CPU or PCIe pressure does not improve grouped held-out RMSE beyond peer count alone. No CPU/PCIe placement coupling term is therefore promoted; active-concurrency pressure moves forward as an input to the Phase-2D admission/tail gate instead.
 
+The Phase 2D current-default overload baseline is documented in `phase2d-overload-baseline-20261001.md`. Under balanced-additive placement, 92/92 synchronized requests complete successfully and total lane assignments remain 29/32/31, but exact queue p95 jumps from 3.6 ms at M=3 to 4.17 s at M=4, 7.74 s at M=6, and 15.37 s at M=9. This establishes the admission-control target: prevent multi-wave tail growth without reintroducing placement imbalance or breaking affinity.
+
 ## 0.1.30 promoted campaign
 
 Strata 0.1.30 is the **promoted result generation**. The measured implementation is `rhgo1749/Strata-Lanes@dcdd46ff37b1baf5172a96389fbdc0c7b51a7dbc`, based on upstream tag `Niko1221/Strata@30ec18ec7094550fcc594fd948220d511d80464e`. The unpromoted 0.1.29 campaign was superseded before its headline matrix was completed.
