@@ -1,8 +1,32 @@
 # Results
 
-This repository keeps the current operational baseline and the immediately preceding benchmark generation for the GPU-per-lane Strata recipe.
+This repository keeps the current software baseline while preserving measured evidence under the engine generation that produced it.
 
-## Current operational baseline — Strata 0.1.31
+## Current software baseline — Strata 0.1.34
+
+```text
+repository          rhgo1749/Strata-Lanes
+operational main    4b5b47d6e50250b71c52fe4fe7d33593684dce91
+integration merge   a96b2cd7d9c4a505c4bdb5cb9c2a87ade5f32684
+upstream 0.1.34     1678de333d0e0711bc414ad992b640e1a37dd814
+engine              Strata 0.1.34
+binary sha256       8d34efb9161b64a68029feffa780d24e7f5b27dbcad3d96b3508231924d3fc87
+```
+
+The bounded 0.1.34 upstream-sync compatibility gate passed:
+
+- Lanes-specific Python suite: **58 passed**
+- full Python serving suite: **204 passed / 7 skipped**
+- CUDA **13.4.92**, sm_120 Release configure/build: **PASS (237/237 build steps)**
+- registered CTests: **48 passed / 2 skipped / 3 external-fixture unavailable**
+- known unavailable external-fixture tests: `ple_parity`, `expert_parity`, `pool_test`
+- no new fixture-independent test failure
+
+This sync did **not** rerun the long model-backed three-lane benchmark campaign. The latest full live serving/lifecycle evidence remains the 0.1.31 Phase 3 campaign below, and the complete architecture-performance matrix remains 0.1.30. Those measurements are intentionally not relabeled as 0.1.34.
+
+Current sync record: [`docs/strata-0.1.34-promotion-20261002.md`](docs/strata-0.1.34-promotion-20261002.md).
+
+## Retained full live baseline — Strata 0.1.31
 
 ```text
 repository          rhgo1749/Strata-Lanes

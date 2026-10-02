@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 # Qwen3.8-Flash-Next / Strata-Lanes / 3x RTX 5070 Ti
 #
-# Current operational pin (Strata 0.1.31):
-#   rhgo1749/Strata-Lanes@475e0766e8b41e17c978a6765ee0587f198790a3
-# Upstream 0.1.31:
-#   Niko1221/Strata@9259cad4cfa3543cd3b8decab5962672b968c649
+# Current operational pin (Strata 0.1.34):
+#   rhgo1749/Strata-Lanes@4b5b47d6e50250b71c52fe4fe7d33593684dce91
+# Upstream 0.1.34:
+#   Niko1221/Strata@1678de333d0e0711bc414ad992b640e1a37dd814
 #
 # The supervisor passes one upstream-native --shared-expert-arena backing to
 # all lanes and keeps conversation parking disabled until parked-locality

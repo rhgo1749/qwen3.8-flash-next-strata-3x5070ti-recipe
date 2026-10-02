@@ -9,8 +9,8 @@
 ## 当前状态
 
 - 实现 fork：[`rhgo1749/Strata-Lanes`](https://github.com/rhgo1749/Strata-Lanes)
-- **当前运行用 Strata pin：** [`475e076`](https://github.com/rhgo1749/Strata-Lanes/commit/475e0766e8b41e17c978a6765ee0587f198790a3)
-- 引擎基线：Strata **0.1.31**（upstream `9259cad`）；升级记录：[`docs/strata-0.1.31-promotion-20261001.md`](docs/strata-0.1.31-promotion-20261001.md)
+- **当前运行用 Strata pin：** [`4b5b47d`](https://github.com/rhgo1749/Strata-Lanes/commit/4b5b47d6e50250b71c52fe4fe7d33593684dce91)
+- 引擎基线：Strata **0.1.34**（upstream `1678de3`）；同步记录：[`docs/strata-0.1.34-promotion-20261002.md`](docs/strata-0.1.34-promotion-20261002.md)
 - 参考主机当前 production quant：**Qwen3.8-Flash-Next GSQ-RCO IQ3_S**
 `main` 跟踪当前运行方案。保留的实测结果与版本边界记录在 [`RESULTS.md`](RESULTS.md)。更早的快照不再重复保留在滚动 `main` 中，可通过 Git history 与命名分支查看。
 
@@ -83,12 +83,13 @@ required host RAM ≈ one shared expert arena + every lane's host-KV + OS/runtim
 
 ## 版本化证据
 
-滚动 `main` 只保留当前 **0.1.31 运行基线**与紧邻的 **0.1.30 benchmark generation**。测量结果保留原始引擎版本，不把旧版本结果重新标记为当前结果。
+滚动 `main` 跟踪当前 **0.1.34 software baseline**，同时保留 **0.1.31** 的最新完整 live/lifecycle 证据以及 **0.1.30** 的完整 architecture-performance matrix。历史测量保持原始引擎版本，不重新标记为 0.1.34。
 
 参见：
 
 - [`RESULTS.md`](RESULTS.md) — 当前摘要与保留的 benchmark evidence
-- [`docs/strata-0.1.31-promotion-20261001.md`](docs/strata-0.1.31-promotion-20261001.md) — 当前运行 parity 升级记录
+- [`docs/strata-0.1.34-promotion-20261002.md`](docs/strata-0.1.34-promotion-20261002.md) — 当前 0.1.34 software-sync 升级记录
+- [`docs/strata-0.1.31-promotion-20261001.md`](docs/strata-0.1.31-promotion-20261001.md) — 保留的完整 live/parity 证据
 - [`docs/strata-0.1.30-promotion-20261001.md`](docs/strata-0.1.30-promotion-20261001.md) — 保留的完整 benchmark generation
 - [`docs/fork-and-implementation.md`](docs/fork-and-implementation.md) — upstream/fork/recipe 角色边界
 

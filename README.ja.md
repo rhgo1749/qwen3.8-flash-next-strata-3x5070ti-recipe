@@ -9,8 +9,8 @@
 ## 現在の状態
 
 - 実装 fork: [`rhgo1749/Strata-Lanes`](https://github.com/rhgo1749/Strata-Lanes)
-- **現在の運用 Strata pin:** [`475e076`](https://github.com/rhgo1749/Strata-Lanes/commit/475e0766e8b41e17c978a6765ee0587f198790a3)
-- エンジン基準: Strata **0.1.31**（upstream `9259cad`）；昇格記録: [`docs/strata-0.1.31-promotion-20261001.md`](docs/strata-0.1.31-promotion-20261001.md)
+- **現在の運用 Strata pin:** [`4b5b47d`](https://github.com/rhgo1749/Strata-Lanes/commit/4b5b47d6e50250b71c52fe4fe7d33593684dce91)
+- エンジン基準: Strata **0.1.34**（upstream `1678de3`）；同期記録: [`docs/strata-0.1.34-promotion-20261002.md`](docs/strata-0.1.34-promotion-20261002.md)
 - 参照ホストの現行 production quant: **Qwen3.8-Flash-Next GSQ-RCO IQ3_S**
 `main` は現在の運用レシピを追跡します。保持する実測結果とバージョン境界は [`RESULTS.md`](RESULTS.md) にまとめます。さらに古いスナップショットは moving `main` に重複保持せず、Git history と名前付き branch から確認できます。
 
@@ -83,12 +83,13 @@ required host RAM ≈ one shared expert arena + every lane's host-KV + OS/runtim
 
 ## バージョン別 evidence
 
-moving `main` には現在の **0.1.31 運用 baseline** と直前の **0.1.30 benchmark generation** のみを保持します。測定値は元の engine version を維持し、古い結果を current として再ラベルしません。
+moving `main` は現在の **0.1.34 software baseline** を追跡し、最新の完全な live/lifecycle evidence は **0.1.31**、完全な architecture-performance matrix は **0.1.30** の測定を保持します。過去の測定値を 0.1.34 として再ラベルしません。
 
 参照:
 
 - [`RESULTS.md`](RESULTS.md) — 現在の要約と保持中の benchmark evidence
-- [`docs/strata-0.1.31-promotion-20261001.md`](docs/strata-0.1.31-promotion-20261001.md) — 現在の運用 parity promotion
+- [`docs/strata-0.1.34-promotion-20261002.md`](docs/strata-0.1.34-promotion-20261002.md) — 現在の 0.1.34 software-sync promotion
+- [`docs/strata-0.1.31-promotion-20261001.md`](docs/strata-0.1.31-promotion-20261001.md) — 保持中の完全な live/parity evidence
 - [`docs/strata-0.1.30-promotion-20261001.md`](docs/strata-0.1.30-promotion-20261001.md) — 保持中の完全な benchmark generation
 - [`docs/fork-and-implementation.md`](docs/fork-and-implementation.md) — upstream/fork/recipe の役割境界
 

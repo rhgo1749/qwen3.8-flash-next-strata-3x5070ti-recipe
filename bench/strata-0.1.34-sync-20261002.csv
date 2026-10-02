@@ -1,0 +1,7 @@
+kind,engine,fork_commit,upstream_commit,metric,value,unit,status,notes
+provenance,0.1.34,4b5b47d6e50250b71c52fe4fe7d33593684dce91,1678de333d0e0711bc414ad992b640e1a37dd814,binary_sha256,8d34efb9161b64a68029feffa780d24e7f5b27dbcad3d96b3508231924d3fc87,sha256,pass,CUDA 13.4.92 sm_120 Release
+validation,0.1.34,4b5b47d6e50250b71c52fe4fe7d33593684dce91,1678de333d0e0711bc414ad992b640e1a37dd814,lanes_python_passed,58,tests,pass,Lanes-specific suite
+validation,0.1.34,4b5b47d6e50250b71c52fe4fe7d33593684dce91,1678de333d0e0711bc414ad992b640e1a37dd814,python_serving_passed,204,tests,pass,7 skipped
+validation,0.1.34,4b5b47d6e50250b71c52fe4fe7d33593684dce91,1678de333d0e0711bc414ad992b640e1a37dd814,cuda_build_steps,237,steps,pass,CUDA 13.4.92 sm_120 Release
+validation,0.1.34,4b5b47d6e50250b71c52fe4fe7d33593684dce91,1678de333d0e0711bc414ad992b640e1a37dd814,ctest_passed,48,tests,pass,2 skipped; 3 known external-fixture unavailable
+measurement_boundary,0.1.34,4b5b47d6e50250b71c52fe4fe7d33593684dce91,1678de333d0e0711bc414ad992b640e1a37dd814,fresh_live_3lane_campaign,0,runs,not_run,retain 0.1.31 live/lifecycle and 0.1.30 architecture measurements

@@ -1,11 +1,13 @@
 # Benchmark and reporting contract
 
-The **current operational software baseline** is Strata **0.1.31** on fork main `475e0766e8b41e17c978a6765ee0587f198790a3`, with the Phase 3 runtime implementation at `4e333d8cd4731c8c365aeea984371f7853f27092`, upstream `9259cad4cfa3543cd3b8decab5962672b968c649`. The initial 0.1.31 promotion remains the compatibility/parity gate; Phase 3 adds the current startup/lifecycle gate. The complete architecture-performance matrix remains the retained 0.1.30 measurement generation.
+The **current operational software baseline** is Strata **0.1.34** on fork main `4b5b47d6e50250b71c52fe4fe7d33593684dce91`, integrated from upstream `1678de333d0e0711bc414ad992b640e1a37dd814`. The 0.1.34 record is a bounded software compatibility promotion: Python serving tests, CUDA 13.4 sm_120 build, and fixture-independent CTests passed. The latest full live/lifecycle evidence remains the retained 0.1.31 Phase 3 generation, and the complete architecture-performance matrix remains the retained 0.1.30 measurement generation.
 
 Current promotion evidence:
 
+- `strata-0.1.34-sync-20261002.csv` — 0.1.34 provenance and bounded compatibility gate;
+- `docs/strata-0.1.34-promotion-20261002.md` — current software-sync promotion record;
 - `phase3-shared-arena-lifecycle-0.1.31-20261002.csv` — matched Phase 3 startup and production wake timings;
-- `docs/phase3-shared-arena-lifecycle-20261002.md` — current lifecycle promotion record;
+- `docs/phase3-shared-arena-lifecycle-20261002.md` — retained latest full live/lifecycle promotion record;
 - `raw/phase3-20261002/` — exact candidate/production smoke, wake and ownership-refusal evidence;
 - `strata-0.1.31-promotion-20261001.csv` — initial 0.1.31 provenance, implementation, smoke, scheduler-parity and shared-arena gate;
 - `docs/strata-0.1.31-promotion-20261001.md` — human-readable parity promotion record;

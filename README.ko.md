@@ -9,8 +9,8 @@
 ## 현재 상태
 
 - 구현 포크: [`rhgo1749/Strata-Lanes`](https://github.com/rhgo1749/Strata-Lanes)
-- **현재 운용 Strata pin:** [`475e076`](https://github.com/rhgo1749/Strata-Lanes/commit/475e0766e8b41e17c978a6765ee0587f198790a3)
-- 엔진 기준: Strata **0.1.31** (upstream `9259cad`); 승격 기록: [`docs/strata-0.1.31-promotion-20261001.md`](docs/strata-0.1.31-promotion-20261001.md)
+- **현재 운용 Strata pin:** [`4b5b47d`](https://github.com/rhgo1749/Strata-Lanes/commit/4b5b47d6e50250b71c52fe4fe7d33593684dce91)
+- 엔진 기준: Strata **0.1.34** (upstream `1678de3`); 동기화 기록: [`docs/strata-0.1.34-promotion-20261002.md`](docs/strata-0.1.34-promotion-20261002.md)
 - 기준 서버 현재 production quant: **Qwen3.8-Flash-Next GSQ-RCO IQ3_S**
 `main`은 현재 운용 레시피를 따라간다. 유지 중인 실측 결과와 버전 경계는 [`RESULTS.md`](RESULTS.md)에 정리한다. 더 오래된 스냅샷은 움직이는 `main`에 중복 보관하지 않고 Git history와 별도 브랜치에서 확인할 수 있다.
 
@@ -83,12 +83,13 @@ host RAM은 대략 다음처럼 잡는다.
 
 ## 버전별 증거 경계
 
-움직이는 `main`에는 현재 **0.1.31 운용 baseline**과 바로 전 **0.1.30 benchmark generation**만 유지한다. 측정값은 원래 엔진 버전을 그대로 유지하며, 더 오래된 세대의 기록을 현재 결과처럼 재라벨링하지 않는다.
+움직이는 `main`은 현재 **0.1.34 software baseline**을 따라가며, 최신 전체 live/lifecycle 실측은 **0.1.31**, 전체 architecture-performance matrix는 **0.1.30** 기록을 그대로 유지한다. 과거 측정값을 0.1.34 결과로 재라벨링하지 않는다.
 
 참고:
 
 - [`RESULTS.md`](RESULTS.md) — 현재 요약과 유지 중인 benchmark evidence
-- [`docs/strata-0.1.31-promotion-20261001.md`](docs/strata-0.1.31-promotion-20261001.md) — 현재 운용 parity 승격 기록
+- [`docs/strata-0.1.34-promotion-20261002.md`](docs/strata-0.1.34-promotion-20261002.md) — 현재 0.1.34 software-sync 승격 기록
+- [`docs/strata-0.1.31-promotion-20261001.md`](docs/strata-0.1.31-promotion-20261001.md) — 유지 중인 전체 live/parity 기록
 - [`docs/strata-0.1.30-promotion-20261001.md`](docs/strata-0.1.30-promotion-20261001.md) — 유지 중인 전체 benchmark generation
 - [`docs/fork-and-implementation.md`](docs/fork-and-implementation.md) — upstream/fork/recipe 역할 경계
 
