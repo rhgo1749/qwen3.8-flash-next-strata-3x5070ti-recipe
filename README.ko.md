@@ -9,7 +9,7 @@
 ## 현재 상태
 
 - 구현 포크: [`rhgo1749/Strata-Lanes`](https://github.com/rhgo1749/Strata-Lanes)
-- **현재 운용 Strata pin:** [`15be918`](https://github.com/rhgo1749/Strata-Lanes/commit/15be91859ffdc49010bf37ed60cb2dfaf4d6e7d5)
+- **현재 운용 Strata pin:** [`d7afade`](https://github.com/rhgo1749/Strata-Lanes/commit/d7afade41f06d4486a4feb2dd59b2864122e0e2e)
 - 엔진 기준: Strata **0.1.31** (upstream `9259cad`); 승격 기록: [`docs/strata-0.1.31-promotion-20261001.md`](docs/strata-0.1.31-promotion-20261001.md)
 - 기준 서버 현재 production quant: **Qwen3.8-Flash-Next GSQ-RCO IQ3_S**
 `main`은 현재 운용 레시피를 따라간다. 유지 중인 실측 결과와 버전 경계는 [`RESULTS.md`](RESULTS.md)에 정리한다. 더 오래된 스냅샷은 움직이는 `main`에 중복 보관하지 않고 Git history와 별도 브랜치에서 확인할 수 있다.

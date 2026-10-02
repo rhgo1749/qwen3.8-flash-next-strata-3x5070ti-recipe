@@ -6,11 +6,11 @@ This repository keeps the current operational baseline and the immediately prece
 
 ```text
 repository          rhgo1749/Strata-Lanes
-operational main    15be91859ffdc49010bf37ed60cb2dfaf4d6e7d5
-measured runtime    0e29989c8a1ba016950ec3722531edcae42bdae5
+operational main    d7afade41f06d4486a4feb2dd59b2864122e0e2e
+measured runtime    4e333d8cd4731c8c365aeea984371f7853f27092
 upstream 0.1.31     9259cad4cfa3543cd3b8decab5962672b968c649
 engine              Strata 0.1.31
-binary sha256       afe4970c509860fe000131d20726972962b98179a04949212126c2742040dc4d
+binary sha256       28b247fd94c49420a6c698630a7883fc8d7723543996b39987cfe54edd1db8ff
 ```
 
 The 0.1.31 sync passed the current compatibility/parity gate:
@@ -32,7 +32,9 @@ Persistent-wave continuation throughput:
 
 The shared arena remained one physical mapping across all three lane engines: 49,116,200 KiB payload per mapping, `Shared_Dirty=49,116,200 KiB`, `Private_Dirty=0`.
 
-Full record: [`docs/strata-0.1.31-promotion-20261001.md`](docs/strata-0.1.31-promotion-20261001.md).
+Phase 3 then removed duplicate shared-arena source loading on the same 0.1.31 engine generation. Matched direct 3-lane ready time changed from **42.218 s → 27.133 s** (**-35.73%**), while the full production idle-proxy wake changed from the previously recorded **42.042 s → 34.031 s** (**-19.05%**). Lane 0 remains the population leader; lane 1/2 attach only after pack/size/readiness validation and skip their duplicate source loads. Production correctness smoke remained PASS.
+
+Current lifecycle record: [`docs/phase3-shared-arena-lifecycle-20261002.md`](docs/phase3-shared-arena-lifecycle-20261002.md). Initial 0.1.31 parity record: [`docs/strata-0.1.31-promotion-20261001.md`](docs/strata-0.1.31-promotion-20261001.md).
 
 ## Retained benchmark generation — Strata 0.1.30
 
@@ -84,7 +86,7 @@ Full 0.1.30 record: [`docs/strata-0.1.30-promotion-20261001.md`](docs/strata-0.1
 
 ## Serving-control state
 
-Phase 1 and Phase 2 are complete on the independent-lane architecture.
+Phase 1, Phase 2, and the current Phase 3 shared-arena lifecycle gate are complete on the independent-lane architecture.
 
 - production new-session placement: `balanced-additive-new-prefill-retained-state-proxy-v1`
 - rollback policy: `safe-affinity-live-state-v1`
@@ -92,7 +94,7 @@ Phase 1 and Phase 2 are complete on the independent-lane architecture.
 - bounded admission for the all-complete-immediately workload: not promoted
 - workload-regime adaptation: not promoted
 
-The next roadmap focus is startup/runtime lifecycle overhead on the 0.1.31 baseline.
+There is no mandatory next serving phase. Architecture challengers remain evidence-triggered and stay deferred until a measured bottleneck activates them.
 
 ## Reference host
 

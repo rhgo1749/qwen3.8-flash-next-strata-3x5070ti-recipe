@@ -36,7 +36,7 @@ The moving recipe `main` tracks the current operational baseline and the immedia
 ## Current operational state
 
 ```text
-Strata-Lanes main      15be91859ffdc49010bf37ed60cb2dfaf4d6e7d5
+Strata-Lanes main      d7afade41f06d4486a4feb2dd59b2864122e0e2e
 upstream Strata        9259cad4cfa3543cd3b8decab5962672b968c649
 engine baseline        Strata 0.1.31
 production scheduler   balanced-additive-new-prefill-retained-state-proxy-v1
@@ -49,7 +49,7 @@ The production execution unit remains one independent Strata engine lane per GPU
 
 The host expert backing is one upstream-native shared arena used by multiple lane processes. The primitive originated in this fork's upstream PR #129 and was incorporated into Strata 0.1.30; current 0.1.31 keeps that path and its Linux whole-arena pinning behavior.
 
-Each lane keeps its own CUDA registration and GPU-side cache while mapping the same physical host expert pages.
+Each lane keeps its own CUDA registration and GPU-side cache while mapping the same physical host expert pages. Phase 3 makes population single-writer per supervisor generation: lane 0 fills the arena and publishes readiness, later lanes verify and attach as followers without repeating the source expert load.
 
 ## Multi-GPU supervisor
 
@@ -68,7 +68,8 @@ The supervisor:
 5. keeps known sessions on their remembered lane;
 6. uses capability filtering and compatible FIFO queueing;
 7. uses balanced-additive placement for new sessions;
-8. excludes lanes whose child engine is no longer healthy.
+8. excludes lanes whose child engine is no longer healthy;
+9. owns the shared-arena pathname for the supervisor lifetime so another supervisor cannot repopulate it concurrently.
 
 The normal parallelism unit is therefore a **request/session**, not a token, tensor, layer, or expert.
 
@@ -90,4 +91,4 @@ These are measured host values, not portable defaults.
 
 ## Roadmap authority
 
-The canonical moving roadmap is the GitHub Issue tree in `rhgo1749/Strata-Lanes`. The current roadmap has completed Phase 1 and Phase 2; Phase 3 covers startup/runtime lifecycle overhead on the 0.1.31 baseline.
+The canonical moving roadmap is the GitHub Issue tree in `rhgo1749/Strata-Lanes`. Phase 1, Phase 2, and the current Phase 3 shared-arena lifecycle gate are complete on the 0.1.31 baseline. Later architecture challengers remain conditional on measured triggers.

@@ -1,0 +1,36 @@
+{
+  "created_unix_ns": 1790910387660068783,
+  "disconnect": {
+    "cleanup_polls_250ms": 4,
+    "lane": 0,
+    "start_status": 200
+  },
+  "kind": "phase1_correctness_smoke",
+  "malformed": {
+    "status": 400
+  },
+  "multiturn": {
+    "turn1_lane": 2,
+    "turn1_status": 200,
+    "turn2_cache_n": 56,
+    "turn2_lane": 2,
+    "turn2_status": 200
+  },
+  "recovery": {
+    "lane": 2,
+    "status": 200
+  },
+  "schema": 1,
+  "status": "pass",
+  "text": {
+    "lane": 0,
+    "status": 200
+  },
+  "vision": {
+    "lane": 1,
+    "status": 200
+  },
+  "vision_lanes": [
+    1
+  ]
+}
