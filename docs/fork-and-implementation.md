@@ -36,7 +36,7 @@ The moving recipe `main` tracks the current operational baseline and the immedia
 ## Current operational state
 
 ```text
-Strata-Lanes main      d7afade41f06d4486a4feb2dd59b2864122e0e2e
+Strata-Lanes main      475e0766e8b41e17c978a6765ee0587f198790a3
 upstream Strata        9259cad4cfa3543cd3b8decab5962672b968c649
 engine baseline        Strata 0.1.31
 production scheduler   balanced-additive-new-prefill-retained-state-proxy-v1

@@ -1,6 +1,6 @@
 # Benchmark and reporting contract
 
-The **current operational software baseline** is Strata **0.1.31** on fork main `d7afade41f06d4486a4feb2dd59b2864122e0e2e`, with the Phase 3 runtime implementation at `4e333d8cd4731c8c365aeea984371f7853f27092`, upstream `9259cad4cfa3543cd3b8decab5962672b968c649`. The initial 0.1.31 promotion remains the compatibility/parity gate; Phase 3 adds the current startup/lifecycle gate. The complete architecture-performance matrix remains the retained 0.1.30 measurement generation.
+The **current operational software baseline** is Strata **0.1.31** on fork main `475e0766e8b41e17c978a6765ee0587f198790a3`, with the Phase 3 runtime implementation at `4e333d8cd4731c8c365aeea984371f7853f27092`, upstream `9259cad4cfa3543cd3b8decab5962672b968c649`. The initial 0.1.31 promotion remains the compatibility/parity gate; Phase 3 adds the current startup/lifecycle gate. The complete architecture-performance matrix remains the retained 0.1.30 measurement generation.
 
 Current promotion evidence:
 

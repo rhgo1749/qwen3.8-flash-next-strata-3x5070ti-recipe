@@ -9,7 +9,7 @@
 ## 現在の状態
 
 - 実装 fork: [`rhgo1749/Strata-Lanes`](https://github.com/rhgo1749/Strata-Lanes)
-- **現在の運用 Strata pin:** [`d7afade`](https://github.com/rhgo1749/Strata-Lanes/commit/d7afade41f06d4486a4feb2dd59b2864122e0e2e)
+- **現在の運用 Strata pin:** [`475e076`](https://github.com/rhgo1749/Strata-Lanes/commit/475e0766e8b41e17c978a6765ee0587f198790a3)
 - エンジン基準: Strata **0.1.31**（upstream `9259cad`）；昇格記録: [`docs/strata-0.1.31-promotion-20261001.md`](docs/strata-0.1.31-promotion-20261001.md)
 - 参照ホストの現行 production quant: **Qwen3.8-Flash-Next GSQ-RCO IQ3_S**
 `main` は現在の運用レシピを追跡します。保持する実測結果とバージョン境界は [`RESULTS.md`](RESULTS.md) にまとめます。さらに古いスナップショットは moving `main` に重複保持せず、Git history と名前付き branch から確認できます。

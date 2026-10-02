@@ -9,7 +9,7 @@
 ## 当前状态
 
 - 实现 fork：[`rhgo1749/Strata-Lanes`](https://github.com/rhgo1749/Strata-Lanes)
-- **当前运行用 Strata pin：** [`d7afade`](https://github.com/rhgo1749/Strata-Lanes/commit/d7afade41f06d4486a4feb2dd59b2864122e0e2e)
+- **当前运行用 Strata pin：** [`475e076`](https://github.com/rhgo1749/Strata-Lanes/commit/475e0766e8b41e17c978a6765ee0587f198790a3)
 - 引擎基线：Strata **0.1.31**（upstream `9259cad`）；升级记录：[`docs/strata-0.1.31-promotion-20261001.md`](docs/strata-0.1.31-promotion-20261001.md)
 - 参考主机当前 production quant：**Qwen3.8-Flash-Next GSQ-RCO IQ3_S**
 `main` 跟踪当前运行方案。保留的实测结果与版本边界记录在 [`RESULTS.md`](RESULTS.md)。更早的快照不再重复保留在滚动 `main` 中，可通过 Git history 与命名分支查看。

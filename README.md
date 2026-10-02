@@ -9,7 +9,7 @@ A practical recipe for running **one independent Strata generation lane per GPU*
 ## Current state
 
 - Implementation fork: [`rhgo1749/Strata-Lanes`](https://github.com/rhgo1749/Strata-Lanes)
-- **Current operational Strata pin:** [`d7afade`](https://github.com/rhgo1749/Strata-Lanes/commit/d7afade41f06d4486a4feb2dd59b2864122e0e2e)
+- **Current operational Strata pin:** [`475e076`](https://github.com/rhgo1749/Strata-Lanes/commit/475e0766e8b41e17c978a6765ee0587f198790a3)
 - Engine baseline: Strata **0.1.31** (`9259cad` upstream); promotion record: [`docs/strata-0.1.31-promotion-20261001.md`](docs/strata-0.1.31-promotion-20261001.md)
 - Current production quant on the reference host: **Qwen3.8-Flash-Next GSQ-RCO IQ3_S**
 `main` tracks the current operational recipe. Detailed retained measurements and version boundaries are in [`RESULTS.md`](RESULTS.md). Older snapshots remain available through Git history and named branches rather than being mirrored on the moving main branch.
