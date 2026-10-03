@@ -1,0 +1,5 @@
+arm,workload_region,mean_tg,sd_tg,cold_pp_mean,cold_pp_sd,notes
+independent_lane,single_request,67.448629,,,,same 0.1.38 fixed campaign prompt
+layer_split_3gpu,single_request,101.903018,1.391070,1033.114396,14.814639,"GPU [0,2,1], serial server"
+independent_lanes_3,three_requests,173.259409,,,,three concurrent independent lanes
+layer_split_3gpu,three_requests_fifo,102.839343,0.702796,,,ordinary upstream FIFO serialization

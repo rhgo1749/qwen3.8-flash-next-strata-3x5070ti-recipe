@@ -28,9 +28,56 @@ A matched single-lane compatibility A/B against the installed 0.1.31 production 
 
 This is a bounded one-sample-per-size directional A/B, not a replacement for the full model-backed benchmark campaign. Decode samples were too short and acceptance-sensitive for a version-level decode claim.
 
-The latest full live serving/lifecycle evidence remains the 0.1.31 Phase 3 campaign below, and the complete architecture-performance matrix remains 0.1.30. Those measurements are intentionally not relabeled as 0.1.38.
+The current full architecture campaign has now been rerun on 0.1.38. The 0.1.31 Phase 3 lifecycle campaign and the 0.1.30 architecture matrix remain retained historical evidence; their measurements are not relabeled as 0.1.38.
 
-Current sync record: [`docs/strata-0.1.38-promotion-20261003.md`](docs/strata-0.1.38-promotion-20261003.md).
+Current sync record: [`docs/strata-0.1.38-promotion-20261003.md`](docs/strata-0.1.38-promotion-20261003.md). Current full campaign: [`docs/strata-0.1.38-full-campaign-20261003.md`](docs/strata-0.1.38-full-campaign-20261003.md).
+
+## Current full benchmark generation — Strata 0.1.38
+
+The current full campaign uses a fixed prompt contract within 0.1.38. Historical 0.1.30 prompt bytes were not retained, so cross-version workload deltas are descriptive unless separately byte-matched.
+
+### Independent-lane scaling
+
+| Active lanes | Common-wall aggregate TG | Speedup | Efficiency |
+| ---: | ---: | ---: | ---: |
+| 1 | **67.45 ± 2.20 tok/s** | 1.000× | 100.0% |
+| 2 | **129.41 ± 2.95 tok/s** | **1.919×** | **95.9%** |
+| 3 | **173.26 ± 6.67 tok/s** | **2.569×** | **85.6%** |
+
+Corrected mixed fiction/coding/reasoning serving measured **178.86 ± 3.33 tok/s** over nine retained warm rotations.
+
+### Shared arena memory
+
+The historical 32K / resident-KV 8192 contract was rerun exactly for memory accounting:
+
+| Arena mode | Two-engine PSS |
+| --- | ---: |
+| Private | **95.670 GiB** |
+| Shared | **52.111 GiB** |
+| Saved | **43.559 GiB / 45.53%** |
+
+At the production 262K / resident-KV 32768 contract, PSS changed from **95.927 → 58.036 GiB**, saving **37.892 GiB / 39.50%**. The shared expert mapping remains 49,116,204 KiB `Shared_Dirty` with `Private_Dirty=0`.
+
+### Heterogeneous isolation
+
+After discarding an initial CPU-affinity-contaminated attempt, the retained disjoint-CPU ABBA run measured **68.90 tok/s** on the RTX 5070 Ti solo and **68.75 tok/s** while the RTX 5060 Ti ran concurrently. Raw fast-lane delta is **-0.22%**. An acceptance-adjusted model estimates **-0.74%**, with the arm coefficient interval crossing zero, so this run does not establish material fast-lane pacing.
+
+### Independent lanes vs layer split
+
+Within the 0.1.38 fixed campaign prompt, one warm request measured **67.45 tok/s** on one independent lane versus **101.90 ± 1.39 tok/s** on three-GPU layer split. Three simultaneous requests measured **173.26 tok/s** on three independent lanes versus **102.84 ± 0.70 tok/s** on the ordinary layer-split server's serial FIFO path.
+
+Three-GPU layer-split cold PP measured **1033.1 ± 14.8 tok/s**. The old 0.1.30 contract measured 807.1 ± 11.8 tok/s, but those prompt bytes differ; the separately byte-matched 0.1.31→0.1.38 A/B remains the stronger version-level prefill evidence.
+
+### Oversubscription
+
+| Requests | Aggregate TG | Queue p50 | Queue p95 | E2E p95 |
+| ---: | ---: | ---: | ---: | ---: |
+| 3 | **173.55 ± 3.34** | 2.9 ms | 8.8 ms | 9.08 s |
+| 4 | **130.88 ± 1.12** | 4.9 ms | 8.20 s | 15.71 s |
+| 6 | **183.98 ± 2.97** | 4.01 s | 8.64 s | 16.65 s |
+| 9 | **183.38 ± 3.90** | 8.23 s | 16.83 s | 25.26 s |
+
+Full current record: [`docs/strata-0.1.38-full-campaign-20261003.md`](docs/strata-0.1.38-full-campaign-20261003.md). Machine-readable evidence: [`bench/raw/0.1.38-20261003/`](bench/raw/0.1.38-20261003/).
 
 ### Retained previous software gate — Strata 0.1.34
 

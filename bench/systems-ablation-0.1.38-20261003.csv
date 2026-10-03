@@ -1,0 +1,13 @@
+group,metric,value,sd,unit,notes
+scaling,1_lane_aggregate,67.448629,2.196720,tok/s,speedup=1.000; efficiency=100.0%
+scaling,2_lane_aggregate,129.405865,2.946593,tok/s,speedup=1.919; efficiency=95.9%
+scaling,3_lane_aggregate,173.259409,6.669523,tok/s,speedup=2.569; efficiency=85.6%
+mixed,three_lane_aggregate,178.859303,3.333226,tok/s,9 retained warm rotations
+hetero,5070ti_solo,68.900000,1.738637,tok/s,CPU-disjoint ABBA
+hetero,5070ti_concurrent,68.750000,1.101946,tok/s,raw delta=-0.22%; acceptance-adjusted=-0.74%
+hetero,5060ti_concurrent,55.650000,1.245564,tok/s,CPU-disjoint ABBA
+hetero,common_wall_aggregate,110.080572,2.441297,tok/s,concurrent arm
+memory,32k_8192_private_pss,95.670205,,GiB,
+memory,32k_8192_shared_pss,52.110801,,GiB,saved=43.559 GiB / 45.53%
+memory,262k_32768_private_pss,95.927104,,GiB,
+memory,262k_32768_shared_pss,58.035557,,GiB,saved=37.892 GiB / 39.50%

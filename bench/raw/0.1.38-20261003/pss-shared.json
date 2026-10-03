@@ -1,0 +1,73 @@
+{
+  "engines": [
+    24245,
+    25516
+  ],
+  "sum_pss_gib": 58.03555679321289,
+  "rows": [
+    {
+      "200000000-7fff3ad1f000 ---p 00000000 00": 0,
+      "Rss": 55112856,
+      "Pss": 30431360,
+      "Pss_Dirty": 30267694,
+      "Pss_Anon": 1636864,
+      "Pss_File": 174446,
+      "Pss_Shmem": 28620050,
+      "Shared_Clean": 240300,
+      "Shared_Dirty": 49116204,
+      "Private_Clean": 46760,
+      "Private_Dirty": 5709592,
+      "Referenced": 55112856,
+      "Anonymous": 1636864,
+      "KSM": 0,
+      "LazyFree": 0,
+      "AnonHugePages": 0,
+      "ShmemPmdMapped": 0,
+      "FilePmdMapped": 0,
+      "Shared_Hugetlb": 0,
+      "Private_Hugetlb": 0,
+      "Swap": 0,
+      "SwapPss": 0,
+      "Locked": 0
+    },
+    {
+      "200000000-7fff327a2000 ---p 00000000 00": 0,
+      "Rss": 55104716,
+      "Pss": 30423332,
+      "Pss_Dirty": 30261550,
+      "Pss_Anon": 1627552,
+      "Pss_File": 175730,
+      "Pss_Shmem": 28620050,
+      "Shared_Clean": 240188,
+      "Shared_Dirty": 49116204,
+      "Private_Clean": 44876,
+      "Private_Dirty": 5703448,
+      "Referenced": 55104716,
+      "Anonymous": 1627552,
+      "KSM": 0,
+      "LazyFree": 0,
+      "AnonHugePages": 0,
+      "ShmemPmdMapped": 0,
+      "FilePmdMapped": 0,
+      "Shared_Hugetlb": 0,
+      "Private_Hugetlb": 0,
+      "Swap": 0,
+      "SwapPss": 0,
+      "Locked": 0
+    }
+  ],
+  "arena_rows": [
+    {
+      "Pss": 24558102,
+      "Shared_Dirty": 49116204,
+      "Private_Dirty": 0,
+      "Size": 49116204
+    },
+    {
+      "Pss": 24558102,
+      "Shared_Dirty": 49116204,
+      "Private_Dirty": 0,
+      "Size": 49116204
+    }
+  ]
+}

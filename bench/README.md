@@ -1,25 +1,27 @@
 # Benchmark and reporting contract
 
-The **current operational software baseline** is Strata **0.1.34** on fork main `4b5b47d6e50250b71c52fe4fe7d33593684dce91`, integrated from upstream `1678de333d0e0711bc414ad992b640e1a37dd814`. The 0.1.34 record is a bounded software compatibility promotion: Python serving tests, CUDA 13.4 sm_120 build, and fixture-independent CTests passed. The latest full live/lifecycle evidence remains the retained 0.1.31 Phase 3 generation, and the complete architecture-performance matrix remains the retained 0.1.30 measurement generation.
+The **current operational software baseline** and current full benchmark generation are Strata **0.1.38** on fork main `8ea68eaab3ee93f1c820f5103d64ca251cfe52b6`, integrated from upstream `99f3dbd0b21d1401b3769e0c0d963913607f380b` (`v0.1.38`). The full 0.1.38 campaign reruns independent-lane scaling, workload sensitivity, corrected mixed serving, exact-queue oversubscription, heterogeneous isolation, private↔shared PSS, and three-GPU layer-split.
 
-Current promotion evidence:
+Current 0.1.38 evidence:
 
-- `strata-0.1.34-sync-20261002.csv` — 0.1.34 provenance and bounded compatibility gate;
-- `docs/strata-0.1.34-promotion-20261002.md` — current software-sync promotion record;
-- `phase3-shared-arena-lifecycle-0.1.31-20261002.csv` — matched Phase 3 startup and production wake timings;
-- `docs/phase3-shared-arena-lifecycle-20261002.md` — retained latest full live/lifecycle promotion record;
-- `raw/phase3-20261002/` — exact candidate/production smoke, wake and ownership-refusal evidence;
-- `strata-0.1.31-promotion-20261001.csv` — initial 0.1.31 provenance, implementation, smoke, scheduler-parity and shared-arena gate;
-- `docs/strata-0.1.31-promotion-20261001.md` — human-readable parity promotion record;
-- `raw/0.1.31-20261001/` — retained 0.1.31 candidate and matched 0.1.30 control smoke / persistent-wave evidence.
+- `strata-0.1.38-campaign.md` — full campaign contract, results, caveats and interpretation;
+- `systems-ablation-0.1.38-20261003.csv` — scaling, mixed serving, heterogeneous isolation and PSS;
+- `workload-sensitivity-0.1.38-20261003.csv` — cold PP and warm decode summaries;
+- `oversubscription-0.1.38-summary-20261003.csv` — corrected 3/4/6/9 request summaries;
+- `layer-split-ab-0.1.38-20261003.csv` — current independent-lane ↔ layer-split comparison;
+- `raw/0.1.38-20261003/` — retained non-contaminated raw JSON and machine-readable summary;
+- `docs/strata-0.1.38-full-campaign-20261003.md` — human-readable current full benchmark promotion;
+- `docs/strata-0.1.38-promotion-20261003.md` — software-sync compatibility gate and byte-matched bounded prefill A/B.
+
+Historical evidence remains versioned under 0.1.31/0.1.30. The 0.1.30 fixed prompt bytes were not retained, so 0.1.30↔0.1.38 workload values are contract-matched rather than byte-identical; only the separately documented 0.1.31→0.1.38 bounded A/B is used for exact version-level prefill percentages.
 
 Retained 0.1.30 architecture evidence:
 
-- `strata-0.1.30-promotion-20261001.csv` — promoted validation/provenance gate;
-- `systems-ablation-0.1.30-20261001.csv` — scaling, native shared-arena PSS, heterogeneous isolation and mixed serving;
-- `workload-sensitivity-0.1.30-20261001.csv` — PP/TTFT and warm decode summaries;
-- `oversubscription-0.1.30-summary-20261001.csv` — 3/4/6/9-request exact-queue summaries;
-- `layer-split-ab-0.1.30-20261001.csv` — matched independent-lane ↔ layer-split A/B.
+- `strata-0.1.30-promotion-20261001.csv` — historical validation/provenance gate;
+- `systems-ablation-0.1.30-20261001.csv` — historical scaling, native shared-arena PSS, heterogeneous isolation and mixed serving;
+- `workload-sensitivity-0.1.30-20261001.csv` — historical PP/TTFT and warm decode summaries;
+- `oversubscription-0.1.30-summary-20261001.csv` — historical 3/4/6/9 request summaries;
+- `layer-split-ab-0.1.30-20261001.csv` — historical independent-lane ↔ layer-split A/B.
 
 ## Phase 1 cross-lane interference
 
@@ -57,7 +59,7 @@ aggregate TG = total concurrent completion tokens / one common client wall inter
 
 This is a makespan-based metric and is therefore gated by the last request to finish. It is the primary scaling metric. **Do not substitute lane-sum engine TG for common-wall aggregate TG.**
 
-Current controlled scaling, five completed repetitions per point:
+Retained 0.1.30 controlled scaling, five completed repetitions per point:
 
 ```text
 1 lane   70.804 ± 1.546 tok/s
@@ -116,7 +118,7 @@ The mixed three-lane experiment rotates fiction/coding/reasoning across GPU0 x8 
 
 ## Matched independent-lane ↔ layer-split A/B
 
-The new comparison is a **matched workload-region study**, not a single winner score. Both arms use Strata 0.1.30, IQ3_S, the same prompt bytes/hash, context, completion length, sampling/seed, warm/cold/reuse contract, driver/toolchain, and GPU tuning snapshot. Upstream conversation parking stays disabled in the primary comparison so it does not become an unmatched hidden state variable.
+The retained 0.1.30 comparison is a **matched workload-region study**, not a single winner score. Both arms use Strata 0.1.30, IQ3_S, the same prompt bytes/hash, context, completion length, sampling/seed, warm/cold/reuse contract, driver/toolchain, and GPU tuning snapshot. Upstream conversation parking stays disabled in the primary comparison so it does not become an unmatched hidden state variable.
 
 The retained A/B is now complete. One warm request measures **70.804 ± 1.546 tok/s** on one independent lane versus **102.976 ± 1.527 tok/s** on three-GPU layer split (+45.4%). Three simultaneous requests measure **189.486 ± 3.205 tok/s** common-wall on independent lanes versus **102.588 ± 1.629 tok/s** under the ordinary layer-split server's serial FIFO execution; independent lanes therefore provide 84.7% more aggregate throughput in that three-request region. Short-reasoning no-reuse PP/TTFT are 850.67 tok/s / 1.781 s for one independent lane and 807.11 tok/s / 1.867 s for layer split. Layer-split auto selected K=18,33 after per-stage PCIe probing.
 

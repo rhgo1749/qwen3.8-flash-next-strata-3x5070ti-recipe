@@ -1,0 +1,205 @@
+[
+  {
+    "M": 3,
+    "run": 1,
+    "wall_s": 9.077101967999624,
+    "aggregate_tg": 169.2170039969814,
+    "rows": [
+      {
+        "i": 0,
+        "client_s": 8.747331540999767,
+        "completion_tokens": 512,
+        "lane": "1",
+        "queue_ms": 6.618
+      },
+      {
+        "i": 1,
+        "client_s": 9.076383707999412,
+        "completion_tokens": 512,
+        "lane": "0",
+        "queue_ms": 2.858
+      },
+      {
+        "i": 2,
+        "client_s": 9.07643765100056,
+        "completion_tokens": 512,
+        "lane": "2",
+        "queue_ms": 1.872
+      }
+    ]
+  },
+  {
+    "M": 3,
+    "run": 2,
+    "wall_s": 8.928128952999941,
+    "aggregate_tg": 172.04052585775977,
+    "rows": [
+      {
+        "i": 0,
+        "client_s": 8.92773700699945,
+        "completion_tokens": 512,
+        "lane": "0",
+        "queue_ms": 2.86
+      },
+      {
+        "i": 1,
+        "client_s": 8.857074442999874,
+        "completion_tokens": 512,
+        "lane": "1",
+        "queue_ms": 1.929
+      },
+      {
+        "i": 2,
+        "client_s": 8.927492327000436,
+        "completion_tokens": 512,
+        "lane": "2",
+        "queue_ms": 7.326
+      }
+    ]
+  },
+  {
+    "M": 3,
+    "run": 3,
+    "wall_s": 9.031226381999659,
+    "aggregate_tg": 170.07656934183782,
+    "rows": [
+      {
+        "i": 0,
+        "client_s": 9.030900738999662,
+        "completion_tokens": 512,
+        "lane": "1",
+        "queue_ms": 2.096
+      },
+      {
+        "i": 1,
+        "client_s": 8.57799950900062,
+        "completion_tokens": 512,
+        "lane": "0",
+        "queue_ms": 9.514
+      },
+      {
+        "i": 2,
+        "client_s": 8.577990848999434,
+        "completion_tokens": 512,
+        "lane": "2",
+        "queue_ms": 3.303
+      }
+    ]
+  },
+  {
+    "M": 3,
+    "run": 4,
+    "wall_s": 8.829261779000262,
+    "aggregate_tg": 173.96697917070043,
+    "rows": [
+      {
+        "i": 0,
+        "client_s": 8.617457230999207,
+        "completion_tokens": 512,
+        "lane": "0",
+        "queue_ms": 1.75
+      },
+      {
+        "i": 1,
+        "client_s": 8.828676224999981,
+        "completion_tokens": 512,
+        "lane": "1",
+        "queue_ms": 7.365
+      },
+      {
+        "i": 2,
+        "client_s": 8.617153328999848,
+        "completion_tokens": 512,
+        "lane": "2",
+        "queue_ms": 2.609
+      }
+    ]
+  },
+  {
+    "M": 3,
+    "run": 5,
+    "wall_s": 8.80113539299964,
+    "aggregate_tg": 174.52293725894995,
+    "rows": [
+      {
+        "i": 0,
+        "client_s": 8.800547808999909,
+        "completion_tokens": 512,
+        "lane": "2",
+        "queue_ms": 2.855
+      },
+      {
+        "i": 1,
+        "client_s": 8.800595551000697,
+        "completion_tokens": 512,
+        "lane": "0",
+        "queue_ms": 1.645
+      },
+      {
+        "i": 2,
+        "client_s": 8.124283316999936,
+        "completion_tokens": 512,
+        "lane": "1",
+        "queue_ms": 7.551
+      }
+    ]
+  },
+  {
+    "M": 3,
+    "run": 6,
+    "wall_s": 8.61590404799972,
+    "aggregate_tg": 178.27496585881778,
+    "rows": [
+      {
+        "i": 0,
+        "client_s": 8.615618386000278,
+        "completion_tokens": 512,
+        "lane": "1",
+        "queue_ms": 1.867
+      },
+      {
+        "i": 1,
+        "client_s": 8.595093792000625,
+        "completion_tokens": 512,
+        "lane": "2",
+        "queue_ms": 2.844
+      },
+      {
+        "i": 2,
+        "client_s": 8.594746798000415,
+        "completion_tokens": 512,
+        "lane": "0",
+        "queue_ms": 8.764
+      }
+    ]
+  },
+  {
+    "M": 3,
+    "run": 7,
+    "wall_s": 8.689988523000466,
+    "aggregate_tg": 176.75512412180404,
+    "rows": [
+      {
+        "i": 0,
+        "client_s": 8.608757093999884,
+        "completion_tokens": 512,
+        "lane": "0",
+        "queue_ms": 1.719
+      },
+      {
+        "i": 1,
+        "client_s": 8.608508573000108,
+        "completion_tokens": 512,
+        "lane": "2",
+        "queue_ms": 2.74
+      },
+      {
+        "i": 2,
+        "client_s": 8.689224980999825,
+        "completion_tokens": 512,
+        "lane": "1",
+        "queue_ms": 7.458
+      }
+    ]
+  }
+]

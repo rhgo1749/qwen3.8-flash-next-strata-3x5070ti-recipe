@@ -83,12 +83,13 @@ required host RAM ≈ one shared expert arena + every lane's host-KV + OS/runtim
 
 ## Versioned evidence
 
-The moving `main` tracks the current **0.1.38 software baseline** while retaining the latest full live/lifecycle evidence from **0.1.31** and the full architecture-performance matrix from **0.1.30**. Measurements keep their original engine version and are never relabeled as current.
+The moving `main` tracks the current **0.1.38 software baseline** and the current **0.1.38 full benchmark campaign**. The 0.1.31 Phase 3 lifecycle record and the 0.1.30 architecture matrix remain retained historical evidence under their original engine generations. Cross-version benchmark claims preserve their prompt/version boundaries rather than relabeling old measurements as current.
 
 See:
 
 - [`RESULTS.md`](RESULTS.md) — current summary and retained benchmark evidence
-- [`docs/strata-0.1.38-promotion-20261003.md`](docs/strata-0.1.38-promotion-20261003.md) — current 0.1.38 software-sync promotion and bounded long-prompt A/B
+- [`docs/strata-0.1.38-full-campaign-20261003.md`](docs/strata-0.1.38-full-campaign-20261003.md) — current 0.1.38 full benchmark campaign
+- [`docs/strata-0.1.38-promotion-20261003.md`](docs/strata-0.1.38-promotion-20261003.md) — 0.1.38 software-sync promotion and byte-matched bounded prefill A/B
 - [`docs/strata-0.1.34-promotion-20261002.md`](docs/strata-0.1.34-promotion-20261002.md) — retained 0.1.34 software-sync promotion
 - [`docs/strata-0.1.31-promotion-20261001.md`](docs/strata-0.1.31-promotion-20261001.md) — retained full live/parity evidence
 - [`docs/strata-0.1.30-promotion-20261001.md`](docs/strata-0.1.30-promotion-20261001.md) — retained full benchmark generation

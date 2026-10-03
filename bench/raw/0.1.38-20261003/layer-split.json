@@ -1,0 +1,112 @@
+{
+  "prompt_tokens": 1456,
+  "single": [
+    {
+      "rep": 1,
+      "wall_s": 5.093683406000025,
+      "prompt_tokens": 1456,
+      "reused": 1449,
+      "prompt_ms": 36.5,
+      "decode_ms": 5051.5,
+      "decode_tok_s": 101.4,
+      "drafts_offered": 445,
+      "drafts_accepted": 284
+    },
+    {
+      "rep": 2,
+      "wall_s": 4.989660009999966,
+      "prompt_tokens": 1456,
+      "reused": 1449,
+      "prompt_ms": 36.5,
+      "decode_ms": 4947.7,
+      "decode_tok_s": 103.5,
+      "drafts_offered": 443,
+      "drafts_accepted": 279
+    },
+    {
+      "rep": 3,
+      "wall_s": 5.106024699999921,
+      "prompt_tokens": 1456,
+      "reused": 1449,
+      "prompt_ms": 36.4,
+      "decode_ms": 5063.9,
+      "decode_tok_s": 101.1,
+      "drafts_offered": 412,
+      "drafts_accepted": 271
+    },
+    {
+      "rep": 4,
+      "wall_s": 4.967250541999988,
+      "prompt_tokens": 1456,
+      "reused": 1449,
+      "prompt_ms": 37.0,
+      "decode_ms": 4922.7,
+      "decode_tok_s": 104.0,
+      "drafts_offered": 430,
+      "drafts_accepted": 282
+    },
+    {
+      "rep": 5,
+      "wall_s": 4.969069334999972,
+      "prompt_tokens": 1456,
+      "reused": 1449,
+      "prompt_ms": 36.3,
+      "decode_ms": 4925.4,
+      "decode_tok_s": 104.0,
+      "drafts_offered": 420,
+      "drafts_accepted": 284
+    }
+  ],
+  "multi": [
+    {
+      "rep": 1,
+      "wall_s": 15.09873879600002,
+      "aggregate_tg": 101.73035117389536,
+      "client_s": [
+        10.134181142999978,
+        15.09441206300005,
+        5.1110140199999705
+      ]
+    },
+    {
+      "rep": 2,
+      "wall_s": 14.966340832000014,
+      "aggregate_tg": 102.63029669321902,
+      "client_s": [
+        10.091601115999993,
+        14.965877663000015,
+        5.160984241000051
+      ]
+    },
+    {
+      "rep": 3,
+      "wall_s": 14.839177799000026,
+      "aggregate_tg": 103.50977802176527,
+      "client_s": [
+        14.838906038000005,
+        9.930130379000047,
+        4.984986122999999
+      ]
+    },
+    {
+      "rep": 4,
+      "wall_s": 14.867918809999992,
+      "aggregate_tg": 103.30968440363718,
+      "client_s": [
+        5.023642160999998,
+        10.101650468999992,
+        14.867453841000042
+      ]
+    },
+    {
+      "rep": 5,
+      "wall_s": 14.91021738400002,
+      "aggregate_tg": 103.01660669604077,
+      "client_s": [
+        9.897149216999992,
+        14.90982527899996,
+        5.075457624999899
+      ]
+    }
+  ]
+}

@@ -1,0 +1,497 @@
+[
+  {
+    "rotation": 1,
+    "rep": 1,
+    "assignment": [
+      "fiction",
+      "coding",
+      "reasoning"
+    ],
+    "wall_s": 8.306579272999443,
+    "aggregate_tg": 184.91366295543244,
+    "rows": [
+      {
+        "port": 19120,
+        "client_s": 8.161388000000443,
+        "completion_tokens": 512,
+        "prompt_tokens": 1500,
+        "reused": 1493,
+        "prompt_ms": 90.0,
+        "decode_ms": 8063.5,
+        "decode_tok_s": 63.5,
+        "hit_rate": 0.898,
+        "drafts_offered": 433,
+        "drafts_accepted": 234,
+        "workload": "fiction"
+      },
+      {
+        "port": 19121,
+        "client_s": 7.73778490299992,
+        "completion_tokens": 512,
+        "prompt_tokens": 1527,
+        "reused": 1520,
+        "prompt_ms": 76.7,
+        "decode_ms": 7652.7,
+        "decode_tok_s": 66.9,
+        "hit_rate": 0.822,
+        "drafts_offered": 423,
+        "drafts_accepted": 314,
+        "workload": "coding"
+      },
+      {
+        "port": 19122,
+        "client_s": 8.30585467399942,
+        "completion_tokens": 512,
+        "prompt_tokens": 1456,
+        "reused": 1449,
+        "prompt_ms": 86.2,
+        "decode_ms": 8212.6,
+        "decode_tok_s": 62.3,
+        "hit_rate": 0.8,
+        "drafts_offered": 441,
+        "drafts_accepted": 275,
+        "workload": "reasoning"
+      }
+    ]
+  },
+  {
+    "rotation": 1,
+    "rep": 2,
+    "assignment": [
+      "fiction",
+      "coding",
+      "reasoning"
+    ],
+    "wall_s": 8.585036849000971,
+    "aggregate_tg": 178.91594724823366,
+    "rows": [
+      {
+        "port": 19120,
+        "client_s": 8.399163736001356,
+        "completion_tokens": 512,
+        "prompt_tokens": 1500,
+        "reused": 1493,
+        "prompt_ms": 108.4,
+        "decode_ms": 8281.5,
+        "decode_tok_s": 61.8,
+        "hit_rate": 0.881,
+        "drafts_offered": 448,
+        "drafts_accepted": 251,
+        "workload": "fiction"
+      },
+      {
+        "port": 19121,
+        "client_s": 8.584577170000557,
+        "completion_tokens": 512,
+        "prompt_tokens": 1527,
+        "reused": 1520,
+        "prompt_ms": 96.3,
+        "decode_ms": 8479.3,
+        "decode_tok_s": 60.4,
+        "hit_rate": 0.808,
+        "drafts_offered": 446,
+        "drafts_accepted": 302,
+        "workload": "coding"
+      },
+      {
+        "port": 19122,
+        "client_s": 8.420138890998714,
+        "completion_tokens": 512,
+        "prompt_tokens": 1456,
+        "reused": 1449,
+        "prompt_ms": 105.1,
+        "decode_ms": 8307.8,
+        "decode_tok_s": 61.6,
+        "hit_rate": 0.785,
+        "drafts_offered": 434,
+        "drafts_accepted": 282,
+        "workload": "reasoning"
+      }
+    ]
+  },
+  {
+    "rotation": 1,
+    "rep": 3,
+    "assignment": [
+      "fiction",
+      "coding",
+      "reasoning"
+    ],
+    "wall_s": 8.777972846999546,
+    "aggregate_tg": 174.9834531015928,
+    "rows": [
+      {
+        "port": 19120,
+        "client_s": 8.777702915998816,
+        "completion_tokens": 512,
+        "prompt_tokens": 1500,
+        "reused": 1493,
+        "prompt_ms": 105.6,
+        "decode_ms": 8664.0,
+        "decode_tok_s": 59.1,
+        "hit_rate": 0.878,
+        "drafts_offered": 461,
+        "drafts_accepted": 236,
+        "workload": "fiction"
+      },
+      {
+        "port": 19121,
+        "client_s": 7.4820423439996375,
+        "completion_tokens": 512,
+        "prompt_tokens": 1527,
+        "reused": 1520,
+        "prompt_ms": 90.2,
+        "decode_ms": 7382.4,
+        "decode_tok_s": 69.4,
+        "hit_rate": 0.825,
+        "drafts_offered": 413,
+        "drafts_accepted": 319,
+        "workload": "coding"
+      },
+      {
+        "port": 19122,
+        "client_s": 8.129404211000292,
+        "completion_tokens": 512,
+        "prompt_tokens": 1456,
+        "reused": 1449,
+        "prompt_ms": 101.2,
+        "decode_ms": 8020.3,
+        "decode_tok_s": 63.8,
+        "hit_rate": 0.782,
+        "drafts_offered": 430,
+        "drafts_accepted": 289,
+        "workload": "reasoning"
+      }
+    ]
+  },
+  {
+    "rotation": 2,
+    "rep": 1,
+    "assignment": [
+      "coding",
+      "reasoning",
+      "fiction"
+    ],
+    "wall_s": 8.689601574000335,
+    "aggregate_tg": 176.76299504867734,
+    "rows": [
+      {
+        "port": 19120,
+        "client_s": 7.5622306570003275,
+        "completion_tokens": 512,
+        "prompt_tokens": 1527,
+        "reused": 1520,
+        "prompt_ms": 80.8,
+        "decode_ms": 7473.8,
+        "decode_tok_s": 68.5,
+        "hit_rate": 0.834,
+        "drafts_offered": 418,
+        "drafts_accepted": 314,
+        "workload": "coding"
+      },
+      {
+        "port": 19121,
+        "client_s": 7.90327006500047,
+        "completion_tokens": 512,
+        "prompt_tokens": 1456,
+        "reused": 1449,
+        "prompt_ms": 83.9,
+        "decode_ms": 7812.0,
+        "decode_tok_s": 65.5,
+        "hit_rate": 0.862,
+        "drafts_offered": 419,
+        "drafts_accepted": 282,
+        "workload": "reasoning"
+      },
+      {
+        "port": 19122,
+        "client_s": 8.68913464599973,
+        "completion_tokens": 512,
+        "prompt_tokens": 1500,
+        "reused": 1493,
+        "prompt_ms": 98.7,
+        "decode_ms": 8583.7,
+        "decode_tok_s": 59.6,
+        "hit_rate": 0.834,
+        "drafts_offered": 433,
+        "drafts_accepted": 234,
+        "workload": "fiction"
+      }
+    ]
+  },
+  {
+    "rotation": 2,
+    "rep": 2,
+    "assignment": [
+      "coding",
+      "reasoning",
+      "fiction"
+    ],
+    "wall_s": 8.637836148000133,
+    "aggregate_tg": 177.82231263504818,
+    "rows": [
+      {
+        "port": 19120,
+        "client_s": 8.483206085000347,
+        "completion_tokens": 512,
+        "prompt_tokens": 1527,
+        "reused": 1520,
+        "prompt_ms": 93.2,
+        "decode_ms": 8380.8,
+        "decode_tok_s": 61.1,
+        "hit_rate": 0.808,
+        "drafts_offered": 422,
+        "drafts_accepted": 295,
+        "workload": "coding"
+      },
+      {
+        "port": 19121,
+        "client_s": 8.023934611001096,
+        "completion_tokens": 512,
+        "prompt_tokens": 1456,
+        "reused": 1449,
+        "prompt_ms": 102.6,
+        "decode_ms": 7913.0,
+        "decode_tok_s": 64.7,
+        "hit_rate": 0.859,
+        "drafts_offered": 428,
+        "drafts_accepted": 280,
+        "workload": "reasoning"
+      },
+      {
+        "port": 19122,
+        "client_s": 8.637057466999977,
+        "completion_tokens": 512,
+        "prompt_tokens": 1500,
+        "reused": 1493,
+        "prompt_ms": 110.2,
+        "decode_ms": 8519.1,
+        "decode_tok_s": 60.1,
+        "hit_rate": 0.83,
+        "drafts_offered": 429,
+        "drafts_accepted": 239,
+        "workload": "fiction"
+      }
+    ]
+  },
+  {
+    "rotation": 2,
+    "rep": 3,
+    "assignment": [
+      "coding",
+      "reasoning",
+      "fiction"
+    ],
+    "wall_s": 8.758537083000192,
+    "aggregate_tg": 175.3717527760756,
+    "rows": [
+      {
+        "port": 19120,
+        "client_s": 7.3863668060002965,
+        "completion_tokens": 512,
+        "prompt_tokens": 1527,
+        "reused": 1520,
+        "prompt_ms": 97.0,
+        "decode_ms": 7280.8,
+        "decode_tok_s": 70.3,
+        "hit_rate": 0.829,
+        "drafts_offered": 412,
+        "drafts_accepted": 321,
+        "workload": "coding"
+      },
+      {
+        "port": 19121,
+        "client_s": 8.292499356000917,
+        "completion_tokens": 512,
+        "prompt_tokens": 1456,
+        "reused": 1449,
+        "prompt_ms": 103.9,
+        "decode_ms": 8179.3,
+        "decode_tok_s": 62.6,
+        "hit_rate": 0.841,
+        "drafts_offered": 441,
+        "drafts_accepted": 284,
+        "workload": "reasoning"
+      },
+      {
+        "port": 19122,
+        "client_s": 8.757850075000533,
+        "completion_tokens": 512,
+        "prompt_tokens": 1500,
+        "reused": 1493,
+        "prompt_ms": 116.6,
+        "decode_ms": 8633.4,
+        "decode_tok_s": 59.3,
+        "hit_rate": 0.829,
+        "drafts_offered": 452,
+        "drafts_accepted": 236,
+        "workload": "fiction"
+      }
+    ]
+  },
+  {
+    "rotation": 3,
+    "rep": 1,
+    "assignment": [
+      "reasoning",
+      "fiction",
+      "coding"
+    ],
+    "wall_s": 8.555633433999901,
+    "aggregate_tg": 179.53083332158312,
+    "rows": [
+      {
+        "port": 19120,
+        "client_s": 8.028014322999297,
+        "completion_tokens": 512,
+        "prompt_tokens": 1456,
+        "reused": 1449,
+        "prompt_ms": 86.4,
+        "decode_ms": 7933.5,
+        "decode_tok_s": 64.5,
+        "hit_rate": 0.863,
+        "drafts_offered": 414,
+        "drafts_accepted": 271,
+        "workload": "reasoning"
+      },
+      {
+        "port": 19121,
+        "client_s": 8.377571924998847,
+        "completion_tokens": 512,
+        "prompt_tokens": 1500,
+        "reused": 1493,
+        "prompt_ms": 99.3,
+        "decode_ms": 8270.6,
+        "decode_tok_s": 61.9,
+        "hit_rate": 0.884,
+        "drafts_offered": 455,
+        "drafts_accepted": 244,
+        "workload": "fiction"
+      },
+      {
+        "port": 19122,
+        "client_s": 8.55485432200112,
+        "completion_tokens": 512,
+        "prompt_tokens": 1527,
+        "reused": 1520,
+        "prompt_ms": 82.9,
+        "decode_ms": 8465.1,
+        "decode_tok_s": 60.5,
+        "hit_rate": 0.821,
+        "drafts_offered": 510,
+        "drafts_accepted": 265,
+        "workload": "coding"
+      }
+    ]
+  },
+  {
+    "rotation": 3,
+    "rep": 2,
+    "assignment": [
+      "reasoning",
+      "fiction",
+      "coding"
+    ],
+    "wall_s": 8.38481315700119,
+    "aggregate_tg": 183.18833958959044,
+    "rows": [
+      {
+        "port": 19120,
+        "client_s": 8.06354652600021,
+        "completion_tokens": 512,
+        "prompt_tokens": 1456,
+        "reused": 1449,
+        "prompt_ms": 103.2,
+        "decode_ms": 7952.2,
+        "decode_tok_s": 64.4,
+        "hit_rate": 0.845,
+        "drafts_offered": 434,
+        "drafts_accepted": 289,
+        "workload": "reasoning"
+      },
+      {
+        "port": 19121,
+        "client_s": 8.384235542998795,
+        "completion_tokens": 512,
+        "prompt_tokens": 1500,
+        "reused": 1493,
+        "prompt_ms": 107.9,
+        "decode_ms": 8268.0,
+        "decode_tok_s": 61.9,
+        "hit_rate": 0.881,
+        "drafts_offered": 443,
+        "drafts_accepted": 245,
+        "workload": "fiction"
+      },
+      {
+        "port": 19122,
+        "client_s": 7.901326216000598,
+        "completion_tokens": 512,
+        "prompt_tokens": 1527,
+        "reused": 1520,
+        "prompt_ms": 91.1,
+        "decode_ms": 7803.6,
+        "decode_tok_s": 65.6,
+        "hit_rate": 0.774,
+        "drafts_offered": 419,
+        "drafts_accepted": 303,
+        "workload": "coding"
+      }
+    ]
+  },
+  {
+    "rotation": 3,
+    "rep": 3,
+    "assignment": [
+      "reasoning",
+      "fiction",
+      "coding"
+    ],
+    "wall_s": 8.617380101999515,
+    "aggregate_tg": 178.24442949239264,
+    "rows": [
+      {
+        "port": 19120,
+        "client_s": 8.2145196019992,
+        "completion_tokens": 512,
+        "prompt_tokens": 1456,
+        "reused": 1449,
+        "prompt_ms": 104.0,
+        "decode_ms": 8102.7,
+        "decode_tok_s": 63.2,
+        "hit_rate": 0.848,
+        "drafts_offered": 436,
+        "drafts_accepted": 282,
+        "workload": "reasoning"
+      },
+      {
+        "port": 19121,
+        "client_s": 8.616919553000116,
+        "completion_tokens": 512,
+        "prompt_tokens": 1500,
+        "reused": 1493,
+        "prompt_ms": 108.7,
+        "decode_ms": 8498.5,
+        "decode_tok_s": 60.2,
+        "hit_rate": 0.881,
+        "drafts_offered": 430,
+        "drafts_accepted": 230,
+        "workload": "fiction"
+      },
+      {
+        "port": 19122,
+        "client_s": 7.73013141499905,
+        "completion_tokens": 512,
+        "prompt_tokens": 1527,
+        "reused": 1520,
+        "prompt_ms": 88.2,
+        "decode_ms": 7633.8,
+        "decode_tok_s": 67.1,
+        "hit_rate": 0.752,
+        "drafts_offered": 420,
+        "drafts_accepted": 320,
+        "workload": "coding"
+      }
+    ]
+  }
+]

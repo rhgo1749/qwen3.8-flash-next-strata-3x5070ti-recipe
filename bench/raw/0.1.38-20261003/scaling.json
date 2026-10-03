@@ -1,0 +1,524 @@
+{
+  "1": {
+    "prompt_tokens": 1456,
+    "reps": [
+      {
+        "rep": 1,
+        "wall_s": 7.945403533999524,
+        "aggregate_tg": 64.43977298435232,
+        "rows": [
+          {
+            "port": 19087,
+            "client_s": 7.945163675000003,
+            "completion_tokens": 512,
+            "prompt_tokens": 1456,
+            "reused": 1449,
+            "prompt_ms": 60.3,
+            "decode_ms": 7879.0,
+            "decode_tok_s": 65.0,
+            "hit_rate": 0.859,
+            "drafts_offered": 461,
+            "drafts_accepted": 265
+          }
+        ]
+      },
+      {
+        "rep": 2,
+        "wall_s": 7.687013325999942,
+        "aggregate_tg": 66.60584264479573,
+        "rows": [
+          {
+            "port": 19087,
+            "client_s": 7.686734634999993,
+            "completion_tokens": 512,
+            "prompt_tokens": 1456,
+            "reused": 1449,
+            "prompt_ms": 74.1,
+            "decode_ms": 7606.2,
+            "decode_tok_s": 67.3,
+            "hit_rate": 0.842,
+            "drafts_offered": 442,
+            "drafts_accepted": 284
+          }
+        ]
+      },
+      {
+        "rep": 3,
+        "wall_s": 7.623389272000168,
+        "aggregate_tg": 67.16172842970477,
+        "rows": [
+          {
+            "port": 19087,
+            "client_s": 7.623095030000513,
+            "completion_tokens": 512,
+            "prompt_tokens": 1456,
+            "reused": 1449,
+            "prompt_ms": 73.3,
+            "decode_ms": 7543.9,
+            "decode_tok_s": 67.9,
+            "hit_rate": 0.862,
+            "drafts_offered": 430,
+            "drafts_accepted": 265
+          }
+        ]
+      },
+      {
+        "rep": 4,
+        "wall_s": 7.436478656999498,
+        "aggregate_tg": 68.84979082379078,
+        "rows": [
+          {
+            "port": 19087,
+            "client_s": 7.436136952999732,
+            "completion_tokens": 512,
+            "prompt_tokens": 1456,
+            "reused": 1449,
+            "prompt_ms": 75.4,
+            "decode_ms": 7354.7,
+            "decode_tok_s": 69.6,
+            "hit_rate": 0.857,
+            "drafts_offered": 427,
+            "drafts_accepted": 276
+          }
+        ]
+      },
+      {
+        "rep": 5,
+        "wall_s": 7.294901258999744,
+        "aggregate_tg": 70.18600825725282,
+        "rows": [
+          {
+            "port": 19087,
+            "client_s": 7.2946011679996445,
+            "completion_tokens": 512,
+            "prompt_tokens": 1456,
+            "reused": 1449,
+            "prompt_ms": 74.1,
+            "decode_ms": 7214.4,
+            "decode_tok_s": 71.0,
+            "hit_rate": 0.86,
+            "drafts_offered": 416,
+            "drafts_accepted": 280
+          }
+        ]
+      }
+    ],
+    "mean": 67.44862862797929,
+    "sd": 2.196719995535362,
+    "min": 64.43977298435232,
+    "max": 70.18600825725282
+  },
+  "2": {
+    "prompt_tokens": 1456,
+    "reps": [
+      {
+        "rep": 1,
+        "wall_s": 8.162186962000305,
+        "aggregate_tg": 125.45657245629283,
+        "rows": [
+          {
+            "port": 19087,
+            "client_s": 7.642816864999986,
+            "completion_tokens": 512,
+            "prompt_tokens": 1456,
+            "reused": 1449,
+            "prompt_ms": 78.2,
+            "decode_ms": 7558.5,
+            "decode_tok_s": 67.7,
+            "hit_rate": 0.86,
+            "drafts_offered": 413,
+            "drafts_accepted": 274
+          },
+          {
+            "port": 19089,
+            "client_s": 8.161844588999884,
+            "completion_tokens": 512,
+            "prompt_tokens": 1456,
+            "reused": 1449,
+            "prompt_ms": 71.0,
+            "decode_ms": 8084.2,
+            "decode_tok_s": 63.3,
+            "hit_rate": 0.859,
+            "drafts_offered": 461,
+            "drafts_accepted": 265
+          }
+        ]
+      },
+      {
+        "rep": 2,
+        "wall_s": 7.919236388000172,
+        "aggregate_tg": 129.30539635761377,
+        "rows": [
+          {
+            "port": 19087,
+            "client_s": 7.799996750999526,
+            "completion_tokens": 512,
+            "prompt_tokens": 1456,
+            "reused": 1449,
+            "prompt_ms": 88.5,
+            "decode_ms": 7705.1,
+            "decode_tok_s": 66.4,
+            "hit_rate": 0.855,
+            "drafts_offered": 430,
+            "drafts_accepted": 272
+          },
+          {
+            "port": 19089,
+            "client_s": 7.918826160999743,
+            "completion_tokens": 512,
+            "prompt_tokens": 1456,
+            "reused": 1449,
+            "prompt_ms": 89.2,
+            "decode_ms": 7822.8,
+            "decode_tok_s": 65.4,
+            "hit_rate": 0.842,
+            "drafts_offered": 442,
+            "drafts_accepted": 284
+          }
+        ]
+      },
+      {
+        "rep": 3,
+        "wall_s": 7.832177118999425,
+        "aggregate_tg": 130.7427021173926,
+        "rows": [
+          {
+            "port": 19087,
+            "client_s": 7.474650635999751,
+            "completion_tokens": 512,
+            "prompt_tokens": 1456,
+            "reused": 1449,
+            "prompt_ms": 87.7,
+            "decode_ms": 7379.9,
+            "decode_tok_s": 69.4,
+            "hit_rate": 0.846,
+            "drafts_offered": 415,
+            "drafts_accepted": 293
+          },
+          {
+            "port": 19089,
+            "client_s": 7.831680749000043,
+            "completion_tokens": 512,
+            "prompt_tokens": 1456,
+            "reused": 1449,
+            "prompt_ms": 87.9,
+            "decode_ms": 7737.2,
+            "decode_tok_s": 66.2,
+            "hit_rate": 0.862,
+            "drafts_offered": 430,
+            "drafts_accepted": 265
+          }
+        ]
+      },
+      {
+        "rep": 4,
+        "wall_s": 7.990677828000116,
+        "aggregate_tg": 128.14932876054692,
+        "rows": [
+          {
+            "port": 19087,
+            "client_s": 7.9903071930002625,
+            "completion_tokens": 512,
+            "prompt_tokens": 1456,
+            "reused": 1449,
+            "prompt_ms": 84.8,
+            "decode_ms": 7899.1,
+            "decode_tok_s": 64.8,
+            "hit_rate": 0.852,
+            "drafts_offered": 459,
+            "drafts_accepted": 272
+          },
+          {
+            "port": 19089,
+            "client_s": 7.667900757000098,
+            "completion_tokens": 512,
+            "prompt_tokens": 1456,
+            "reused": 1449,
+            "prompt_ms": 88.0,
+            "decode_ms": 7571.5,
+            "decode_tok_s": 67.6,
+            "hit_rate": 0.857,
+            "drafts_offered": 427,
+            "drafts_accepted": 276
+          }
+        ]
+      },
+      {
+        "rep": 5,
+        "wall_s": 7.677582076000363,
+        "aggregate_tg": 133.37532440075887,
+        "rows": [
+          {
+            "port": 19087,
+            "client_s": 7.677255663999858,
+            "completion_tokens": 512,
+            "prompt_tokens": 1456,
+            "reused": 1449,
+            "prompt_ms": 87.8,
+            "decode_ms": 7582.6,
+            "decode_tok_s": 67.5,
+            "hit_rate": 0.861,
+            "drafts_offered": 437,
+            "drafts_accepted": 274
+          },
+          {
+            "port": 19089,
+            "client_s": 7.499910073999672,
+            "completion_tokens": 512,
+            "prompt_tokens": 1456,
+            "reused": 1449,
+            "prompt_ms": 87.1,
+            "decode_ms": 7406.7,
+            "decode_tok_s": 69.1,
+            "hit_rate": 0.86,
+            "drafts_offered": 416,
+            "drafts_accepted": 280
+          }
+        ]
+      }
+    ],
+    "mean": 129.405864818521,
+    "sd": 2.9465925353556366,
+    "min": 125.45657245629283,
+    "max": 133.37532440075887
+  },
+  "3": {
+    "prompt_tokens": 1456,
+    "reps": [
+      {
+        "rep": 1,
+        "wall_s": 8.84512498300046,
+        "aggregate_tg": 173.65497977157528,
+        "rows": [
+          {
+            "port": 19087,
+            "client_s": 7.890734360000351,
+            "completion_tokens": 512,
+            "prompt_tokens": 1456,
+            "reused": 1449,
+            "prompt_ms": 96.3,
+            "decode_ms": 7786.9,
+            "decode_tok_s": 65.8,
+            "hit_rate": 0.864,
+            "drafts_offered": 413,
+            "drafts_accepted": 278
+          },
+          {
+            "port": 19089,
+            "client_s": 8.128506245000608,
+            "completion_tokens": 512,
+            "prompt_tokens": 1456,
+            "reused": 1449,
+            "prompt_ms": 94.0,
+            "decode_ms": 8028.0,
+            "decode_tok_s": 63.8,
+            "hit_rate": 0.86,
+            "drafts_offered": 413,
+            "drafts_accepted": 274
+          },
+          {
+            "port": 19088,
+            "client_s": 8.844415694999952,
+            "completion_tokens": 512,
+            "prompt_tokens": 1456,
+            "reused": 1449,
+            "prompt_ms": 86.6,
+            "decode_ms": 8749.9,
+            "decode_tok_s": 58.5,
+            "hit_rate": 0.741,
+            "drafts_offered": 441,
+            "drafts_accepted": 284
+          }
+        ]
+      },
+      {
+        "rep": 2,
+        "wall_s": 8.954641617000561,
+        "aggregate_tg": 171.53115285863302,
+        "rows": [
+          {
+            "port": 19087,
+            "client_s": 8.269948605000536,
+            "completion_tokens": 512,
+            "prompt_tokens": 1456,
+            "reused": 1449,
+            "prompt_ms": 102.5,
+            "decode_ms": 8159.3,
+            "decode_tok_s": 62.8,
+            "hit_rate": 0.841,
+            "drafts_offered": 435,
+            "drafts_accepted": 290
+          },
+          {
+            "port": 19089,
+            "client_s": 8.348096405999968,
+            "completion_tokens": 512,
+            "prompt_tokens": 1456,
+            "reused": 1449,
+            "prompt_ms": 102.6,
+            "decode_ms": 8237.4,
+            "decode_tok_s": 62.2,
+            "hit_rate": 0.855,
+            "drafts_offered": 430,
+            "drafts_accepted": 272
+          },
+          {
+            "port": 19088,
+            "client_s": 8.95396411099955,
+            "completion_tokens": 512,
+            "prompt_tokens": 1456,
+            "reused": 1449,
+            "prompt_ms": 102.6,
+            "decode_ms": 8844.4,
+            "decode_tok_s": 57.9,
+            "hit_rate": 0.729,
+            "drafts_offered": 420,
+            "drafts_accepted": 284
+          }
+        ]
+      },
+      {
+        "rep": 3,
+        "wall_s": 9.222198725000453,
+        "aggregate_tg": 166.5546412306274,
+        "rows": [
+          {
+            "port": 19087,
+            "client_s": 8.595855735000441,
+            "completion_tokens": 512,
+            "prompt_tokens": 1456,
+            "reused": 1449,
+            "prompt_ms": 103.7,
+            "decode_ms": 8485.7,
+            "decode_tok_s": 60.3,
+            "hit_rate": 0.848,
+            "drafts_offered": 454,
+            "drafts_accepted": 275
+          },
+          {
+            "port": 19089,
+            "client_s": 8.042491037000218,
+            "completion_tokens": 512,
+            "prompt_tokens": 1456,
+            "reused": 1449,
+            "prompt_ms": 104.8,
+            "decode_ms": 7929.0,
+            "decode_tok_s": 64.6,
+            "hit_rate": 0.846,
+            "drafts_offered": 415,
+            "drafts_accepted": 293
+          },
+          {
+            "port": 19088,
+            "client_s": 9.221396382999956,
+            "completion_tokens": 512,
+            "prompt_tokens": 1456,
+            "reused": 1449,
+            "prompt_ms": 104.5,
+            "decode_ms": 9109.9,
+            "decode_tok_s": 56.2,
+            "hit_rate": 0.745,
+            "drafts_offered": 415,
+            "drafts_accepted": 264
+          }
+        ]
+      },
+      {
+        "rep": 4,
+        "wall_s": 9.019650320000437,
+        "aggregate_tg": 170.29485018881815,
+        "rows": [
+          {
+            "port": 19087,
+            "client_s": 8.338686846999735,
+            "completion_tokens": 512,
+            "prompt_tokens": 1456,
+            "reused": 1449,
+            "prompt_ms": 104.1,
+            "decode_ms": 8227.4,
+            "decode_tok_s": 62.2,
+            "hit_rate": 0.845,
+            "drafts_offered": 439,
+            "drafts_accepted": 286
+          },
+          {
+            "port": 19089,
+            "client_s": 8.560121504999188,
+            "completion_tokens": 512,
+            "prompt_tokens": 1456,
+            "reused": 1449,
+            "prompt_ms": 105.4,
+            "decode_ms": 8446.6,
+            "decode_tok_s": 60.6,
+            "hit_rate": 0.852,
+            "drafts_offered": 459,
+            "drafts_accepted": 272
+          },
+          {
+            "port": 19088,
+            "client_s": 9.019048014999498,
+            "completion_tokens": 512,
+            "prompt_tokens": 1456,
+            "reused": 1449,
+            "prompt_ms": 113.2,
+            "decode_ms": 8898.7,
+            "decode_tok_s": 57.5,
+            "hit_rate": 0.74,
+            "drafts_offered": 426,
+            "drafts_accepted": 279
+          }
+        ]
+      },
+      {
+        "rep": 5,
+        "wall_s": 8.335982538999815,
+        "aggregate_tg": 184.26142243146967,
+        "rows": [
+          {
+            "port": 19087,
+            "client_s": 8.317821256999196,
+            "completion_tokens": 512,
+            "prompt_tokens": 1456,
+            "reused": 1449,
+            "prompt_ms": 104.0,
+            "decode_ms": 8207.3,
+            "decode_tok_s": 62.4,
+            "hit_rate": 0.86,
+            "drafts_offered": 447,
+            "drafts_accepted": 272
+          },
+          {
+            "port": 19089,
+            "client_s": 8.195717154000704,
+            "completion_tokens": 512,
+            "prompt_tokens": 1456,
+            "reused": 1449,
+            "prompt_ms": 106.6,
+            "decode_ms": 8080.2,
+            "decode_tok_s": 63.4,
+            "hit_rate": 0.861,
+            "drafts_offered": 437,
+            "drafts_accepted": 274
+          },
+          {
+            "port": 19088,
+            "client_s": 8.335425835999558,
+            "completion_tokens": 512,
+            "prompt_tokens": 1456,
+            "reused": 1449,
+            "prompt_ms": 104.4,
+            "decode_ms": 8224.6,
+            "decode_tok_s": 62.3,
+            "hit_rate": 0.748,
+            "drafts_offered": 403,
+            "drafts_accepted": 294
+          }
+        ]
+      }
+    ],
+    "mean": 173.2594092962247,
+    "sd": 6.6695233123872795,
+    "min": 166.5546412306274,
+    "max": 184.26142243146967
+  }
+}
