@@ -2,30 +2,39 @@
 
 This repository keeps the current software baseline while preserving measured evidence under the engine generation that produced it.
 
-## Current software baseline — Strata 0.1.34
+## Current software baseline — Strata 0.1.38
 
 ```text
 repository          rhgo1749/Strata-Lanes
-operational main    4b5b47d6e50250b71c52fe4fe7d33593684dce91
-integration merge   a96b2cd7d9c4a505c4bdb5cb9c2a87ade5f32684
-upstream 0.1.34     1678de333d0e0711bc414ad992b640e1a37dd814
-engine              Strata 0.1.34
-binary sha256       8d34efb9161b64a68029feffa780d24e7f5b27dbcad3d96b3508231924d3fc87
+operational main    8ea68eaab3ee93f1c820f5103d64ca251cfe52b6
+upstream 0.1.38     99f3dbd0b21d1401b3769e0c0d963913607f380b
+engine              Strata 0.1.38
+candidate binary    e8740716451ac5b7f5f0155a3dca442e6c3ea2c768e262ed01ed54f2f8195957
 ```
 
-The bounded 0.1.34 upstream-sync compatibility gate passed:
+The bounded 0.1.38 upstream-sync compatibility gate passed:
 
-- Lanes-specific Python suite: **58 passed**
-- full Python serving suite: **204 passed / 7 skipped**
-- CUDA **13.4.92**, sm_120 Release configure/build: **PASS (237/237 build steps)**
-- registered CTests: **48 passed / 2 skipped / 3 external-fixture unavailable**
-- known unavailable external-fixture tests: `ple_parity`, `expert_parity`, `pool_test`
-- no new fixture-independent test failure
+- full Python serving suite: **256 tests run / 7 skipped / no failures**
+- CUDA **13.4.92**, sm_120 Release configure/build: **PASS**
+- focused shared-arena/profile/source CTests: **3/3 PASS**
+- live model-backed 3-lane shared-arena startup and simultaneous request routing: **PASS**
 
-This sync did **not** rerun the long model-backed three-lane benchmark campaign. The latest full live serving/lifecycle evidence remains the 0.1.31 Phase 3 campaign below, and the complete architecture-performance matrix remains 0.1.30. Those measurements are intentionally not relabeled as 0.1.34.
+A matched single-lane compatibility A/B against the installed 0.1.31 production binary found a clear long-prompt prefill movement:
 
-Current sync record: [`docs/strata-0.1.34-promotion-20261002.md`](docs/strata-0.1.34-promotion-20261002.md).
+| Fresh prompt | 0.1.31 | 0.1.38 | Delta |
+| ---: | ---: | ---: | ---: |
+| ~15K | 2498.4 tok/s | **2735.0 tok/s** | **+9.5%** |
+| ~30K | 2594.7 tok/s | **2784.0 tok/s** | **+7.3%** |
 
+This is a bounded one-sample-per-size directional A/B, not a replacement for the full model-backed benchmark campaign. Decode samples were too short and acceptance-sensitive for a version-level decode claim.
+
+The latest full live serving/lifecycle evidence remains the 0.1.31 Phase 3 campaign below, and the complete architecture-performance matrix remains 0.1.30. Those measurements are intentionally not relabeled as 0.1.38.
+
+Current sync record: [`docs/strata-0.1.38-promotion-20261003.md`](docs/strata-0.1.38-promotion-20261003.md).
+
+### Retained previous software gate — Strata 0.1.34
+
+The previous 0.1.34 compatibility record remains at [`docs/strata-0.1.34-promotion-20261002.md`](docs/strata-0.1.34-promotion-20261002.md).
 ## Retained full live baseline — Strata 0.1.31
 
 ```text
