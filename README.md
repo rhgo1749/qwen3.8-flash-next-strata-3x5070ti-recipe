@@ -9,7 +9,7 @@ A practical recipe for running **one independent Strata generation lane per GPU*
 ## Current state
 
 - Implementation fork: [`rhgo1749/Strata-Lanes`](https://github.com/rhgo1749/Strata-Lanes)
-- **Current operational Strata-Lanes pin:** [`3ccb7f9`](https://github.com/rhgo1749/Strata-Lanes/commit/3ccb7f9c6316ab51a696d621feb0502d083509fa)
+- **Current operational Strata-Lanes pin:** [`48a51d3`](https://github.com/rhgo1749/Strata-Lanes/commit/48a51d33a8436c9504dd24c180aa4fc7adcfdd66)
 - Engine baseline: Strata **0.1.38** (`99f3dbd` upstream); sync record: [`docs/strata-0.1.38-promotion-20261003.md`](docs/strata-0.1.38-promotion-20261003.md)
 - Current promoted text-engine binary SHA256: `a1793a6e3f65dc271f8fa1af6148b374aac7398e431b3f94e40010846049a3bd`
 - Current production quant on the reference host: **Qwen3.8-Flash-Next GSQ-RCO IQ3_S**
@@ -63,7 +63,7 @@ Current production additionally enables upstream Strata's native conversation pa
 
 The `slots` value is **parked conversations per lane**, not GPU count or queue depth. Admission is bounded by both the slot cap and the byte budget, so large agent prompts may hit the 4 GiB byte cap before four parked snapshots fit. An engine-side eviction does not invalidate supervisor affinity; a returning session safely falls back to prompt recomputation on that same lane. If only the child engine dies while the private lane wrapper survives, the affinity is retained and the returning request can restart the child before recomputing.
 
-On the reference host, a matched production-path A/B through the real `8087 → 18087` path used the same patched binary in both arms. With six stable mixed sessions, cold turn 1 was unchanged (~0.1%), while parking reduced returning-turn wall time by **35.7% / 32.2%**, reduced mean E2E by **28.5% / 25.7%**, and increased aggregate completion throughput by **55.4% / 59.1%** on turns 2 / 3. A follow-up Hermes `eval` live-use run used real named Hermes sessions with ~25K-token prompts; normal revisits reused about **25.1K–25.6K tokens**, and one real byte-budget-driven eviction safely fell back to partial reuse + recompute without losing conversation continuity. See [`docs/lane-local-conversation-parking-20261003.md`](docs/lane-local-conversation-parking-20261003.md).
+On the reference host, a matched deployment A/B around the standard Lanes supervisor used the same patched binary in both arms. With six stable mixed sessions, cold turn 1 was unchanged (~0.1%), while parking reduced returning-turn wall time by **35.7% / 32.2%**, reduced mean E2E by **28.5% / 25.7%**, and increased aggregate completion throughput by **55.4% / 59.1%** on turns 2 / 3. A follow-up Hermes `eval` live-use run used real named Hermes sessions with ~25K-token prompts; normal revisits reused about **25.1K–25.6K tokens**, and one real byte-budget-driven eviction safely fell back to partial reuse + recompute without losing conversation continuity. See [`docs/lane-local-conversation-parking-20261003.md`](docs/lane-local-conversation-parking-20261003.md).
 
 A production smoke after the fix exercised A → B → C → D → A: A/B/C filled separate lanes, D selected the lane with the smallest live state, and A still returned to its original lane. A separate overload smoke ran 3 active requests plus 4 queued requests, observed `peak_queue_depth=4`, and drained all 7 requests successfully back to `queue_depth=0` with all lanes idle.
 
@@ -106,12 +106,17 @@ See:
 
 - [`RESULTS.md`](RESULTS.md) — current summary and retained benchmark evidence
 - [`docs/strata-0.1.38-full-campaign-20261003.md`](docs/strata-0.1.38-full-campaign-20261003.md) — current 0.1.38 full benchmark campaign
-- [`docs/lane-local-conversation-parking-20261003.md`](docs/lane-local-conversation-parking-20261003.md) — production-path parking A/B, Hermes eval validation, and operating contract
+- [`docs/USAGE.md`](docs/USAGE.md) — direct Strata-Lanes launch/client/parking/status usage
+- [`docs/lane-local-conversation-parking-20261003.md`](docs/lane-local-conversation-parking-20261003.md) — deployment parking A/B, Hermes eval validation, and operating contract
 - [`docs/strata-0.1.38-promotion-20261003.md`](docs/strata-0.1.38-promotion-20261003.md) — 0.1.38 software-sync promotion and byte-matched bounded prefill A/B
 - [`docs/strata-0.1.34-promotion-20261002.md`](docs/strata-0.1.34-promotion-20261002.md) — retained 0.1.34 software-sync promotion
 - [`docs/strata-0.1.31-promotion-20261001.md`](docs/strata-0.1.31-promotion-20261001.md) — retained full live/parity evidence
 - [`docs/strata-0.1.30-promotion-20261001.md`](docs/strata-0.1.30-promotion-20261001.md) — retained full benchmark generation
 - [`docs/fork-and-implementation.md`](docs/fork-and-implementation.md) — upstream/fork/recipe ownership boundary
+
+## Direct usage
+
+This recipe launches `serve/multigpu_server.py` directly. Start with [`recipe/launch-3lane.sh.example`](recipe/launch-3lane.sh.example) and follow [`docs/USAGE.md`](docs/USAGE.md) for session IDs, parking controls, status fields, vision lanes and rollback.
 
 ## Adapting the recipe
 

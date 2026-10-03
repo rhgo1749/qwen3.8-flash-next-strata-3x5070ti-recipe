@@ -2,7 +2,7 @@
 # Qwen3.8-Flash-Next / Strata-Lanes / 3x RTX 5070 Ti
 #
 # Current operational pin (Strata 0.1.38 + lane-local parking):
-#   rhgo1749/Strata-Lanes@3ccb7f9c6316ab51a696d621feb0502d083509fa
+#   rhgo1749/Strata-Lanes@48a51d33a8436c9504dd24c180aa4fc7adcfdd66
 # Upstream 0.1.38:
 #   Niko1221/Strata@99f3dbd0b21d1401b3769e0c0d963913607f380b
 #

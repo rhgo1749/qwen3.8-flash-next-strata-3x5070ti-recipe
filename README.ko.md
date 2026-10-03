@@ -9,7 +9,7 @@
 ## 현재 상태
 
 - 구현 포크: [`rhgo1749/Strata-Lanes`](https://github.com/rhgo1749/Strata-Lanes)
-- **현재 운용 Strata-Lanes pin:** [`3ccb7f9`](https://github.com/rhgo1749/Strata-Lanes/commit/3ccb7f9c6316ab51a696d621feb0502d083509fa)
+- **현재 운용 Strata-Lanes pin:** [`48a51d3`](https://github.com/rhgo1749/Strata-Lanes/commit/48a51d33a8436c9504dd24c180aa4fc7adcfdd66)
 - 엔진 기준: Strata **0.1.38** (upstream `99f3dbd`); 동기화 기록: [`docs/strata-0.1.38-promotion-20261003.md`](docs/strata-0.1.38-promotion-20261003.md)
 - 현재 production text engine SHA256: `a1793a6e3f65dc271f8fa1af6148b374aac7398e431b3f94e40010846049a3bd`
 - 기준 서버 현재 production quant: **Qwen3.8-Flash-Next GSQ-RCO IQ3_S**
@@ -67,7 +67,7 @@ CUDA 상태, GPU hot-expert cache, GPU-resident KV, host-KV/session 상태, spec
 
 `slots`는 GPU 수나 request queue 길이가 아니라 **lane 하나가 RAM에 보관할 parked conversation 수**다. slot cap과 byte budget을 동시에 적용하므로 Hermes처럼 system prompt가 큰 agent workload에서는 4개 slot을 다 채우기 전에 4 GiB budget이 먼저 제한할 수 있다. eviction이 나도 affinity는 유지되며 같은 lane에서 prompt recompute로 안전하게 fallback한다.
 
-실제 production public path `8087 → 18087`에서 동일 patched binary로 A/B한 결과, 6개 stable mixed session의 cold turn 1은 약 0.1% 차이였고, parking ON은 returning turn 2/3의 wall time을 **35.7% / 32.2%**, 평균 E2E를 **28.5% / 25.7%** 줄이고 aggregate completion throughput을 **55.4% / 59.1%** 높였다. Hermes `eval` 실사용 검증에서는 약 25K-token prompt 중 대부분의 재방문이 **25.1K~25.6K tokens를 재사용**했고, 4 GiB budget으로 eviction이 난 경우에도 부분 재사용 + recompute로 continuity가 유지됐다. 자세한 기록은 [`docs/lane-local-conversation-parking-20261003.md`](docs/lane-local-conversation-parking-20261003.md)에 있다.
+reference host의 비공개 deployment wrapper를 거쳐 표준 Lanes supervisor에 도달하는 matched A/B에서 동일 patched binary를 사용한 결과, 6개 stable mixed session의 cold turn 1은 약 0.1% 차이였고, parking ON은 returning turn 2/3의 wall time을 **35.7% / 32.2%**, 평균 E2E를 **28.5% / 25.7%** 줄이고 aggregate completion throughput을 **55.4% / 59.1%** 높였다. Hermes `eval` 실사용 검증에서는 약 25K-token prompt 중 대부분의 재방문이 **25.1K~25.6K tokens를 재사용**했고, 4 GiB budget으로 eviction이 난 경우에도 부분 재사용 + recompute로 continuity가 유지됐다. 자세한 기록은 [`docs/lane-local-conversation-parking-20261003.md`](docs/lane-local-conversation-parking-20261003.md)에 있다.
 
 ## 기준 시스템
 
@@ -107,7 +107,8 @@ host RAM은 대략 다음처럼 잡는다.
 - [`RESULTS.md`](RESULTS.md) — 현재 요약과 유지 중인 benchmark evidence
 - [`docs/strata-0.1.38-full-campaign-20261003.md`](docs/strata-0.1.38-full-campaign-20261003.md) — 현재 0.1.38 full benchmark campaign
 - [`docs/strata-0.1.38-promotion-20261003.md`](docs/strata-0.1.38-promotion-20261003.md) — 현재 0.1.38 software-sync 승격 기록
-- [`docs/lane-local-conversation-parking-20261003.md`](docs/lane-local-conversation-parking-20261003.md) — production-path parking/Hermes eval 검증
+- [`docs/USAGE.md`](docs/USAGE.md) — direct Lanes 실행/세션 ID/parking/status 사용법
+- [`docs/lane-local-conversation-parking-20261003.md`](docs/lane-local-conversation-parking-20261003.md) — deployment parking/Hermes eval 검증
 - [`docs/strata-0.1.34-promotion-20261002.md`](docs/strata-0.1.34-promotion-20261002.md) — 유지 중인 0.1.34 승격 기록
 - [`docs/strata-0.1.31-promotion-20261001.md`](docs/strata-0.1.31-promotion-20261001.md) — 유지 중인 전체 live/parity 기록
 - [`docs/strata-0.1.30-promotion-20261001.md`](docs/strata-0.1.30-promotion-20261001.md) — 유지 중인 전체 benchmark generation

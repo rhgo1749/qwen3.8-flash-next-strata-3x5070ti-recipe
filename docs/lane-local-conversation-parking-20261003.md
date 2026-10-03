@@ -7,7 +7,7 @@ This record documents the current reference-host operating contract for upstream
 Current implementation pin:
 
 ```text
-Strata-Lanes      3ccb7f9c6316ab51a696d621feb0502d083509fa
+Strata-Lanes      48a51d33a8436c9504dd24c180aa4fc7adcfdd66
 upstream Strata   99f3dbd0b21d1401b3769e0c0d963913607f380b (0.1.38)
 text binary       a1793a6e3f65dc271f8fa1af6148b374aac7398e431b3f94e40010846049a3bd
 ```
@@ -43,15 +43,9 @@ The supervisor does **not** own a second snapshot format. It owns session/lane a
 
 `conversation-cache-slots` is the maximum number of parked conversations per lane. It is not the number of GPUs and not request queue depth. The effective working set is jointly limited by slot count and MiB budget.
 
-## Exact matched production-path A/B
+## Exact matched reference-host deployment A/B
 
-The public production path was used:
-
-```text
-client -> 127.0.0.1:8087 idle/wake proxy
-       -> 127.0.0.1:18087 three-lane supervisor
-       -> ordinary lane engine
-```
+Both arms used the same standard three-lane Lanes supervisor under an otherwise fixed reference-host deployment path.
 
 Both A/B arms used the same patched text-engine binary. The only intended retained-state difference was parking OFF versus ON.
 

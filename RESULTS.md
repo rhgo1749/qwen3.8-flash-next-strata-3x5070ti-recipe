@@ -6,7 +6,7 @@ This repository keeps the current software baseline while preserving measured ev
 
 ```text
 repository          rhgo1749/Strata-Lanes
-operational main    3ccb7f9c6316ab51a696d621feb0502d083509fa
+operational main    48a51d33a8436c9504dd24c180aa4fc7adcfdd66
 upstream 0.1.38     99f3dbd0b21d1401b3769e0c0d963913607f380b
 engine              Strata 0.1.38
 production binary   a1793a6e3f65dc271f8fa1af6148b374aac7398e431b3f94e40010846049a3bd
@@ -36,7 +36,7 @@ Current sync record: [`docs/strata-0.1.38-promotion-20261003.md`](docs/strata-0.
 
 Current reference-host production uses three RTX 5070 Ti lanes only and enables upstream-native conversation parking at **4096 MiB / 4 slots / 8192 MiB MemAvailable floor per lane**. The RTX 5060 Ti is excluded from the serving pool.
 
-In an exact matched production-path A/B through the real `8087 → 18087` route with the same patched engine in both arms, six stable mixed sessions measured:
+In an exact matched reference-host deployment A/B around the standard Lanes supervisor, both arms used the same patched engine. Six stable mixed sessions measured:
 
 | Turn | Wall OFF | Wall ON | Wall delta | Mean E2E delta | Aggregate completion TPS delta |
 | ---: | ---: | ---: | ---: | ---: | ---: |
@@ -126,7 +126,7 @@ Persistent-wave continuation throughput:
 
 The shared arena remained one physical mapping across all three lane engines: 49,116,200 KiB payload per mapping, `Shared_Dirty=49,116,200 KiB`, `Private_Dirty=0`.
 
-Phase 3 then removed duplicate shared-arena source loading on the same 0.1.31 engine generation. Matched direct 3-lane ready time changed from **42.218 s → 27.133 s** (**-35.73%**), while the full production idle-proxy wake changed from the previously recorded **42.042 s → 34.031 s** (**-19.05%**). Lane 0 remains the population leader; lane 1/2 attach only after pack/size/readiness validation and skip their duplicate source loads. Production correctness smoke remained PASS.
+Phase 3 then removed duplicate shared-arena source loading on the same 0.1.31 engine generation. Matched direct 3-lane ready time changed from **42.218 s → 27.133 s** (**-35.73%**), while the full reference-host deployment wake changed from the previously recorded **42.042 s → 34.031 s** (**-19.05%**). Lane 0 remains the population leader; lane 1/2 attach only after pack/size/readiness validation and skip their duplicate source loads. Production correctness smoke remained PASS.
 
 Current lifecycle record: [`docs/phase3-shared-arena-lifecycle-20261002.md`](docs/phase3-shared-arena-lifecycle-20261002.md). Initial 0.1.31 parity record: [`docs/strata-0.1.31-promotion-20261001.md`](docs/strata-0.1.31-promotion-20261001.md).
 

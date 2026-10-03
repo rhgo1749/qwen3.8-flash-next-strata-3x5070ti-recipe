@@ -9,7 +9,7 @@
 ## 当前状态
 
 - 实现 fork：[`rhgo1749/Strata-Lanes`](https://github.com/rhgo1749/Strata-Lanes)
-- **当前运行用 Strata-Lanes pin：** [`3ccb7f9`](https://github.com/rhgo1749/Strata-Lanes/commit/3ccb7f9c6316ab51a696d621feb0502d083509fa)
+- **当前运行用 Strata-Lanes pin：** [`48a51d3`](https://github.com/rhgo1749/Strata-Lanes/commit/48a51d33a8436c9504dd24c180aa4fc7adcfdd66)
 - 引擎基线：Strata **0.1.38**（upstream `99f3dbd`）；同步记录：[`docs/strata-0.1.38-promotion-20261003.md`](docs/strata-0.1.38-promotion-20261003.md)
 - 当前 production text engine SHA256：`a1793a6e3f65dc271f8fa1af6148b374aac7398e431b3f94e40010846049a3bd`
 - 参考主机当前 production quant：**Qwen3.8-Flash-Next GSQ-RCO IQ3_S**
@@ -59,7 +59,7 @@ production smoke 已验证 A → B → C → D → A：A/B/C 分别占用空 lan
 
 当前 production 在每个 independent lane 上使用 upstream Strata 原生 conversation parking。Lanes 不引入第二套 snapshot 格式；supervisor 只负责保持 same-lane affinity，并把 `--conversation-cache-mib 4096`、`--conversation-cache-slots 4`、`--conversation-cache-min-free-mib 8192` 传给普通 Strata engine。`slots` 表示**每个 lane 可停放的 conversation 数**，不是 GPU 数或请求队列长度；实际容量同时受 4 GiB byte budget 限制。发生 eviction 时 affinity 仍保留，返回 session 会在同一 lane 安全回退到 prompt recompute。
 
-在真实 production public path `8087 → 18087` 的 matched A/B 中，6 个稳定 mixed sessions 的 cold turn 1 基本不变（约 0.1%），而 parking 将 returning turn 2/3 的 wall time 降低 **35.7% / 32.2%**，mean E2E 降低 **28.5% / 25.7%**，aggregate completion throughput 提高 **55.4% / 59.1%**。Hermes `eval` 验证中，约 25K-token prompt 的大多数返回请求复用了约 **25.1K–25.6K tokens**。详见 [`docs/lane-local-conversation-parking-20261003.md`](docs/lane-local-conversation-parking-20261003.md)。
+在通过 reference host 私有 deployment wrapper 到达标准 Lanes supervisor 的 matched A/B 中（该 wrapper 不属于本仓库），6 个稳定 mixed sessions 的 cold turn 1 基本不变（约 0.1%），而 parking 将 returning turn 2/3 的 wall time 降低 **35.7% / 32.2%**，mean E2E 降低 **28.5% / 25.7%**，aggregate completion throughput 提高 **55.4% / 59.1%**。Hermes `eval` 验证中，约 25K-token prompt 的大多数返回请求复用了约 **25.1K–25.6K tokens**。详见 [`docs/lane-local-conversation-parking-20261003.md`](docs/lane-local-conversation-parking-20261003.md)。
 
 ## 参考主机
 
@@ -99,7 +99,8 @@ required host RAM ≈ one shared expert arena + every lane's host-KV + OS/runtim
 - [`RESULTS.md`](RESULTS.md) — 当前摘要与保留的 benchmark evidence
 - [`docs/strata-0.1.38-full-campaign-20261003.md`](docs/strata-0.1.38-full-campaign-20261003.md) — 当前 0.1.38 full benchmark campaign
 - [`docs/strata-0.1.38-promotion-20261003.md`](docs/strata-0.1.38-promotion-20261003.md) — 当前 0.1.38 software-sync 升级记录
-- [`docs/lane-local-conversation-parking-20261003.md`](docs/lane-local-conversation-parking-20261003.md) — production-path parking / Hermes eval 验证
+- [`docs/USAGE.md`](docs/USAGE.md) — direct Lanes 启动/session ID/parking/status 用法
+- [`docs/lane-local-conversation-parking-20261003.md`](docs/lane-local-conversation-parking-20261003.md) — deployment parking / Hermes eval 验证
 - [`docs/strata-0.1.34-promotion-20261002.md`](docs/strata-0.1.34-promotion-20261002.md) — 保留的 0.1.34 升级记录
 - [`docs/strata-0.1.31-promotion-20261001.md`](docs/strata-0.1.31-promotion-20261001.md) — 保留的完整 live/parity 证据
 - [`docs/strata-0.1.30-promotion-20261001.md`](docs/strata-0.1.30-promotion-20261001.md) — 保留的完整 benchmark generation

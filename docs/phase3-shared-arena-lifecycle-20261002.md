@@ -58,7 +58,7 @@ Earlier candidate repetitions were approximately 27.14 s as well, so the promote
 
 ## Production wake
 
-The production idle proxy includes launcher/holder work beyond direct supervisor startup. The previously recorded 0.1.31 wake was **42.042 s**. After the Phase 3 cutover, the same production wake path reported **34.031 s**, an **8.011 s / 19.05%** reduction.
+The full reference-host deployment includes work beyond direct supervisor startup. The previously recorded 0.1.31 deployment wake was **42.042 s**. After the Phase 3 cutover, the same deployment path reported **34.031 s**, an **8.011 s / 19.05%** reduction.
 
 Treat this as the user-facing operational measurement; the direct supervisor A/B above is the cleaner implementation comparison.
 
