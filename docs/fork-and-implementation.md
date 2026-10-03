@@ -36,9 +36,9 @@ The moving recipe `main` tracks the current operational baseline and the immedia
 ## Current operational state
 
 ```text
-Strata-Lanes main      4b5b47d6e50250b71c52fe4fe7d33593684dce91
-upstream Strata        1678de333d0e0711bc414ad992b640e1a37dd814
-engine baseline        Strata 0.1.34
+Strata-Lanes main      8ea68eaab3ee93f1c820f5103d64ca251cfe52b6
+upstream Strata        99f3dbd0b21d1401b3769e0c0d963913607f380b
+engine baseline        Strata 0.1.38
 production scheduler   balanced-additive-new-prefill-retained-state-proxy-v1
 rollback scheduler     safe-affinity-live-state-v1
 ```
@@ -47,7 +47,7 @@ The production execution unit remains one independent Strata engine lane per GPU
 
 ## Shared expert arena
 
-The host expert backing is one upstream-native shared arena used by multiple lane processes. The primitive originated in this fork's upstream PR #129 and was incorporated into Strata 0.1.30; current 0.1.34 keeps that path and the Linux shared-arena behavior used by the lane runtime.
+The host expert backing is one upstream-native shared arena used by multiple lane processes. The primitive originated in this fork's upstream PR #129 and was incorporated into Strata 0.1.30; current 0.1.38 keeps that path and the Linux shared-arena behavior used by the lane runtime.
 
 Each lane keeps its own CUDA registration and GPU-side cache while mapping the same physical host expert pages. Phase 3 makes population single-writer per supervisor generation: lane 0 fills the arena and publishes readiness, later lanes verify and attach as followers without repeating the source expert load.
 
@@ -91,4 +91,4 @@ These are measured host values, not portable defaults.
 
 ## Roadmap authority
 
-The canonical moving roadmap is the GitHub Issue tree in `rhgo1749/Strata-Lanes`. Phase 1, Phase 2, and Phase 3 remain complete on the independent-lane architecture; the current software baseline is 0.1.34, while the latest full live Phase 3 measurements remain versioned to 0.1.31. Later architecture challengers remain conditional on measured triggers.
+The canonical moving roadmap is the GitHub Issue tree in `rhgo1749/Strata-Lanes`. Phase 1, Phase 2, and Phase 3 remain complete on the independent-lane architecture; the current software baseline is 0.1.38, while the latest full live Phase 3 measurements remain versioned to 0.1.31. Later architecture challengers remain conditional on measured triggers.
