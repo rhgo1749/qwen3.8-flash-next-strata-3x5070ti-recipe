@@ -6,10 +6,10 @@ This repository keeps the current software baseline while preserving measured ev
 
 ```text
 repository          rhgo1749/Strata-Lanes
-operational main    8ea68eaab3ee93f1c820f5103d64ca251cfe52b6
+operational main    3ccb7f9c6316ab51a696d621feb0502d083509fa
 upstream 0.1.38     99f3dbd0b21d1401b3769e0c0d963913607f380b
 engine              Strata 0.1.38
-candidate binary    e8740716451ac5b7f5f0155a3dca442e6c3ea2c768e262ed01ed54f2f8195957
+production binary   a1793a6e3f65dc271f8fa1af6148b374aac7398e431b3f94e40010846049a3bd
 ```
 
 The bounded 0.1.38 upstream-sync compatibility gate passed:
@@ -30,7 +30,21 @@ This is a bounded one-sample-per-size directional A/B, not a replacement for the
 
 The current full architecture campaign has now been rerun on 0.1.38. The 0.1.31 Phase 3 lifecycle campaign and the 0.1.30 architecture matrix remain retained historical evidence; their measurements are not relabeled as 0.1.38.
 
-Current sync record: [`docs/strata-0.1.38-promotion-20261003.md`](docs/strata-0.1.38-promotion-20261003.md). Current full campaign: [`docs/strata-0.1.38-full-campaign-20261003.md`](docs/strata-0.1.38-full-campaign-20261003.md).
+Current sync record: [`docs/strata-0.1.38-promotion-20261003.md`](docs/strata-0.1.38-promotion-20261003.md). Current full campaign: [`docs/strata-0.1.38-full-campaign-20261003.md`](docs/strata-0.1.38-full-campaign-20261003.md). Current lane-local parking production/Hermes record: [`docs/lane-local-conversation-parking-20261003.md`](docs/lane-local-conversation-parking-20261003.md).
+
+### Lane-local conversation parking — production path + Hermes eval
+
+Current reference-host production uses three RTX 5070 Ti lanes only and enables upstream-native conversation parking at **4096 MiB / 4 slots / 8192 MiB MemAvailable floor per lane**. The RTX 5060 Ti is excluded from the serving pool.
+
+In an exact matched production-path A/B through the real `8087 → 18087` route with the same patched engine in both arms, six stable mixed sessions measured:
+
+| Turn | Wall OFF | Wall ON | Wall delta | Mean E2E delta | Aggregate completion TPS delta |
+| ---: | ---: | ---: | ---: | ---: | ---: |
+| 1 cold/wake | 36.185 s | 36.223 s | +0.1% | +0.1% | -0.1% |
+| 2 returning | 9.686 s | **6.232 s** | **-35.7%** | **-28.5%** | **+55.4%** |
+| 3 returning | 9.688 s | **6.571 s** | **-32.2%** | **-25.7%** | **+59.1%** |
+
+A later Hermes `eval` validation used real Hermes session persistence with the Strata provider override. Returning requests carried roughly **25K-token prompts**; normal hits reused about **25.1K–25.6K tokens** while reading only ~232–264 fresh tokens. Under the 4 GiB/lane byte budget, lane1 produced one real eviction; the affected revisit still completed with partial reuse (`16384` reused, ~9.5K freshly read) and preserved conversation continuity. Final observed parked state was ~1.73 GiB / 2.86 GiB / 1.10 GiB on lanes 0/1/2 with eviction counts 0/1/0.
 
 ## Current full benchmark generation — Strata 0.1.38
 

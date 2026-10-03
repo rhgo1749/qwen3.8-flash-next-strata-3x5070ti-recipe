@@ -9,9 +9,12 @@
 ## 当前状态
 
 - 实现 fork：[`rhgo1749/Strata-Lanes`](https://github.com/rhgo1749/Strata-Lanes)
-- **当前运行用 Strata pin：** [`4b5b47d`](https://github.com/rhgo1749/Strata-Lanes/commit/4b5b47d6e50250b71c52fe4fe7d33593684dce91)
-- 引擎基线：Strata **0.1.34**（upstream `1678de3`）；同步记录：[`docs/strata-0.1.34-promotion-20261002.md`](docs/strata-0.1.34-promotion-20261002.md)
+- **当前运行用 Strata-Lanes pin：** [`3ccb7f9`](https://github.com/rhgo1749/Strata-Lanes/commit/3ccb7f9c6316ab51a696d621feb0502d083509fa)
+- 引擎基线：Strata **0.1.38**（upstream `99f3dbd`）；同步记录：[`docs/strata-0.1.38-promotion-20261003.md`](docs/strata-0.1.38-promotion-20261003.md)
+- 当前 production text engine SHA256：`a1793a6e3f65dc271f8fa1af6148b374aac7398e431b3f94e40010846049a3bd`
 - 参考主机当前 production quant：**Qwen3.8-Flash-Next GSQ-RCO IQ3_S**
+- production lanes：**仅 RTX 5070 Ti ×3**；RTX 5060 Ti 不进入 serving pool
+- lane-local conversation parking：**每 lane 4096 MiB / 4 slots / MemAvailable floor 8192 MiB**
 `main` 跟踪当前运行方案。保留的实测结果与版本边界记录在 [`RESULTS.md`](RESULTS.md)。更早的快照不再重复保留在滚动 `main` 中，可通过 Git history 与命名分支查看。
 
 ## 核心结构
@@ -52,6 +55,12 @@ production smoke 已验证 A → B → C → D → A：A/B/C 分别占用空 lan
 
 该调度器属于**当前 lane-local KV 架构的 serving hardening**，并不宣称是最终最优方案。cache-aware global scheduling、migration/transfer cost、overload queueing 以及更完整的 cost model 仍属于 roadmap 工作。
 
+### Lane-local conversation parking
+
+当前 production 在每个 independent lane 上使用 upstream Strata 原生 conversation parking。Lanes 不引入第二套 snapshot 格式；supervisor 只负责保持 same-lane affinity，并把 `--conversation-cache-mib 4096`、`--conversation-cache-slots 4`、`--conversation-cache-min-free-mib 8192` 传给普通 Strata engine。`slots` 表示**每个 lane 可停放的 conversation 数**，不是 GPU 数或请求队列长度；实际容量同时受 4 GiB byte budget 限制。发生 eviction 时 affinity 仍保留，返回 session 会在同一 lane 安全回退到 prompt recompute。
+
+在真实 production public path `8087 → 18087` 的 matched A/B 中，6 个稳定 mixed sessions 的 cold turn 1 基本不变（约 0.1%），而 parking 将 returning turn 2/3 的 wall time 降低 **35.7% / 32.2%**，mean E2E 降低 **28.5% / 25.7%**，aggregate completion throughput 提高 **55.4% / 59.1%**。Hermes `eval` 验证中，约 25K-token prompt 的大多数返回请求复用了约 **25.1K–25.6K tokens**。详见 [`docs/lane-local-conversation-parking-20261003.md`](docs/lane-local-conversation-parking-20261003.md)。
+
 ## 参考主机
 
 ```text
@@ -83,12 +92,15 @@ required host RAM ≈ one shared expert arena + every lane's host-KV + OS/runtim
 
 ## 版本化证据
 
-滚动 `main` 跟踪当前 **0.1.34 software baseline**，同时保留 **0.1.31** 的最新完整 live/lifecycle 证据以及 **0.1.30** 的完整 architecture-performance matrix。历史测量保持原始引擎版本，不重新标记为 0.1.34。
+滚动 `main` 当前跟踪 **0.1.38 software baseline** 与完整的 0.1.38 benchmark campaign。0.1.31 Phase 3 lifecycle 与 0.1.30 architecture matrix 继续作为原版本历史证据保留，不重新标记为 0.1.38。
 
 参见：
 
 - [`RESULTS.md`](RESULTS.md) — 当前摘要与保留的 benchmark evidence
-- [`docs/strata-0.1.34-promotion-20261002.md`](docs/strata-0.1.34-promotion-20261002.md) — 当前 0.1.34 software-sync 升级记录
+- [`docs/strata-0.1.38-full-campaign-20261003.md`](docs/strata-0.1.38-full-campaign-20261003.md) — 当前 0.1.38 full benchmark campaign
+- [`docs/strata-0.1.38-promotion-20261003.md`](docs/strata-0.1.38-promotion-20261003.md) — 当前 0.1.38 software-sync 升级记录
+- [`docs/lane-local-conversation-parking-20261003.md`](docs/lane-local-conversation-parking-20261003.md) — production-path parking / Hermes eval 验证
+- [`docs/strata-0.1.34-promotion-20261002.md`](docs/strata-0.1.34-promotion-20261002.md) — 保留的 0.1.34 升级记录
 - [`docs/strata-0.1.31-promotion-20261001.md`](docs/strata-0.1.31-promotion-20261001.md) — 保留的完整 live/parity 证据
 - [`docs/strata-0.1.30-promotion-20261001.md`](docs/strata-0.1.30-promotion-20261001.md) — 保留的完整 benchmark generation
 - [`docs/fork-and-implementation.md`](docs/fork-and-implementation.md) — upstream/fork/recipe 角色边界

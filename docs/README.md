@@ -4,6 +4,7 @@ This directory keeps the current operational and benchmark records for the GPU-p
 
 ## Current operational baseline
 
+- [`lane-local-conversation-parking-20261003.md`](lane-local-conversation-parking-20261003.md) — current production-path/Hermes live-use conversation-parking contract and evidence.
 - [`strata-0.1.38-full-campaign-20261003.md`](strata-0.1.38-full-campaign-20261003.md) — current 0.1.38 full architecture-performance campaign.
 - [`strata-0.1.38-promotion-20261003.md`](strata-0.1.38-promotion-20261003.md) — 0.1.38 software-sync promotion: merge provenance, compatibility gate, live smoke, and byte-matched bounded prefill A/B.
 - [`strata-0.1.34-promotion-20261002.md`](strata-0.1.34-promotion-20261002.md) — retained 0.1.34 software-sync promotion.

@@ -1,6 +1,6 @@
 # Benchmark and reporting contract
 
-The **current operational software baseline** and current full benchmark generation are Strata **0.1.38** on fork main `8ea68eaab3ee93f1c820f5103d64ca251cfe52b6`, integrated from upstream `99f3dbd0b21d1401b3769e0c0d963913607f380b` (`v0.1.38`). The full 0.1.38 campaign reruns independent-lane scaling, workload sensitivity, corrected mixed serving, exact-queue oversubscription, heterogeneous isolation, private↔shared PSS, and three-GPU layer-split.
+The **current operational software baseline** is Strata **0.1.38** on fork main `3ccb7f9c6316ab51a696d621feb0502d083509fa`, integrated from upstream `99f3dbd0b21d1401b3769e0c0d963913607f380b` (`v0.1.38`). The retained full 0.1.38 architecture campaign was measured at fork commit `8ea68eaab3ee93f1c820f5103d64ca251cfe52b6`; later serving-control/parking changes do not relabel those benchmark measurements. The full campaign reruns independent-lane scaling, workload sensitivity, corrected mixed serving, exact-queue oversubscription, heterogeneous isolation, private↔shared PSS, and three-GPU layer-split.
 
 Current 0.1.38 evidence:
 

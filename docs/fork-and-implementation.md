@@ -36,14 +36,14 @@ The moving recipe `main` tracks the current operational baseline and the immedia
 ## Current operational state
 
 ```text
-Strata-Lanes main      8ea68eaab3ee93f1c820f5103d64ca251cfe52b6
+Strata-Lanes main      3ccb7f9c6316ab51a696d621feb0502d083509fa
 upstream Strata        99f3dbd0b21d1401b3769e0c0d963913607f380b
 engine baseline        Strata 0.1.38
 production scheduler   balanced-additive-new-prefill-retained-state-proxy-v1
 rollback scheduler     safe-affinity-live-state-v1
 ```
 
-The production execution unit remains one independent Strata engine lane per GPU. CUDA state, GPU hot-expert cache, resident KV, host-KV/session state and the generation loop stay lane-local.
+The production execution unit remains one independent Strata engine lane per GPU. CUDA state, GPU hot-expert cache, resident KV, host-KV/session state and the generation loop stay lane-local. The reference host currently serves on **three RTX 5070 Ti lanes only**; the RTX 5060 Ti is excluded. Upstream-native lane-local conversation parking is enabled at **4096 MiB / 4 slots / 8192 MiB MemAvailable floor per lane**, with supervisor affinity remaining the ownership authority.
 
 ## Shared expert arena
 

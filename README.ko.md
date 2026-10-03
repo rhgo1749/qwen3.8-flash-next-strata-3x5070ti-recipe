@@ -9,9 +9,12 @@
 ## 현재 상태
 
 - 구현 포크: [`rhgo1749/Strata-Lanes`](https://github.com/rhgo1749/Strata-Lanes)
-- **현재 운용 Strata pin:** [`4b5b47d`](https://github.com/rhgo1749/Strata-Lanes/commit/4b5b47d6e50250b71c52fe4fe7d33593684dce91)
-- 엔진 기준: Strata **0.1.34** (upstream `1678de3`); 동기화 기록: [`docs/strata-0.1.34-promotion-20261002.md`](docs/strata-0.1.34-promotion-20261002.md)
+- **현재 운용 Strata-Lanes pin:** [`3ccb7f9`](https://github.com/rhgo1749/Strata-Lanes/commit/3ccb7f9c6316ab51a696d621feb0502d083509fa)
+- 엔진 기준: Strata **0.1.38** (upstream `99f3dbd`); 동기화 기록: [`docs/strata-0.1.38-promotion-20261003.md`](docs/strata-0.1.38-promotion-20261003.md)
+- 현재 production text engine SHA256: `a1793a6e3f65dc271f8fa1af6148b374aac7398e431b3f94e40010846049a3bd`
 - 기준 서버 현재 production quant: **Qwen3.8-Flash-Next GSQ-RCO IQ3_S**
+- production lane: **RTX 5070 Ti ×3만 사용**, RTX 5060 Ti는 serving pool에서 제외
+- lane-local conversation parking: **lane당 4096 MiB / 4 slots / MemAvailable floor 8192 MiB**
 `main`은 현재 운용 레시피를 따라간다. 유지 중인 실측 결과와 버전 경계는 [`RESULTS.md`](RESULTS.md)에 정리한다. 더 오래된 스냅샷은 움직이는 `main`에 중복 보관하지 않고 Git history와 별도 브랜치에서 확인할 수 있다.
 
 ## 핵심 구조
@@ -52,6 +55,20 @@ CUDA 상태, GPU hot-expert cache, GPU-resident KV, host-KV/session 상태, spec
 
 이 스케줄러는 **현재 lane-local KV 구조를 안전하게 운용하기 위한 serving hardening**이며, 최종 최적 스케줄러라고 주장하지 않는다. cache-aware global scheduling, migration/transfer cost, overload queueing, 더 정교한 cost model은 로드맵 과제로 남긴다.
 
+### Lane-local conversation parking
+
+현재 production은 각 independent lane에서 upstream Strata의 native conversation parking을 사용한다. Lanes가 별도 snapshot 포맷을 만든 것이 아니라, supervisor가 same-lane affinity를 보존하고 각 ordinary engine에 다음 upstream 옵션을 전달하는 구조다.
+
+```text
+--conversation-cache-mib 4096
+--conversation-cache-slots 4
+--conversation-cache-min-free-mib 8192
+```
+
+`slots`는 GPU 수나 request queue 길이가 아니라 **lane 하나가 RAM에 보관할 parked conversation 수**다. slot cap과 byte budget을 동시에 적용하므로 Hermes처럼 system prompt가 큰 agent workload에서는 4개 slot을 다 채우기 전에 4 GiB budget이 먼저 제한할 수 있다. eviction이 나도 affinity는 유지되며 같은 lane에서 prompt recompute로 안전하게 fallback한다.
+
+실제 production public path `8087 → 18087`에서 동일 patched binary로 A/B한 결과, 6개 stable mixed session의 cold turn 1은 약 0.1% 차이였고, parking ON은 returning turn 2/3의 wall time을 **35.7% / 32.2%**, 평균 E2E를 **28.5% / 25.7%** 줄이고 aggregate completion throughput을 **55.4% / 59.1%** 높였다. Hermes `eval` 실사용 검증에서는 약 25K-token prompt 중 대부분의 재방문이 **25.1K~25.6K tokens를 재사용**했고, 4 GiB budget으로 eviction이 난 경우에도 부분 재사용 + recompute로 continuity가 유지됐다. 자세한 기록은 [`docs/lane-local-conversation-parking-20261003.md`](docs/lane-local-conversation-parking-20261003.md)에 있다.
+
 ## 기준 시스템
 
 ```text
@@ -83,12 +100,15 @@ host RAM은 대략 다음처럼 잡는다.
 
 ## 버전별 증거 경계
 
-움직이는 `main`은 현재 **0.1.34 software baseline**을 따라가며, 최신 전체 live/lifecycle 실측은 **0.1.31**, 전체 architecture-performance matrix는 **0.1.30** 기록을 그대로 유지한다. 과거 측정값을 0.1.34 결과로 재라벨링하지 않는다.
+움직이는 `main`은 현재 **0.1.38 software baseline**과 0.1.38 full campaign을 따라간다. 0.1.31 Phase 3 lifecycle과 0.1.30 architecture matrix는 원래 버전의 과거 증거로 유지하며, 과거 측정값을 0.1.38 결과로 재라벨링하지 않는다.
 
 참고:
 
 - [`RESULTS.md`](RESULTS.md) — 현재 요약과 유지 중인 benchmark evidence
-- [`docs/strata-0.1.34-promotion-20261002.md`](docs/strata-0.1.34-promotion-20261002.md) — 현재 0.1.34 software-sync 승격 기록
+- [`docs/strata-0.1.38-full-campaign-20261003.md`](docs/strata-0.1.38-full-campaign-20261003.md) — 현재 0.1.38 full benchmark campaign
+- [`docs/strata-0.1.38-promotion-20261003.md`](docs/strata-0.1.38-promotion-20261003.md) — 현재 0.1.38 software-sync 승격 기록
+- [`docs/lane-local-conversation-parking-20261003.md`](docs/lane-local-conversation-parking-20261003.md) — production-path parking/Hermes eval 검증
+- [`docs/strata-0.1.34-promotion-20261002.md`](docs/strata-0.1.34-promotion-20261002.md) — 유지 중인 0.1.34 승격 기록
 - [`docs/strata-0.1.31-promotion-20261001.md`](docs/strata-0.1.31-promotion-20261001.md) — 유지 중인 전체 live/parity 기록
 - [`docs/strata-0.1.30-promotion-20261001.md`](docs/strata-0.1.30-promotion-20261001.md) — 유지 중인 전체 benchmark generation
 - [`docs/fork-and-implementation.md`](docs/fork-and-implementation.md) — upstream/fork/recipe 역할 경계

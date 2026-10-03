@@ -9,9 +9,12 @@ A practical recipe for running **one independent Strata generation lane per GPU*
 ## Current state
 
 - Implementation fork: [`rhgo1749/Strata-Lanes`](https://github.com/rhgo1749/Strata-Lanes)
-- **Current operational Strata pin:** [`8ea68ea`](https://github.com/rhgo1749/Strata-Lanes/commit/8ea68eaab3ee93f1c820f5103d64ca251cfe52b6)
+- **Current operational Strata-Lanes pin:** [`3ccb7f9`](https://github.com/rhgo1749/Strata-Lanes/commit/3ccb7f9c6316ab51a696d621feb0502d083509fa)
 - Engine baseline: Strata **0.1.38** (`99f3dbd` upstream); sync record: [`docs/strata-0.1.38-promotion-20261003.md`](docs/strata-0.1.38-promotion-20261003.md)
+- Current promoted text-engine binary SHA256: `a1793a6e3f65dc271f8fa1af6148b374aac7398e431b3f94e40010846049a3bd`
 - Current production quant on the reference host: **Qwen3.8-Flash-Next GSQ-RCO IQ3_S**
+- Production lanes: **RTX 5070 Ti ×3 only**; the RTX 5060 Ti is excluded from the serving pool
+- Lane-local conversation parking: **4096 MiB / 4 slots / 8192 MiB MemAvailable floor per lane**
 `main` tracks the current operational recipe. Detailed retained measurements and version boundaries are in [`RESULTS.md`](RESULTS.md). Older snapshots remain available through Git history and named branches rather than being mirrored on the moving main branch.
 
 ## Core architecture
@@ -47,6 +50,20 @@ Current `main` uses **strict session affinity plus balanced-additive new-session
 Queued new sessions use **compatible FIFO tickets**: an older compatible waiter gets a newly released lane first, while capability-constrained work such as vision does not block unrelated lanes. A remembered continuation waiting for its lane reserves that lane, so a `notify_all()` wake-up race cannot let a new session steal the cache-rich lane. An empty live state is defined by `live_request_bytes == 0`, not by the absence of an affinity key.
 
 The policy is **hardware-agnostic**: it does not hard-code GPU number, GPU model, or PCIe width. `busy` is request/stream-scoped; affinity is session-scoped. Several session keys may remain mapped to the same engine so Strata can recover older per-engine prompt-cache checkpoints after intervening requests.
+
+### Lane-local conversation parking
+
+Current production additionally enables upstream Strata's native conversation parking on each independent lane. Lanes does not invent a second snapshot format: the supervisor preserves same-lane session affinity and forwards bounded parking settings to each ordinary Strata engine:
+
+```text
+--conversation-cache-mib 4096
+--conversation-cache-slots 4
+--conversation-cache-min-free-mib 8192
+```
+
+The `slots` value is **parked conversations per lane**, not GPU count or queue depth. Admission is bounded by both the slot cap and the byte budget, so large agent prompts may hit the 4 GiB byte cap before four parked snapshots fit. An engine-side eviction does not invalidate supervisor affinity; a returning session safely falls back to prompt recomputation on that same lane. If only the child engine dies while the private lane wrapper survives, the affinity is retained and the returning request can restart the child before recomputing.
+
+On the reference host, a matched production-path A/B through the real `8087 → 18087` path used the same patched binary in both arms. With six stable mixed sessions, cold turn 1 was unchanged (~0.1%), while parking reduced returning-turn wall time by **35.7% / 32.2%**, reduced mean E2E by **28.5% / 25.7%**, and increased aggregate completion throughput by **55.4% / 59.1%** on turns 2 / 3. A follow-up Hermes `eval` live-use run used real named Hermes sessions with ~25K-token prompts; normal revisits reused about **25.1K–25.6K tokens**, and one real byte-budget-driven eviction safely fell back to partial reuse + recompute without losing conversation continuity. See [`docs/lane-local-conversation-parking-20261003.md`](docs/lane-local-conversation-parking-20261003.md).
 
 A production smoke after the fix exercised A → B → C → D → A: A/B/C filled separate lanes, D selected the lane with the smallest live state, and A still returned to its original lane. A separate overload smoke ran 3 active requests plus 4 queued requests, observed `peak_queue_depth=4`, and drained all 7 requests successfully back to `queue_depth=0` with all lanes idle.
 
@@ -89,6 +106,7 @@ See:
 
 - [`RESULTS.md`](RESULTS.md) — current summary and retained benchmark evidence
 - [`docs/strata-0.1.38-full-campaign-20261003.md`](docs/strata-0.1.38-full-campaign-20261003.md) — current 0.1.38 full benchmark campaign
+- [`docs/lane-local-conversation-parking-20261003.md`](docs/lane-local-conversation-parking-20261003.md) — production-path parking A/B, Hermes eval validation, and operating contract
 - [`docs/strata-0.1.38-promotion-20261003.md`](docs/strata-0.1.38-promotion-20261003.md) — 0.1.38 software-sync promotion and byte-matched bounded prefill A/B
 - [`docs/strata-0.1.34-promotion-20261002.md`](docs/strata-0.1.34-promotion-20261002.md) — retained 0.1.34 software-sync promotion
 - [`docs/strata-0.1.31-promotion-20261001.md`](docs/strata-0.1.31-promotion-20261001.md) — retained full live/parity evidence

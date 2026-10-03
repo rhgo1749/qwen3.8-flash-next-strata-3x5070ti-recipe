@@ -1,19 +1,20 @@
 #!/usr/bin/env bash
 # Qwen3.8-Flash-Next / Strata-Lanes / 3x RTX 5070 Ti
 #
-# Current operational pin (Strata 0.1.34):
-#   rhgo1749/Strata-Lanes@4b5b47d6e50250b71c52fe4fe7d33593684dce91
-# Upstream 0.1.34:
-#   Niko1221/Strata@1678de333d0e0711bc414ad992b640e1a37dd814
+# Current operational pin (Strata 0.1.38 + lane-local parking):
+#   rhgo1749/Strata-Lanes@3ccb7f9c6316ab51a696d621feb0502d083509fa
+# Upstream 0.1.38:
+#   Niko1221/Strata@99f3dbd0b21d1401b3769e0c0d963913607f380b
 #
 # The supervisor passes one upstream-native --shared-expert-arena backing to
-# all lanes and keeps conversation parking disabled until parked-locality
-# routing is explicitly modeled.
+# all lanes and preserves same-lane affinity while each ordinary Strata engine
+# uses upstream-native bounded conversation parking.
 #
 # This is a host-specific example for the validated GPU enumeration:
-#   GPU0 = PCIe 5.0 x8
-#   GPU2 = PCIe 5.0 x8
-#   GPU1 = PCIe 5.0 x4
+#   GPU0 = RTX 5070 Ti, PCIe 5.0 x8
+#   GPU1 = RTX 5070 Ti, PCIe 5.0 x4
+#   GPU2 = RTX 5070 Ti, PCIe 5.0 x8
+#   GPU3 / RTX 5060 Ti is intentionally excluded from the serving pool.
 #
 # Verify your own topology before copying the asymmetric pcie-frac values.
 
@@ -22,17 +23,25 @@ CONFIG="${CONFIG:-/absolute/path/to/strata.json}"
 PUBLIC_PORT="${PUBLIC_PORT:-18086}"
 BASE_PORT="${BASE_PORT:-19086}"
 ARENA_FILE="${ARENA_FILE:-/dev/shm/strata/qwen38-iq3_s.shared}"
+CONVERSATION_CACHE_MIB="${CONVERSATION_CACHE_MIB:-4096}"
+CONVERSATION_CACHE_SLOTS="${CONVERSATION_CACHE_SLOTS:-4}"
+CONVERSATION_CACHE_MIN_FREE_MIB="${CONVERSATION_CACHE_MIN_FREE_MIB:-8192}"
 
 cd "$STRATA_DIR"
 
 exec python3 serve/multigpu_server.py \
   --config "$CONFIG" \
-  --gpus 0,2,1 \
+  --gpus 0,1,2 \
   --lane-contexts 262144,262144,262144 \
   --kv-budget 786432 \
-  --lane-cpu-cores 5,5,6 \
-  --lane-pcie-fracs 0.55,0.55,0.25 \
+  --lane-cpu-cores 5,6,5 \
+  --lane-pcie-fracs 0.55,0.25,0.55 \
   --lane-kv-residents 32768,32768,32768 \
+  --lane-vram-reserve-mibs 1200,1200,1200 \
+  --vision-lanes 1 \
+  --experimental-conversation-cache-mib "$CONVERSATION_CACHE_MIB" \
+  --experimental-conversation-cache-slots "$CONVERSATION_CACHE_SLOTS" \
+  --experimental-conversation-cache-min-free-mib "$CONVERSATION_CACHE_MIN_FREE_MIB" \
   --arena-file "$ARENA_FILE" \
   --base-port "$BASE_PORT" \
   --port "$PUBLIC_PORT"

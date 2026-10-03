@@ -9,9 +9,12 @@
 ## 現在の状態
 
 - 実装 fork: [`rhgo1749/Strata-Lanes`](https://github.com/rhgo1749/Strata-Lanes)
-- **現在の運用 Strata pin:** [`4b5b47d`](https://github.com/rhgo1749/Strata-Lanes/commit/4b5b47d6e50250b71c52fe4fe7d33593684dce91)
-- エンジン基準: Strata **0.1.34**（upstream `1678de3`）；同期記録: [`docs/strata-0.1.34-promotion-20261002.md`](docs/strata-0.1.34-promotion-20261002.md)
+- **現在の運用 Strata-Lanes pin:** [`3ccb7f9`](https://github.com/rhgo1749/Strata-Lanes/commit/3ccb7f9c6316ab51a696d621feb0502d083509fa)
+- エンジン基準: Strata **0.1.38**（upstream `99f3dbd`）；同期記録: [`docs/strata-0.1.38-promotion-20261003.md`](docs/strata-0.1.38-promotion-20261003.md)
+- 現行 production text engine SHA256: `a1793a6e3f65dc271f8fa1af6148b374aac7398e431b3f94e40010846049a3bd`
 - 参照ホストの現行 production quant: **Qwen3.8-Flash-Next GSQ-RCO IQ3_S**
+- production lanes: **RTX 5070 Ti ×3 のみ**。RTX 5060 Ti は serving pool から除外
+- lane-local conversation parking: **lane ごとに 4096 MiB / 4 slots / MemAvailable floor 8192 MiB**
 `main` は現在の運用レシピを追跡します。保持する実測結果とバージョン境界は [`RESULTS.md`](RESULTS.md) にまとめます。さらに古いスナップショットは moving `main` に重複保持せず、Git history と名前付き branch から確認できます。
 
 ## 基本アーキテクチャ
@@ -52,6 +55,12 @@ production smoke では A → B → C → D → A を検証しました。A/B/C 
 
 この scheduler は **現行の lane-local KV アーキテクチャを安全に運用するための serving hardening** であり、最終的な最適 scheduler と主張するものではありません。cache-aware global scheduling、migration/transfer cost、overload queueing、より明示的な cost model は roadmap 項目です。
 
+### Lane-local conversation parking
+
+現在の production は、各 independent lane で upstream Strata の native conversation parking を使います。Lanes 独自の snapshot 形式を追加するのではなく、supervisor が same-lane affinity を維持し、通常の Strata engine に `--conversation-cache-mib 4096`、`--conversation-cache-slots 4`、`--conversation-cache-min-free-mib 8192` を渡します。`slots` は GPU 数や request queue 長ではなく、**1 lane が RAM に park できる conversation 数**です。実容量は 4 GiB の byte budget にも制限されます。eviction 後も affinity は保持され、同じ lane で prompt recompute に安全にフォールバックします。
+
+実 production public path `8087 → 18087` の matched A/B では、6 stable mixed sessions の cold turn 1 は約 0.1% 差で、parking により returning turn 2/3 の wall time が **35.7% / 32.2%**、mean E2E が **28.5% / 25.7%** 改善し、aggregate completion throughput は **55.4% / 59.1%** 増加しました。Hermes `eval` 検証では約 25K-token prompt の多くの再訪で **25.1K–25.6K tokens** を再利用できました。詳細は [`docs/lane-local-conversation-parking-20261003.md`](docs/lane-local-conversation-parking-20261003.md) を参照してください。
+
 ## 参照ホスト
 
 ```text
@@ -83,12 +92,15 @@ required host RAM ≈ one shared expert arena + every lane's host-KV + OS/runtim
 
 ## バージョン別 evidence
 
-moving `main` は現在の **0.1.34 software baseline** を追跡し、最新の完全な live/lifecycle evidence は **0.1.31**、完全な architecture-performance matrix は **0.1.30** の測定を保持します。過去の測定値を 0.1.34 として再ラベルしません。
+moving `main` は現在の **0.1.38 software baseline** と 0.1.38 full benchmark campaign を追跡します。0.1.31 Phase 3 lifecycle と 0.1.30 architecture matrix は元バージョンの履歴 evidence として保持し、0.1.38 に再ラベルしません。
 
 参照:
 
 - [`RESULTS.md`](RESULTS.md) — 現在の要約と保持中の benchmark evidence
-- [`docs/strata-0.1.34-promotion-20261002.md`](docs/strata-0.1.34-promotion-20261002.md) — 現在の 0.1.34 software-sync promotion
+- [`docs/strata-0.1.38-full-campaign-20261003.md`](docs/strata-0.1.38-full-campaign-20261003.md) — 現行 0.1.38 full benchmark campaign
+- [`docs/strata-0.1.38-promotion-20261003.md`](docs/strata-0.1.38-promotion-20261003.md) — 現行 0.1.38 software-sync promotion
+- [`docs/lane-local-conversation-parking-20261003.md`](docs/lane-local-conversation-parking-20261003.md) — production-path parking / Hermes eval 検証
+- [`docs/strata-0.1.34-promotion-20261002.md`](docs/strata-0.1.34-promotion-20261002.md) — 保持中の 0.1.34 promotion 記録
 - [`docs/strata-0.1.31-promotion-20261001.md`](docs/strata-0.1.31-promotion-20261001.md) — 保持中の完全な live/parity evidence
 - [`docs/strata-0.1.30-promotion-20261001.md`](docs/strata-0.1.30-promotion-20261001.md) — 保持中の完全な benchmark generation
 - [`docs/fork-and-implementation.md`](docs/fork-and-implementation.md) — upstream/fork/recipe の役割境界
