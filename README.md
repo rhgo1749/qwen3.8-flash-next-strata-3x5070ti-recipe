@@ -9,8 +9,8 @@ A practical recipe for running **one independent Strata generation lane per GPU*
 ## Current state
 
 - Implementation fork: [`rhgo1749/Strata-Lanes`](https://github.com/rhgo1749/Strata-Lanes)
-- **Current operational Strata pin:** [`4b5b47d`](https://github.com/rhgo1749/Strata-Lanes/commit/4b5b47d6e50250b71c52fe4fe7d33593684dce91)
-- Engine baseline: Strata **0.1.34** (`1678de3` upstream); sync record: [`docs/strata-0.1.34-promotion-20261002.md`](docs/strata-0.1.34-promotion-20261002.md)
+- **Current operational Strata pin:** [`8ea68ea`](https://github.com/rhgo1749/Strata-Lanes/commit/8ea68eaab3ee93f1c820f5103d64ca251cfe52b6)
+- Engine baseline: Strata **0.1.38** (`99f3dbd` upstream); sync record: [`docs/strata-0.1.38-promotion-20261003.md`](docs/strata-0.1.38-promotion-20261003.md)
 - Current production quant on the reference host: **Qwen3.8-Flash-Next GSQ-RCO IQ3_S**
 `main` tracks the current operational recipe. Detailed retained measurements and version boundaries are in [`RESULTS.md`](RESULTS.md). Older snapshots remain available through Git history and named branches rather than being mirrored on the moving main branch.
 
@@ -83,12 +83,13 @@ required host RAM ≈ one shared expert arena + every lane's host-KV + OS/runtim
 
 ## Versioned evidence
 
-The moving `main` tracks the current **0.1.34 software baseline** while retaining the latest full live/lifecycle evidence from **0.1.31** and the full architecture-performance matrix from **0.1.30**. Measurements keep their original engine version and are never relabeled as current.
+The moving `main` tracks the current **0.1.38 software baseline** while retaining the latest full live/lifecycle evidence from **0.1.31** and the full architecture-performance matrix from **0.1.30**. Measurements keep their original engine version and are never relabeled as current.
 
 See:
 
 - [`RESULTS.md`](RESULTS.md) — current summary and retained benchmark evidence
-- [`docs/strata-0.1.34-promotion-20261002.md`](docs/strata-0.1.34-promotion-20261002.md) — current 0.1.34 software-sync promotion
+- [`docs/strata-0.1.38-promotion-20261003.md`](docs/strata-0.1.38-promotion-20261003.md) — current 0.1.38 software-sync promotion and bounded long-prompt A/B
+- [`docs/strata-0.1.34-promotion-20261002.md`](docs/strata-0.1.34-promotion-20261002.md) — retained 0.1.34 software-sync promotion
 - [`docs/strata-0.1.31-promotion-20261001.md`](docs/strata-0.1.31-promotion-20261001.md) — retained full live/parity evidence
 - [`docs/strata-0.1.30-promotion-20261001.md`](docs/strata-0.1.30-promotion-20261001.md) — retained full benchmark generation
 - [`docs/fork-and-implementation.md`](docs/fork-and-implementation.md) — upstream/fork/recipe ownership boundary
